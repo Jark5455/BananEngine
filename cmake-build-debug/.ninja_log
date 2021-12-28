@@ -1,0 +1,7 @@
+# ninja log v5
+1	580	1638912969479991116	CMakeFiles/BananEngine.dir/banan_pipeline.cpp.o	a057580b2ab2db8
+659	740	1638912969639995923	BananEngineTest	f992e4b370016621
+580	659	1638912969559993520	libBananEngine.so	8e4389785b382807
+0	162	1638672148754396217	CMakeFiles/BananEngineTest.dir/Tests/BananEngineTest.cpp.o	672963ad8c22be25
+0	445	1638672149037737231	CMakeFiles/BananEngineTest.dir/Tests/main.cpp.o	8a421f8519d62e6a
+1	454	1638672354759977714	CMakeFiles/BananEngine.dir/banan_window.cpp.o	41931db5d1562cf0
