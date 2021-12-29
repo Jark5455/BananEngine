@@ -6,8 +6,12 @@ set(CMAKE_C_COMPILER clang)
 set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp)
+add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp)
 add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp)
+
+find_package(Boost REQUIRED COMPONENTS log)
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIR})
 
 find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})

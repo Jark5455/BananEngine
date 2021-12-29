@@ -23,6 +23,14 @@ BananEngine_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 BananEngine_SOURCE_DIR:STATIC=/home/yashr/CLionProjects/BananEngine
 
+//The directory containing a CMake configuration file for Boost.
+Boost_DIR:PATH=/usr/lib64/cmake/Boost-1.76.0
+
+//Path to a file.
+Boost_INCLUDE_DIR:PATH=/usr/include
+
+Boost_LOG_LIBRARY_RELEASE:STRING=/usr/lib/libboost_log.so.1.76.0
+
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=/usr/bin/addr2line
 
@@ -230,6 +238,39 @@ Vulkan_INCLUDE_DIR:PATH=/usr/include
 //Path to a library.
 Vulkan_LIBRARY:FILEPATH=/lib/libvulkan.so
 
+//The directory containing a CMake configuration file for boost_Log.
+boost_Log_DIR:PATH=/usr/lib64/cmake/boost_log-1.76.0
+
+//The directory containing a CMake configuration file for boost_atomic.
+boost_atomic_DIR:PATH=/usr/lib64/cmake/boost_atomic-1.76.0
+
+//The directory containing a CMake configuration file for boost_boost.
+boost_boost_DIR:PATH=boost_boost_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for boost_chrono.
+boost_chrono_DIR:PATH=/usr/lib64/cmake/boost_chrono-1.76.0
+
+//The directory containing a CMake configuration file for boost_core.
+boost_core_DIR:PATH=boost_core_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for boost_filesystem.
+boost_filesystem_DIR:PATH=/usr/lib64/cmake/boost_filesystem-1.76.0
+
+//The directory containing a CMake configuration file for boost_headers.
+boost_headers_DIR:PATH=/usr/lib64/cmake/boost_headers-1.76.0
+
+//The directory containing a CMake configuration file for boost_log.
+boost_log_DIR:PATH=/usr/lib64/cmake/boost_log-1.76.0
+
+//The directory containing a CMake configuration file for boost_optional.
+boost_optional_DIR:PATH=boost_optional_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for boost_regex.
+boost_regex_DIR:PATH=/usr/lib64/cmake/boost_regex-1.76.0
+
+//The directory containing a CMake configuration file for boost_thread.
+boost_thread_DIR:PATH=/usr/lib64/cmake/boost_thread-1.76.0
+
 //Path to a library.
 pkgcfg_lib_GLFW_glfw:FILEPATH=/usr/lib/libglfw.so
 
@@ -238,6 +279,8 @@ pkgcfg_lib_GLFW_glfw:FILEPATH=/usr/lib/libglfw.so
 # INTERNAL cache entries
 ########################
 
+//ADVANCED property for variable: Boost_DIR
+Boost_DIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_ADDR2LINE
 CMAKE_ADDR2LINE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_AR
@@ -314,6 +357,14 @@ CMAKE_GENERATOR_INSTANCE:INTERNAL=
 CMAKE_GENERATOR_PLATFORM:INTERNAL=
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
+//Test CMAKE_HAVE_LIBC_PTHREAD
+CMAKE_HAVE_LIBC_PTHREAD:INTERNAL=
+//Have library pthreads
+CMAKE_HAVE_PTHREADS_CREATE:INTERNAL=
+//Have library pthread
+CMAKE_HAVE_PTHREAD_CREATE:INTERNAL=1
+//Have include pthread.h
+CMAKE_HAVE_PTHREAD_H:INTERNAL=1
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=/home/yashr/CLionProjects/BananEngine
@@ -377,8 +428,12 @@ CMAKE_STRIP-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Details about finding Boost
+FIND_PACKAGE_MESSAGE_DETAILS_Boost:INTERNAL=[/usr/lib64/cmake/Boost-1.76.0/BoostConfig.cmake][cfound components: log ][v1.76.0()]
 //Details about finding PkgConfig
 FIND_PACKAGE_MESSAGE_DETAILS_PkgConfig:INTERNAL=[/usr/bin/pkg-config][v1.8.0()]
+//Details about finding Threads
+FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //Details about finding Vulkan
 FIND_PACKAGE_MESSAGE_DETAILS_Vulkan:INTERNAL=[/lib/libvulkan.so][/usr/include][v()]
 GLFW_CFLAGS:INTERNAL=
@@ -427,6 +482,20 @@ Vulkan_INCLUDE_DIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: Vulkan_LIBRARY
 Vulkan_LIBRARY-ADVANCED:INTERNAL=1
 __pkg_config_checked_GLFW:INTERNAL=1
+//ADVANCED property for variable: boost_atomic_DIR
+boost_atomic_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_chrono_DIR
+boost_chrono_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_filesystem_DIR
+boost_filesystem_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_headers_DIR
+boost_headers_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_log_DIR
+boost_log_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_regex_DIR
+boost_regex_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_thread_DIR
+boost_thread_DIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: pkgcfg_lib_GLFW_glfw
 pkgcfg_lib_GLFW_glfw-ADVANCED:INTERNAL=1
 prefix_result:INTERNAL=/usr/lib

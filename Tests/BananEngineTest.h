@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../banan_window.h"
+#include "../banan_pipeline.h"
 
 int main();
 namespace Banan{
@@ -14,6 +15,8 @@ namespace Banan{
 
         void run();
     private:
-        BananWindow bananWindow{};
+        BananWindow bananWindow{WIDTH, HEIGHT};
+        BananDevice bananDevice{bananWindow};
+        BananPipeline bananPipeline{bananDevice, "shaders/triangle.vert.spv", "shaders/triangle.frag.spv", BananPipeline::defaultPipelineConfigInfo(WIDTH, HEIGHT)};
     };
 }
