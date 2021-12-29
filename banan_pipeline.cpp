@@ -88,6 +88,23 @@ namespace Banan{
         configInfo.colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         configInfo.colorBlendInfo.logicOpEnable = VK_FALSE;
         configInfo.colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
+        configInfo.colorBlendInfo.attachmentCount = 1;
+        configInfo.colorBlendInfo.pAttachments = &configInfo.colorBlendAttachment;
+        configInfo.colorBlendInfo.blendConstants[0] = 0.0f;
+        configInfo.colorBlendInfo.blendConstants[1] = 0.0f;
+        configInfo.colorBlendInfo.blendConstants[2] = 0.0f;
+        configInfo.colorBlendInfo.blendConstants[3] = 0.0f;
+
+        configInfo.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        configInfo.depthStencilInfo.depthTestEnable = VK_TRUE;
+        configInfo.depthStencilInfo.depthWriteEnable = VK_TRUE;
+        configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+        configInfo.depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+        configInfo.depthStencilInfo.minDepthBounds = 0.0f;
+        configInfo.depthStencilInfo.maxDepthBounds = 1.0f;
+        configInfo.depthStencilInfo.stencilTestEnable = VK_FALSE;
+        configInfo.depthStencilInfo.front = {};
+        configInfo.depthStencilInfo.back = {};
 
         return configInfo;
     }
