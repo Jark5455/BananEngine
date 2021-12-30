@@ -45,5 +45,6 @@ namespace Banan {
             BananDevice &device;
             VkPipeline pipeline;
             VkShaderModule vertShaderModule;
+            VkShaderModule fragShaderModule;
     };
 }
