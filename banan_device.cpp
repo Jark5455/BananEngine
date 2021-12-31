@@ -80,11 +80,6 @@ namespace Banan {
         vulkanFunctions.vkCreateImage = vkCreateImage;
         vulkanFunctions.vkDestroyImage = vkDestroyImage;
         vulkanFunctions.vkCmdCopyBuffer = vkCmdCopyBuffer;
-        vulkanFunctions.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
-        vulkanFunctions.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
-        vulkanFunctions.vkBindBufferMemory2KHR = vkBindBufferMemory2KHR;
-        vulkanFunctions.vkBindImageMemory2KHR = vkBindImageMemory2KHR;
-        vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2KHR;
 
         allocatorInfo.pVulkanFunctions = &vulkanFunctions;
 
@@ -540,7 +535,7 @@ namespace Banan {
         endSingleTimeCommands(commandBuffer);
     }
 
-    void BananDevice::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags propertiesflags, VkImage &image, VmaAllocation &vmaAllocation) {
+    void BananDevice::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags propertiesflags, VkImage &image, VkDeviceMemory &imageMemory) {
         if (vkCreateImage(device_, &imageInfo, nullptr, &image) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image!");
         }
@@ -548,32 +543,17 @@ namespace Banan {
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(device_, image, &memRequirements);
 
-        //VkMemoryAllocateInfo allocInfo{};
-        //allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        //allocInfo.allocationSize = memRequirements.size;
-        //allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
 
-        VmaAllocationCreateInfo allocCreateInfo{};
-        allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-        VmaAllocationInfo allocInfo{};
-        allocInfo.size = memRequirements.size;
-        allocInfo.memoryType = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
-
-        if (vmaAllocateMemory(allocator, &memRequirements, &allocCreateInfo, &vmaAllocation, &allocInfo) != VK_SUCCESS) {
+        if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate image memory!");
         }
 
-        //if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-        //    throw std::runtime_error("failed to allocate image memory!");
-        //}
-
-        if(vmaBindImageMemory(allocator, allocation, image) != VK_SUCCESS) {
+        if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS) {
             throw std::runtime_error("failed to bind image memory!");
         }
-
-        //if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS) {
-        //    throw std::runtime_error("failed to bind image memory!");
-        //}
     }
 }

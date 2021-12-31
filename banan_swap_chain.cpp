@@ -34,7 +34,7 @@ namespace Banan {
         for (int i = 0; i < depthImages.size(); i++) {
             vkDestroyImageView(device.device(), depthImageViews[i], nullptr);
             vkDestroyImage(device.device(), depthImages[i], nullptr);
-            vmaFreeMemory(device.getAllocator(), depthImageMemorys[i]);
+            vkFreeMemory(device.device(), depthImageMemorys[i], nullptr);
         }
 
         for (auto framebuffer : swapChainFramebuffers) {
@@ -291,7 +291,7 @@ namespace Banan {
             imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             imageInfo.flags = 0;
 
-            device.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImages[i], depthImageMemorys[i]);
+            device.createImageWithInfo(imageInfo,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,depthImages[i],depthImageMemorys[i]);
 
             VkImageViewCreateInfo viewInfo{};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

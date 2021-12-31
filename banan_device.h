@@ -8,9 +8,6 @@
 
 #include <string>
 #include <vector>
-
-#define VMA_IMPLEMENTATION
-#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 #include <vk_mem_alloc.h>
 
 namespace Banan {
@@ -63,7 +60,7 @@ namespace Banan {
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount);
 
-        void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VmaAllocation &vmaAllocation);
+        void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
         VkPhysicalDeviceProperties properties;
 
     private:
