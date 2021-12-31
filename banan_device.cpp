@@ -55,6 +55,40 @@ namespace Banan {
         pickPhysicalDevice();
         createLogicalDevice();
         createCommandPool();
+
+        VmaAllocatorCreateInfo allocatorInfo = {};
+        allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
+        allocatorInfo.physicalDevice = physicalDevice;
+        allocatorInfo.device = device_;
+        allocatorInfo.instance = instance;
+
+        VmaVulkanFunctions vulkanFunctions = {};
+        vulkanFunctions.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+        vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+        vulkanFunctions.vkAllocateMemory = vkAllocateMemory;
+        vulkanFunctions.vkFreeMemory = vkFreeMemory;
+        vulkanFunctions.vkMapMemory = vkMapMemory;
+        vulkanFunctions.vkUnmapMemory = vkUnmapMemory;
+        vulkanFunctions.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+        vulkanFunctions.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+        vulkanFunctions.vkBindBufferMemory = vkBindBufferMemory;
+        vulkanFunctions.vkBindImageMemory = vkBindImageMemory;
+        vulkanFunctions.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+        vulkanFunctions.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+        vulkanFunctions.vkCreateBuffer = vkCreateBuffer;
+        vulkanFunctions.vkDestroyBuffer = vkDestroyBuffer;
+        vulkanFunctions.vkCreateImage = vkCreateImage;
+        vulkanFunctions.vkDestroyImage = vkDestroyImage;
+        vulkanFunctions.vkCmdCopyBuffer = vkCmdCopyBuffer;
+        vulkanFunctions.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
+        vulkanFunctions.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
+        vulkanFunctions.vkBindBufferMemory2KHR = vkBindBufferMemory2KHR;
+        vulkanFunctions.vkBindImageMemory2KHR = vkBindImageMemory2KHR;
+        vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2KHR;
+
+        allocatorInfo.pVulkanFunctions = &vulkanFunctions;
+
+        vmaCreateAllocator(&allocatorInfo, &allocator);
     }
 
     BananDevice::~BananDevice() {
@@ -366,17 +400,12 @@ namespace Banan {
 
         if (presentModeCount != 0) {
             details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(
-                    device,
-                    surface_,
-                    &presentModeCount,
-                    details.presentModes.data());
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, details.presentModes.data());
         }
         return details;
     }
 
-    VkFormat BananDevice::findSupportedFormat(
-            const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+    VkFormat BananDevice::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
         for (VkFormat format : candidates) {
             VkFormatProperties props;
             vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
@@ -404,35 +433,47 @@ namespace Banan {
         throw std::runtime_error("failed to find suitable memory type!");
     }
 
-    void BananDevice::createBuffer(
-            VkDeviceSize size,
-            VkBufferUsageFlags usage,
-            VkMemoryPropertyFlags properties,
-            VkBuffer &buffer,
-            VkDeviceMemory &bufferMemory) {
+    void BananDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags propertiesflags, VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = size;
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        VmaAllocationCreateInfo allocCreateInfo{};
+        allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        if (vmaCreateBuffer(allocator, &bufferInfo, &allocCreateInfo, &buffer, &allocation, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("failed to create vertex buffer!");
         }
+
+        //if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        //    throw std::runtime_error("failed to create vertex buffer!");
+        //}
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+        //VkMemoryAllocateInfo allocInfo{};
+        //allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        //allocInfo.allocationSize = memRequirements.size;
+        //allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
 
-        if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        //if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        //    throw std::runtime_error("failed to allocate vertex buffer memory!");
+        //}
+
+        //vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+
+        VmaAllocationInfo allocInfo = {};
+        allocInfo.size = memRequirements.size;
+        allocInfo.memoryType = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
+
+        if (vmaAllocateMemory(allocator, &memRequirements, &allocCreateInfo, &allocation, &allocInfo) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate vertex buffer memory!");
         }
 
-        vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+        vmaBindBufferMemory(allocator, allocation, buffer);
     }
 
     VkCommandBuffer BananDevice::beginSingleTimeCommands() {
@@ -479,8 +520,7 @@ namespace Banan {
         endSingleTimeCommands(commandBuffer);
     }
 
-    void BananDevice::copyBufferToImage(
-            VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount) {
+    void BananDevice::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
         VkBufferImageCopy region{};
@@ -496,21 +536,11 @@ namespace Banan {
         region.imageOffset = {0, 0, 0};
         region.imageExtent = {width, height, 1};
 
-        vkCmdCopyBufferToImage(
-                commandBuffer,
-                buffer,
-                image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1,
-                &region);
+        vkCmdCopyBufferToImage(commandBuffer,buffer,image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,1,&region);
         endSingleTimeCommands(commandBuffer);
     }
 
-    void BananDevice::createImageWithInfo(
-            const VkImageCreateInfo &imageInfo,
-            VkMemoryPropertyFlags properties,
-            VkImage &image,
-            VkDeviceMemory &imageMemory) {
+    void BananDevice::createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags propertiesflags, VkImage &image, VmaAllocation &vmaAllocation) {
         if (vkCreateImage(device_, &imageInfo, nullptr, &image) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image!");
         }
@@ -518,17 +548,32 @@ namespace Banan {
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(device_, image, &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+        //VkMemoryAllocateInfo allocInfo{};
+        //allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        //allocInfo.allocationSize = memRequirements.size;
+        //allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
 
-        if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+        VmaAllocationCreateInfo allocCreateInfo{};
+        allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        VmaAllocationInfo allocInfo{};
+        allocInfo.size = memRequirements.size;
+        allocInfo.memoryType = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
+
+        if (vmaAllocateMemory(allocator, &memRequirements, &allocCreateInfo, &vmaAllocation, &allocInfo) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate image memory!");
         }
 
-        if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS) {
+        //if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+        //    throw std::runtime_error("failed to allocate image memory!");
+        //}
+
+        if(vmaBindImageMemory(allocator, allocation, image) != VK_SUCCESS) {
             throw std::runtime_error("failed to bind image memory!");
         }
+
+        //if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS) {
+        //    throw std::runtime_error("failed to bind image memory!");
+        //}
     }
 }

@@ -61,7 +61,7 @@ namespace Banan {
             VkRenderPass renderPass;
 
             std::vector<VkImage> depthImages;
-            std::vector<VkDeviceMemory> depthImageMemorys;
+            std::vector<VmaAllocation> depthImageMemorys;
             std::vector<VkImageView> depthImageViews;
             std::vector<VkImage> swapChainImages;
             std::vector<VkImageView> swapChainImageViews;

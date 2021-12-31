@@ -9,6 +9,10 @@
 #include <string>
 #include <vector>
 
+#define VMA_IMPLEMENTATION
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#include <vk_mem_alloc.h>
+
 namespace Banan {
     struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
@@ -42,6 +46,7 @@ namespace Banan {
         BananDevice &operator=(BananDevice &&) = delete;
 
         VkCommandPool getCommandPool() { return commandPool; }
+        VmaAllocator getAllocator() { return allocator; }
         VkDevice device() { return device_; }
         VkSurfaceKHR surface() { return surface_; }
         VkQueue graphicsQueue() { return graphicsQueue_; }
@@ -58,7 +63,7 @@ namespace Banan {
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount);
 
-        void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
+        void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VmaAllocation &vmaAllocation);
         VkPhysicalDeviceProperties properties;
 
     private:
@@ -89,6 +94,9 @@ namespace Banan {
         VkSurfaceKHR surface_;
         VkQueue graphicsQueue_;
         VkQueue presentQueue_;
+
+        VmaAllocator allocator;
+        VmaAllocation allocation;
 
         const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
         const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
