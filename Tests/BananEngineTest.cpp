@@ -28,6 +28,8 @@ namespace Banan{
             glfwPollEvents();
             drawFrame();
         }
+
+        vkDeviceWaitIdle(bananDevice.device());
     }
 
     void BananEngineTest::createPipelineLayout() {
