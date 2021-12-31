@@ -35,5 +35,9 @@ namespace Banan {
             throw std::runtime_error("failed to create window surface!");
         }
     }
+
+    VkExtent2D BananWindow::getExtent() {
+        return {static_cast<uint32_t>(std::get<0>(res)), static_cast<uint32_t>(std::get<1>(res))};
+    }
 }
 

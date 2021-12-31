@@ -14,7 +14,6 @@ namespace Banan {
     struct PipelineConfigInfo {
         VkViewport viewport;
         VkRect2D scissor;
-        VkPipelineViewportStateCreateInfo viewportInfo;
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
         VkPipelineRasterizationStateCreateInfo rasterizationInfo;
         VkPipelineMultisampleStateCreateInfo multisampleInfo;
@@ -35,6 +34,7 @@ namespace Banan {
             BananPipeline(const BananPipeline&) = delete;
             void operator=(const BananPipeline&) = delete;
 
+            void bind(VkCommandBuffer buffer);
             static PipelineConfigInfo defaultPipelineConfigInfo(uint32_t width, uint32_t height);
 
         private:

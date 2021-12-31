@@ -18,7 +18,7 @@ namespace Banan {
         BananWindow &operator=(const BananWindow &) = delete;
 
         void createWindowSurface(VkInstance instance, VkSurfaceKHR *surface);
-
+        VkExtent2D getExtent();
         bool windowShouldClose();
 
     private:

@@ -12,6 +12,12 @@ namespace Banan{
         createGraphicsPipeline(vertFilepath, fragFilePath, configInfo);
     }
 
+    BananPipeline::~BananPipeline() {
+        vkDestroyShaderModule(device.device(), vertShaderModule, nullptr);
+        vkDestroyShaderModule(device.device(), fragShaderModule, nullptr);
+        vkDestroyPipeline(device.device(), pipeline, nullptr);
+    }
+
     std::vector<char> BananPipeline::readFile(const std::string &filepath) {
         std::ifstream file(filepath, std::ios::ate | std::ios::binary);
 
@@ -60,21 +66,47 @@ namespace Banan{
         vertexInputInfo.pVertexAttributeDescriptions = nullptr;
         vertexInputInfo.pVertexBindingDescriptions = nullptr;
 
+        VkPipelineViewportStateCreateInfo viewportInfo{};
+        viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        viewportInfo.viewportCount = 1;
+        viewportInfo.pViewports = &info.viewport;
+        viewportInfo.scissorCount = 1;
+        viewportInfo.pScissors = &info.scissor;
+
+        VkPipelineColorBlendStateCreateInfo colorBlendInfo{};
+        colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colorBlendInfo.logicOpEnable = VK_FALSE;
+        colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
+        colorBlendInfo.attachmentCount = 1;
+        colorBlendInfo.pAttachments = &info.colorBlendAttachment;
+        colorBlendInfo.blendConstants[0] = 0.0f;
+        colorBlendInfo.blendConstants[1] = 0.0f;
+        colorBlendInfo.blendConstants[2] = 0.0f;
+        colorBlendInfo.blendConstants[3] = 0.0f;
+
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType =VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.stageCount = 2;
         pipelineInfo.pStages = shaderStages;
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &info.inputAssemblyInfo;
-        pipelineInfo.pViewportState = &info.viewportInfo;
+        pipelineInfo.pViewportState = &viewportInfo;
         pipelineInfo.pRasterizationState = &info.rasterizationInfo;
-        pipelineInfo.pColorBlendState = &info.colorBlendInfo;
+        pipelineInfo.pMultisampleState = &info.multisampleInfo;
+        pipelineInfo.pColorBlendState = &colorBlendInfo;
         pipelineInfo.pDepthStencilState = &info.depthStencilInfo;
         pipelineInfo.pDynamicState = nullptr;
 
         pipelineInfo.layout = info.pipelineLayout;
         pipelineInfo.renderPass = info.renderPass;
         pipelineInfo.subpass = info.subpass;
+
+        pipelineInfo.basePipelineIndex = -1;
+        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+        if (vkCreateGraphicsPipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create graphics pipeline");
+        }
     }
 
     PipelineConfigInfo BananPipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
@@ -93,12 +125,6 @@ namespace Banan{
 
         configInfo.scissor.offset = {0, 0};
         configInfo.scissor.extent = {width, height};
-
-        configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        configInfo.viewportInfo.viewportCount = 1;
-        configInfo.viewportInfo.pViewports = &configInfo.viewport;
-        configInfo.viewportInfo.scissorCount = 1;
-        configInfo.viewportInfo.pScissors = &configInfo.scissor;
 
         configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
@@ -129,16 +155,6 @@ namespace Banan{
         configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
-        configInfo.colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        configInfo.colorBlendInfo.logicOpEnable = VK_FALSE;
-        configInfo.colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
-        configInfo.colorBlendInfo.attachmentCount = 1;
-        configInfo.colorBlendInfo.pAttachments = &configInfo.colorBlendAttachment;
-        configInfo.colorBlendInfo.blendConstants[0] = 0.0f;
-        configInfo.colorBlendInfo.blendConstants[1] = 0.0f;
-        configInfo.colorBlendInfo.blendConstants[2] = 0.0f;
-        configInfo.colorBlendInfo.blendConstants[3] = 0.0f;
-
         configInfo.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         configInfo.depthStencilInfo.depthTestEnable = VK_TRUE;
         configInfo.depthStencilInfo.depthWriteEnable = VK_TRUE;
@@ -162,5 +178,9 @@ namespace Banan{
         if (vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
             throw std::runtime_error("failed to create shader module");
         }
+    }
+
+    void BananPipeline::bind(VkCommandBuffer buffer) {
+        vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
 }
