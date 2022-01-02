@@ -9,9 +9,10 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 
 namespace Banan {
-    BananSwapChain::BananSwapChain(BananDevice &deviceRef, VkExtent2D extent) : device{deviceRef}, windowExtent{extent} {
+    BananSwapChain::BananSwapChain(BananDevice &deviceRef, VkExtent2D extent, std::shared_ptr<BananSwapChain> previous) : device{deviceRef}, windowExtent{extent}, oldSwapChain{std::move(previous)} {
         createSwapChain();
         createImageViews();
         createRenderPass();
@@ -57,8 +58,7 @@ namespace Banan {
         return result;
     }
 
-    VkResult BananSwapChain::submitCommandBuffers(
-            const VkCommandBuffer *buffers, const uint32_t *imageIndex) {
+    VkResult BananSwapChain::submitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex) {
         if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
             vkWaitForFences(device.device(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
         }
@@ -148,7 +148,7 @@ namespace Banan {
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
 
-        createInfo.oldSwapchain = VK_NULL_HANDLE;
+        createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapChain;
 
         if (vkCreateSwapchainKHR(device.device(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
             throw std::runtime_error("failed to create swap chain!");

@@ -5,10 +5,6 @@
 namespace Banan {
 
     BananWindow::BananWindow() {
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         new (this) BananWindow(mode->width, mode->height);
     }
@@ -16,9 +12,11 @@ namespace Banan {
     BananWindow::BananWindow(int w, int h) {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
         window = glfwCreateWindow(w, h, "BananEngine", nullptr, nullptr);
+        glfwSetWindowUserPointer(window, this);
+        glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
     }
 
     bool BananWindow::windowShouldClose() {
@@ -37,7 +35,14 @@ namespace Banan {
     }
 
     VkExtent2D BananWindow::getExtent() {
-        return {static_cast<uint32_t>(std::get<0>(res)), static_cast<uint32_t>(std::get<1>(res))};
+        return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+    }
+
+    void BananWindow::framebufferResizeCallback(GLFWwindow *window, int width, int height) {
+        auto bananWindow = reinterpret_cast<BananWindow *>(glfwGetWindowUserPointer(window));
+        bananWindow->framebufferResized = true;
+        bananWindow->width = width;
+        bananWindow->height = height;
     }
 }
 

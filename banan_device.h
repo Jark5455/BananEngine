@@ -8,7 +8,6 @@
 
 #include <string>
 #include <vector>
-#include <vk_mem_alloc.h>
 
 namespace Banan {
     struct SwapChainSupportDetails {
@@ -37,13 +36,10 @@ namespace Banan {
         BananDevice(BananWindow &window);
         ~BananDevice();
 
-        BananDevice(const BananDevice &) = delete;
-        void operator=(const BananDevice &) = delete;
         BananDevice(BananDevice &&) = delete;
-        BananDevice &operator=(BananDevice &&) = delete;
+        void operator=(BananDevice &&) = delete;
 
         VkCommandPool getCommandPool() { return commandPool; }
-        VmaAllocator getAllocator() { return allocator; }
         VkDevice device() { return device_; }
         VkSurfaceKHR surface() { return surface_; }
         VkQueue graphicsQueue() { return graphicsQueue_; }
@@ -91,9 +87,6 @@ namespace Banan {
         VkSurfaceKHR surface_;
         VkQueue graphicsQueue_;
         VkQueue presentQueue_;
-
-        VmaAllocator allocator;
-        VmaAllocation allocation;
 
         const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
         const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};

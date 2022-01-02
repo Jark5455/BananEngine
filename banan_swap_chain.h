@@ -12,12 +12,14 @@
 // std lib headers
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace Banan {
     class BananSwapChain {
     public:
+
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-        BananSwapChain(BananDevice &deviceRef, VkExtent2D windowExtent);
+        BananSwapChain(BananDevice &deviceRef, VkExtent2D extent, std::shared_ptr<BananSwapChain> previous);
         ~BananSwapChain();
 
         BananSwapChain(const BananSwapChain &) = delete;
@@ -70,6 +72,7 @@ namespace Banan {
         VkExtent2D windowExtent;
 
         VkSwapchainKHR swapChain;
+        std::shared_ptr<BananSwapChain> oldSwapChain;
 
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;

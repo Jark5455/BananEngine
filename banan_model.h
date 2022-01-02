@@ -10,12 +10,16 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
+#include <vk_mem_alloc.h>
+
 namespace Banan {
     class BananModel {
         public:
 
             struct Vertex {
                 glm::vec2 position;
+                glm::vec3 color;
+
                 static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
                 static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
             };

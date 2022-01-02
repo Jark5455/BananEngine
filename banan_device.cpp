@@ -10,24 +10,14 @@
 #include <unordered_set>
 
 namespace Banan {
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-            VkDebugUtilsMessageTypeFlagsEXT messageType,
-            const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-            void *pUserData) {
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
         return VK_FALSE;
     }
 
-    VkResult CreateDebugUtilsMessengerEXT(
-            VkInstance instance,
-            const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-            const VkAllocationCallbacks *pAllocator,
-            VkDebugUtilsMessengerEXT *pDebugMessenger) {
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
-                instance,
-                "vkCreateDebugUtilsMessengerEXT");
+    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance,"vkCreateDebugUtilsMessengerEXT");
         if (func != nullptr) {
             return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
         } else {
@@ -35,13 +25,8 @@ namespace Banan {
         }
     }
 
-    void DestroyDebugUtilsMessengerEXT(
-            VkInstance instance,
-            VkDebugUtilsMessengerEXT debugMessenger,
-            const VkAllocationCallbacks *pAllocator) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
-                instance,
-                "vkDestroyDebugUtilsMessengerEXT");
+    void DestroyDebugUtilsMessengerEXT(VkInstance instance,VkDebugUtilsMessengerEXT debugMessenger,const VkAllocationCallbacks *pAllocator) {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance,"vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr) {
             func(instance, debugMessenger, pAllocator);
         }
@@ -55,35 +40,6 @@ namespace Banan {
         pickPhysicalDevice();
         createLogicalDevice();
         createCommandPool();
-
-        VmaAllocatorCreateInfo allocatorInfo = {};
-        allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
-        allocatorInfo.physicalDevice = physicalDevice;
-        allocatorInfo.device = device_;
-        allocatorInfo.instance = instance;
-
-        VmaVulkanFunctions vulkanFunctions = {};
-        vulkanFunctions.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
-        vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
-        vulkanFunctions.vkAllocateMemory = vkAllocateMemory;
-        vulkanFunctions.vkFreeMemory = vkFreeMemory;
-        vulkanFunctions.vkMapMemory = vkMapMemory;
-        vulkanFunctions.vkUnmapMemory = vkUnmapMemory;
-        vulkanFunctions.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
-        vulkanFunctions.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
-        vulkanFunctions.vkBindBufferMemory = vkBindBufferMemory;
-        vulkanFunctions.vkBindImageMemory = vkBindImageMemory;
-        vulkanFunctions.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
-        vulkanFunctions.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
-        vulkanFunctions.vkCreateBuffer = vkCreateBuffer;
-        vulkanFunctions.vkDestroyBuffer = vkDestroyBuffer;
-        vulkanFunctions.vkCreateImage = vkCreateImage;
-        vulkanFunctions.vkDestroyImage = vkDestroyImage;
-        vulkanFunctions.vkCmdCopyBuffer = vkCmdCopyBuffer;
-
-        allocatorInfo.pVulkanFunctions = &vulkanFunctions;
-
-        vmaCreateAllocator(&allocatorInfo, &allocator);
     }
 
     BananDevice::~BananDevice() {
@@ -105,9 +61,9 @@ namespace Banan {
 
         VkApplicationInfo appInfo = {};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = "LittleVulkanEngine App";
+        appInfo.pApplicationName = "BananEngine App";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "No Engine";
+        appInfo.pEngineName = "BananEngine";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -395,7 +351,11 @@ namespace Banan {
 
         if (presentModeCount != 0) {
             details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, details.presentModes.data());
+            vkGetPhysicalDeviceSurfacePresentModesKHR(
+                    device,
+                    surface_,
+                    &presentModeCount,
+                    details.presentModes.data());
         }
         return details;
     }
@@ -435,40 +395,23 @@ namespace Banan {
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VmaAllocationCreateInfo allocCreateInfo{};
-        allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-        if (vmaCreateBuffer(allocator, &bufferInfo, &allocCreateInfo, &buffer, &allocation, nullptr) != VK_SUCCESS) {
+        if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to create vertex buffer!");
         }
-
-        //if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-        //    throw std::runtime_error("failed to create vertex buffer!");
-        //}
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
 
-        //VkMemoryAllocateInfo allocInfo{};
-        //allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        //allocInfo.allocationSize = memRequirements.size;
-        //allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
 
-        //if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        //    throw std::runtime_error("failed to allocate vertex buffer memory!");
-        //}
-
-        //vkBindBufferMemory(device_, buffer, bufferMemory, 0);
-
-        VmaAllocationInfo allocInfo = {};
-        allocInfo.size = memRequirements.size;
-        allocInfo.memoryType = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
-
-        if (vmaAllocateMemory(allocator, &memRequirements, &allocCreateInfo, &allocation, &allocInfo) != VK_SUCCESS) {
+        if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate vertex buffer memory!");
         }
 
-        vmaBindBufferMemory(allocator, allocation, buffer);
+        vkBindBufferMemory(device_, buffer, bufferMemory, 0);
     }
 
     VkCommandBuffer BananDevice::beginSingleTimeCommands() {
@@ -531,7 +474,7 @@ namespace Banan {
         region.imageOffset = {0, 0, 0};
         region.imageExtent = {width, height, 1};
 
-        vkCmdCopyBufferToImage(commandBuffer,buffer,image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,1,&region);
+        vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         endSingleTimeCommands(commandBuffer);
     }
 

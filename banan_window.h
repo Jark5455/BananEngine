@@ -17,12 +17,21 @@ namespace Banan {
         BananWindow(const BananWindow &) = delete;
         BananWindow &operator=(const BananWindow &) = delete;
 
+        bool wasWindowResized() { return framebufferResized; }
+        void resetWindowResizedFlag() { framebufferResized = false; }
+
         void createWindowSurface(VkInstance instance, VkSurfaceKHR *surface);
         VkExtent2D getExtent();
         bool windowShouldClose();
 
     private:
-        std::tuple<int, int> res = std::make_tuple(0, 0);
+        static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
+
+        int width;
+        int height;
+
+        bool framebufferResized = false;
+
         GLFWwindow *window;
     };
 }
