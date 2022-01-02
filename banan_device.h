@@ -37,7 +37,7 @@ namespace Banan {
         ~BananDevice();
 
         BananDevice(BananDevice &&) = delete;
-        void operator=(BananDevice &&) = delete;
+        BananDevice &operator=(BananDevice &&) = delete;
 
         VkCommandPool getCommandPool() { return commandPool; }
         VkDevice device() { return device_; }

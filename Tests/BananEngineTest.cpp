@@ -43,7 +43,8 @@ namespace Banan{
 
     void BananEngineTest::createPipeline() {
         // why not use the existing variables HEIGHT or WIDTH? - On high pixel density displays such as apples "retina" display these values are incorrect, but the swap chain corrects these values
-        auto pipelineConfig = BananPipeline::defaultPipelineConfigInfo(bananSwapChain->width(), bananSwapChain->height());
+        PipelineConfigInfo pipelineConfig{};
+        BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = bananSwapChain->getRenderPass();
         pipelineConfig.pipelineLayout = pipelineLayout;
         bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/triangle.vert.spv", "shaders/triangle.frag.spv", pipelineConfig);
@@ -61,6 +62,11 @@ namespace Banan{
         if (vkAllocateCommandBuffers(bananDevice.device(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers");
         }
+    }
+
+    void BananEngineTest::freeCommandBuffers() {
+        vkFreeCommandBuffers(bananDevice.device(), bananDevice.getCommandPool(), commandBuffers.size(), commandBuffers.data());
+        commandBuffers.clear();
     }
 
     void BananEngineTest::drawFrame() {
@@ -112,6 +118,12 @@ namespace Banan{
         } else {
             std::shared_ptr<BananSwapChain> oldSwapChain = std::move(bananSwapChain);
             bananSwapChain = std::make_unique<BananSwapChain>(bananDevice, extent, oldSwapChain);
+
+            if (bananSwapChain->imageCount() != commandBuffers.size()) {
+                freeCommandBuffers();
+                createCommandBuffers();
+            }
+
             assert(bananSwapChain->imageCount() == oldSwapChain->imageCount() && "Swap chain image count has changed!");
         }
         createPipeline();
@@ -140,6 +152,17 @@ namespace Banan{
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(bananSwapChain->getSwapChainExtent().width);
+        viewport.height = static_cast<float>(bananSwapChain->getSwapChainExtent().height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        VkRect2D scissor{{0, 0}, bananSwapChain->getSwapChainExtent()};
+        vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
 
         bananPipeline->bind(commandBuffers[imageIndex]);
         bananModel->bind(commandBuffers[imageIndex]);

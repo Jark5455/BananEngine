@@ -13,7 +13,7 @@ namespace Banan {
 
     struct PipelineConfigInfo {
         PipelineConfigInfo(const PipelineConfigInfo&) = delete;
-        PipelineConfigInfo &operator=(const PipelineConfigInfo&) = delete;
+        PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
 
         VkPipelineViewportStateCreateInfo viewportInfo;
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
@@ -36,14 +36,14 @@ namespace Banan {
             ~BananPipeline();
 
             BananPipeline(const BananPipeline&) = delete;
-            void operator=(const BananPipeline&) = delete;
+            BananPipeline &operator=(const BananPipeline&) = delete;
 
             void bind(VkCommandBuffer buffer);
             static void defaultPipelineConfigInfo(PipelineConfigInfo &configInfo);
 
         private:
             static std::vector<char> readFile(const std::string &filepath);
-            void createGraphicsPipeline(const std::string &vertFilePath, const std::string &fragFilePath, PipelineConfigInfo info);
+            void createGraphicsPipeline(const std::string &vertFilePath, const std::string &fragFilePath, const PipelineConfigInfo &info);
             void createShaderModule(const std::vector<char>& code, VkShaderModule *shaderModule);
 
             BananDevice &device;

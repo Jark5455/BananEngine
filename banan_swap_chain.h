@@ -23,7 +23,7 @@ namespace Banan {
         ~BananSwapChain();
 
         BananSwapChain(const BananSwapChain &) = delete;
-        void operator=(const BananSwapChain &) = delete;
+        BananSwapChain &operator=(const BananSwapChain &) = delete;
 
         VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
         VkRenderPass getRenderPass() { return renderPass; }
