@@ -8,6 +8,7 @@
 #include "../banan_swap_chain.h"
 #include "../banan_device.h"
 #include "../banan_model.h"
+#include "../banan_game_object.h"
 
 #include <memory>
 #include <vector>
@@ -27,7 +28,7 @@ namespace Banan{
 
         void run();
     private:
-        void loadModels();
+        void loadGameObjects();
         void createPipelineLayout();
         void createPipeline();
         void createCommandBuffers();
@@ -35,6 +36,7 @@ namespace Banan{
         void drawFrame();
         void recreateSwapChain();
         void recordCommandBuffer(int imageIndex);
+        void renderGameObjects(VkCommandBuffer commandBuffer);
 
         BananWindow bananWindow{WIDTH, HEIGHT};
         BananDevice bananDevice{bananWindow};
@@ -42,6 +44,6 @@ namespace Banan{
         std::unique_ptr<BananPipeline> bananPipeline;
         VkPipelineLayout pipelineLayout;
         std::vector<VkCommandBuffer> commandBuffers;
-        std::unique_ptr<BananModel> bananModel;
+        std::vector<BananGameObject> gameObjects;
     };
 }

@@ -6,7 +6,7 @@ set(CMAKE_C_COMPILER clang)
 set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp)
+add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp)
 add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp)
 
 find_package(Boost REQUIRED COMPONENTS log)
