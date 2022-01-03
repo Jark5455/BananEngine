@@ -183,6 +183,10 @@ namespace Banan{
 
     void BananEngineTest::loadGameObjects() {
         std::vector<BananModel::Vertex> vertices{
+                //{{-0.433f, -0.25f}, {1.0f, 0.0f, 0.0f}},
+                //{{0.433f, -0.25f}, {0.0f, 1.0f, 0.0f}},
+                //{{0.0f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+
                 {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
                 {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
                 {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
@@ -192,8 +196,8 @@ namespace Banan{
         auto triangle = BananGameObject::createGameObject();
         triangle.model = bananModel;
         triangle.color = {.1f, .8f, .1f};
-        triangle.transform2D.translation.x = .2f;
-        triangle.transform2D.scale = {2.f, 0.5f};
+        triangle.transform2D.translation.x = 0.0f;
+        triangle.transform2D.scale = {1.0f, 1.0f};
         triangle.transform2D.rotation = .25f * glm::two_pi<float>();
 
         gameObjects.push_back(std::move(triangle));
@@ -204,6 +208,22 @@ namespace Banan{
 
         for (auto &obj : gameObjects) {
             obj.transform2D.rotation = glm::mod(obj.transform2D.rotation + 0.01f, glm::two_pi<float>());
+
+            /*o++;
+
+            if (o % 3 == 0) {
+                if (n > 128) {
+                    n = 0;
+                }
+
+                float r = glm::sin(frequency*static_cast<float>(n) + 0) * 127 + 128;
+                float g = glm::sin(frequency*static_cast<float>(n) + 2) * 127 + 128;
+                float b = glm::sin(frequency*static_cast<float>(n) + 4) * 127 + 128;
+
+                n++;
+
+                obj.color = {r / 256.0f, g / 256.0f, b / 256.0f};
+            }*/
 
             SimplePushConstantData push{};
             push.offset = obj.transform2D.translation;

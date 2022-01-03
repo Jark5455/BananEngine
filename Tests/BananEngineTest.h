@@ -45,5 +45,9 @@ namespace Banan{
         VkPipelineLayout pipelineLayout;
         std::vector<VkCommandBuffer> commandBuffers;
         std::vector<BananGameObject> gameObjects;
+
+        float frequency = 0.3;
+        float n = 0;
+        int o = 0;
     };
 }
