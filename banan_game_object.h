@@ -6,16 +6,17 @@
 
 #include "banan_model.h"
 
+#include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 
 namespace Banan {
 
-    struct Transform2dComponent {
-        glm::vec2 translation{};
-        glm::vec2 scale{1.f, 1.f};
-        float rotation;
+    struct TransformComponent {
+        glm::vec3 translation{};
+        glm::vec3 scale{1.f, 1.f, 1.f};
+        glm::vec3 rotation{};
 
-        glm::mat2 mat2();
+        glm::mat4 mat4();
     };
 
     class BananGameObject {
@@ -33,7 +34,7 @@ namespace Banan {
 
             std::shared_ptr<BananModel> model{};
             glm::vec3 color{};
-            Transform2dComponent transform2D{};
+            TransformComponent transform{};
 
         private:
             BananGameObject(id_t objId) : id{objId} {}

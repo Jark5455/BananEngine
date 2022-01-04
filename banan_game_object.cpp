@@ -13,11 +13,14 @@ Banan::BananGameObject::id_t Banan::BananGameObject::getId() {
     return id;
 }
 
-glm::mat2 Banan::Transform2dComponent::mat2() {
-    const float s = glm::sin(rotation);
-    const float c = glm::cos(rotation);
-    glm::mat2 rotMatrix{{c, s}, {-s, c}};
+glm::mat4 Banan::TransformComponent::mat4() {
+    auto transform = glm::translate(glm::mat4{1.f}, translation);
 
-    glm::mat2 scaleMat{{scale.x, .0f}, {.0f, scale.y}};
-    return rotMatrix * scaleMat;
+    transform = glm::rotate(transform, rotation.y, {0.f, 1.f, 0.f});
+    transform = glm::rotate(transform, rotation.x, {1.f, 0.f, 0.f});
+    transform = glm::rotate(transform, rotation.z, {0.f, 0.f, 1.f});
+    transform = glm::scale(transform, scale);
+
+    transform = glm::scale(transform, scale);
+    return transform;
 }
