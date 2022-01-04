@@ -7,7 +7,7 @@ set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp banan_renderer.cpp banan_renderer.h)
-add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp)
+add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp Tests/SimpleRenderSystem.cpp)
 
 find_package(Boost REQUIRED COMPONENTS log)
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})

@@ -4,11 +4,10 @@
 #pragma once
 
 #include "../banan_window.h"
-#include "../banan_pipeline.h"
-#include "../banan_swap_chain.h"
 #include "../banan_device.h"
 #include "../banan_model.h"
 #include "../banan_game_object.h"
+#include "../banan_renderer.h"
 
 #include <memory>
 #include <vector>
@@ -29,25 +28,10 @@ namespace Banan{
         void run();
     private:
         void loadGameObjects();
-        void createPipelineLayout();
-        void createPipeline();
-        void createCommandBuffers();
-        void freeCommandBuffers();
-        void drawFrame();
-        void recreateSwapChain();
-        void recordCommandBuffer(int imageIndex);
-        void renderGameObjects(VkCommandBuffer commandBuffer);
 
         BananWindow bananWindow{WIDTH, HEIGHT};
         BananDevice bananDevice{bananWindow};
-        std::unique_ptr<BananSwapChain> bananSwapChain;
-        std::unique_ptr<BananPipeline> bananPipeline;
-        VkPipelineLayout pipelineLayout;
-        std::vector<VkCommandBuffer> commandBuffers;
+        BananRenderer bananRenderer{bananWindow, bananDevice};
         std::vector<BananGameObject> gameObjects;
-
-        float frequency = 0.3;
-        float n = 0;
-        int o = 0;
     };
 }

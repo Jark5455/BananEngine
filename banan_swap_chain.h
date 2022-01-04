@@ -43,6 +43,8 @@ namespace Banan {
         VkResult acquireNextImage(uint32_t *imageIndex);
         VkResult submitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex);
 
+        bool compareSwapFormats(const BananSwapChain &otherSwapChain) const;
+
     private:
         void createSwapChain();
         void createImageViews();
@@ -57,6 +59,7 @@ namespace Banan {
         VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 
         VkFormat swapChainImageFormat;
+        VkFormat swapChainDepthFormat;
         VkExtent2D swapChainExtent;
 
         std::vector<VkFramebuffer> swapChainFramebuffers;

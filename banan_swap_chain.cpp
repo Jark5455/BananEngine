@@ -267,7 +267,7 @@ namespace Banan {
     }
 
     void BananSwapChain::createDepthResources() {
-        VkFormat depthFormat = findDepthFormat();
+        swapChainDepthFormat = findDepthFormat();
         VkExtent2D swapChainExtent = getSwapChainExtent();
 
         depthImages.resize(imageCount());
@@ -283,7 +283,7 @@ namespace Banan {
             imageInfo.extent.depth = 1;
             imageInfo.mipLevels = 1;
             imageInfo.arrayLayers = 1;
-            imageInfo.format = depthFormat;
+            imageInfo.format = swapChainDepthFormat;
             imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
             imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -297,7 +297,7 @@ namespace Banan {
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             viewInfo.image = depthImages[i];
             viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            viewInfo.format = depthFormat;
+            viewInfo.format = swapChainDepthFormat;
             viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             viewInfo.subresourceRange.baseMipLevel = 0;
             viewInfo.subresourceRange.levelCount = 1;
@@ -371,5 +371,9 @@ namespace Banan {
 
     VkFormat BananSwapChain::findDepthFormat() {
         return device.findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},VK_IMAGE_TILING_OPTIMAL,VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    }
+
+    bool BananSwapChain::compareSwapFormats(const BananSwapChain &otherSwapChain) const {
+        return otherSwapChain.swapChainDepthFormat == swapChainDepthFormat && otherSwapChain.swapChainImageFormat == swapChainImageFormat;
     }
 }
