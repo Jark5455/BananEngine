@@ -27,7 +27,7 @@ namespace Banan {
 
             BananGameObject(const BananGameObject &) = delete;
             BananGameObject &operator=(const BananGameObject &) = delete;
-            BananGameObject(BananGameObject&&) = default;
+            BananGameObject(BananGameObject &&) = default;
             BananGameObject &operator=(BananGameObject &&) = default;
 
             id_t getId();

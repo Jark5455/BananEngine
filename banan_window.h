@@ -19,6 +19,7 @@ namespace Banan {
 
         bool wasWindowResized() { return framebufferResized; }
         void resetWindowResizedFlag() { framebufferResized = false; }
+        GLFWwindow* getGLFWwindow() const;
 
         void createWindowSurface(VkInstance instance, VkSurfaceKHR *surface);
         VkExtent2D getExtent();

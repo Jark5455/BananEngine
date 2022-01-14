@@ -165,4 +165,8 @@ namespace Banan {
         assert(isFrameStarted && "Cannot get frame index when frame is not in progress");
         return currentFrameIndex;
     }
+
+    float BananRenderer::getAspectRatio() const {
+        return bananSwapChain->extentAspectRatio();
+    }
 }

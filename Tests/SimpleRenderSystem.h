@@ -3,6 +3,7 @@
 //
 #pragma once
 
+#include "../banan_camera.h"
 #include "../banan_pipeline.h"
 #include "../banan_device.h"
 #include "../banan_game_object.h"
@@ -19,7 +20,7 @@ namespace Banan{
             SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass);
             ~SimpleRenderSystem();
 
-            void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<BananGameObject> &gameObjects);
+            void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<BananGameObject> &gameObjects, const BananCamera &camera);
 
         private:
             void createPipelineLayout();

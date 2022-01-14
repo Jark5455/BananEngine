@@ -44,5 +44,9 @@ namespace Banan {
         bananWindow->width = width;
         bananWindow->height = height;
     }
+
+    GLFWwindow *BananWindow::getGLFWwindow() const {
+        return window;
+    }
 }
 

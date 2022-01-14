@@ -37,6 +37,7 @@ namespace Banan {
             void createVertexBuffers(const std::vector<Vertex> &vertices);
 
             BananDevice &bananDevice;
+
             VkBuffer vertexBuffer;
             VkDeviceMemory vertexBufferMemory;
             uint32_t vertexCount;
