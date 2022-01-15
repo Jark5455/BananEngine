@@ -24,7 +24,12 @@ namespace Banan {
                 static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
             };
 
-            BananModel(BananDevice &device, const std::vector<Vertex> &vertices);
+            struct Builder {
+                std::vector<Vertex> vertices{};
+                std::vector<uint32_t> indices{};
+            };
+
+            BananModel(BananDevice &device, const Builder &builder);
             ~BananModel();
 
             BananModel(const BananModel &) = delete;
@@ -35,11 +40,17 @@ namespace Banan {
 
         private:
             void createVertexBuffers(const std::vector<Vertex> &vertices);
+            void createIndexBuffers(const std::vector<uint32_t> &indices);
 
+            bool hasIndexBuffer;
             BananDevice &bananDevice;
 
             VkBuffer vertexBuffer;
             VkDeviceMemory vertexBufferMemory;
             uint32_t vertexCount;
+
+            VkBuffer indexBuffer;
+            VkDeviceMemory indexBufferMemory;
+            uint32_t indexCount;
     };
 }
