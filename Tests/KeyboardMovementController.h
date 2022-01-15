@@ -28,7 +28,7 @@ namespace Banan {
         void moveInPlaneXZ(GLFWwindow *window, float dt, BananGameObject &object);
 
         KeyMappings keys{};
-        float moveSpeed{0.03f};
-        float lookSpeed{0.015f};
+        float moveSpeed{3.f};
+        float lookSpeed{1.5f};
     };
 }
