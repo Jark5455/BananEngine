@@ -4,59 +4,54 @@
 
 #include "banan_logger.h"
 
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/sources/global_logger_storage.hpp>
-#include <boost/log/utility/setup/file.hpp>
+#include <iostream>
+#include <chrono>
 
-#ifdef __unix__
-const bool nix = true;
+namespace Banan {
+    BananLogger::BananLogger(const char *filepath) {
+        file = nullptr;
 
-#include <unistd.h>
-#include <pwd.h>
-
-#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-const bool nix = false;
-#endif
-
-BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(banan_logger, boost::log::sources::logger_mt)
-
-namespace Banan{
-    void BananLogger::initLogger(boost::optional<std::string> logFilePath) {
-        if (logFilePath) {
-            boost::log::add_file_log(*logFilePath);
-        } else {
-            if (nix) {
-                char *logfile;
-                if ((logfile = getenv("HOME")) == nullptr) {
-                    logfile = getpwuid(getuid())->pw_dir;
-                }
-
-                std::strcat(logfile, "banan/banan.log");
-                boost::log::add_file_log(logfile);
-            } else {
-                char *logfile = getenv("APPDATA");
-                std::strcat(logfile, "Local\\banan\\banan.log");
-                boost::log::add_file_log(logfile);
-            }
+        if (filepath != nullptr) {
+            file = std::make_unique<std::ofstream>();
+            file->open(filepath);
         }
     }
 
-    void BananLogger::write(const std::string& s) {
-        if (initialized) {
-            boost::log::sources::logger_mt& lg = banan_logger::get();
-            boost::log::record rec = lg.open_record();
+    BananLogger::~BananLogger() {
+        if (file != nullptr) file->close();
+    }
 
-            if (rec)
-            {
-                boost::log::record_ostream strm(rec);
-                strm << s.c_str();
-                strm.flush();
-                lg.push_record(boost::move(rec));
-            }
-        } else {
-            initLogger(boost::none);
-            write(s);
+    void BananLogger::write(LogLevel level, const std::string &message) {
+        switch (level) {
+            case INFO:
+                writeToConsole("[INFO]: " + unixMsTs() + ": " + message);
+                break;
+            case WARN:
+                writeToConsole("[WARN]: " + unixMsTs() + ": " + message);
+                break;
+            case ERROR:
+                writeToConsole("[ERROR]: " + unixMsTs() + ": " + message);
+                break;
+            case FATAL:
+                writeToConsole("[FATAL]: " + unixMsTs() + ": " + message);
+                break;
         }
+    }
+
+    void BananLogger::writeToConsole(const std::string &message) {
+        std::cout << message << '\n';
+        if (file != nullptr) writeToFile(message);
+    }
+
+    void BananLogger::writeToFile(const std::string &message) {
+        file->write(message.c_str(), static_cast<std::streamsize>(message.size()));
+    }
+
+    void BananLogger::flush() {
+        std::cout << std::endl;
+    }
+
+    std::string BananLogger::unixMsTs() {
+        return std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
     }
 }

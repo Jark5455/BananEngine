@@ -6,9 +6,9 @@
 
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 namespace Banan {
-
     BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice(device) {
         createVertexBuffers(builder.vertices);
         createIndexBuffers(builder.indices);
@@ -85,6 +85,13 @@ namespace Banan {
         vkFreeMemory(bananDevice.device(), stagingBufferMemory, nullptr);
     }
 
+    std::unique_ptr<BananModel> BananModel::createModelFromFile(BananDevice &device, const std::string &filepath) {
+        Builder builder{};
+        builder.loadModel(filepath);
+        std::cout << "Model Vertex Count:" << builder.vertices.size() << '\n';
+        return std::make_unique<BananModel>(device, builder);
+    }
+
     std::vector<VkVertexInputBindingDescription> BananModel::Vertex::getBindingDescriptions() {
         std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
         bindingDescriptions[0].binding = 0;
@@ -107,5 +114,9 @@ namespace Banan {
         attributeDescriptions[1].offset = offsetof(Vertex, color);
 
         return attributeDescriptions;
+    }
+
+    void BananModel::Builder::loadModel(const std::string &filepath) {
+
     }
 }

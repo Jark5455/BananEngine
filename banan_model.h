@@ -10,7 +10,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
-#include <vk_mem_alloc.h>
+#include <memory>
+#include <vector>
 
 namespace Banan {
     class BananModel {
@@ -19,6 +20,8 @@ namespace Banan {
             struct Vertex {
                 glm::vec3 position;
                 glm::vec3 color;
+                glm::vec3 normal;
+                glm::vec3 uv;
 
                 static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
                 static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
@@ -27,6 +30,8 @@ namespace Banan {
             struct Builder {
                 std::vector<Vertex> vertices{};
                 std::vector<uint32_t> indices{};
+
+                void loadModel(const std::string &filepath);
             };
 
             BananModel(BananDevice &device, const Builder &builder);
@@ -34,6 +39,8 @@ namespace Banan {
 
             BananModel(const BananModel &) = delete;
             BananModel &operator=(const BananModel &) = delete;
+
+            static std::unique_ptr<BananModel> createModelFromFile(BananDevice &device, const std::string &filepath);
 
             void bind(VkCommandBuffer commandBuffer);
             void draw(VkCommandBuffer commandBuffer);

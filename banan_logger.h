@@ -4,27 +4,34 @@
 
 #pragma once
 
+#include <string>
+#include <iostream>
+#include <fstream>
 #include <memory>
-#include <boost/optional.hpp>
 
 namespace Banan {
+    enum LogLevel {
+        INFO = 3,
+        WARN = 2,
+        ERROR = 1,
+        FATAL = 0
+    };
+
     class BananLogger {
-    public:
-        BananLogger(BananLogger const&) = delete;
-        BananLogger& operator=(BananLogger const&) = delete;
+        public:
+            BananLogger(const char *filepath);
+            ~BananLogger();
 
-        static std::shared_ptr<BananLogger> instance()
-        {
-            static std::shared_ptr<BananLogger> s{new BananLogger};
-            return s;
-        }
+            void write(LogLevel level, const std::string &message);
+            void flush();
 
-        static void initLogger(boost::optional<std::string> logFilePath);
-        void write(const std::string& s);
+        private:
+            void writeToConsole(const std::string &message);
+            void writeToFile(const std::string &message);
 
-        bool initialized = false;
+            static std::string unixMsTs();
 
-    private:
-        BananLogger() {}
+            std::unique_ptr<std::ofstream> file;
+
     };
 }

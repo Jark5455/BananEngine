@@ -17,6 +17,7 @@
 namespace Banan{
 
     BananEngineTest::BananEngineTest() {
+        bananLogger =  std::make_shared<BananLogger>(nullptr);
         loadGameObjects();
     }
 
@@ -116,6 +117,10 @@ namespace Banan{
         cube.transform.scale = {.5f, .5f, .5f};
 
         gameObjects.push_back(std::move(cube));
+    }
+
+    std::shared_ptr<BananLogger> BananEngineTest::getLogger() {
+        return bananLogger;
     }
 }
 

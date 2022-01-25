@@ -2,24 +2,24 @@
 // Created by yashr on 12/4/21.
 //
 
-#define VMA_IMPLEMENTATION
-#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
-
-#include "../banan_logger.h"
 #include "BananEngineTest.h"
 
 #include <cstdlib>
 #include <iostream>
 
 int main() {
-    Banan::BananLogger::initLogger(boost::none);
     Banan::BananEngineTest app{};
+    auto logger = app.getLogger();
 
     try {
         app.run();
     } catch (const std::exception &e) {
-        std::cerr << e.what() << '\n';
+        logger->write(Banan::LogLevel::FATAL, e.what());
+        logger->flush();
         return EXIT_FAILURE;
     }
+
+    logger->write(Banan::LogLevel::INFO, "Banan exited successfully");
+    logger->flush();
     return EXIT_SUCCESS;
 }
