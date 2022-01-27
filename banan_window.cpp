@@ -9,7 +9,7 @@ namespace Banan {
         new (this) BananWindow(mode->width, mode->height);
     }
 
-    BananWindow::BananWindow(int w, int h) {
+    BananWindow::BananWindow(int w, int h) : width{w}, height{h} {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);

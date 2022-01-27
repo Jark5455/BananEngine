@@ -9,15 +9,15 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp banan_renderer.cpp banan_camera.cpp)
 add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp Tests/SimpleRenderSystem.cpp Tests/KeyboardMovementController.cpp)
 
-find_package(Boost REQUIRED COMPONENTS log)
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIR})
-
 find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIR})
 
 find_package(PkgConfig REQUIRED)
+
+find_package(assimp REQUIRED)
+target_link_libraries(${PROJECT_NAME} ${ASSIMP_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${ASSIMP_INCLUDE_DIRS})
 
 pkg_search_module(GLFW REQUIRED glfw3)
 target_link_libraries(${PROJECT_NAME} ${GLFW_LIBRARIES})
@@ -28,4 +28,6 @@ target_link_libraries(BananEngineTest PRIVATE BananEngine)
 execute_process(COMMAND mkdir ${CMAKE_BINARY_DIR}/shaders)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.frag -o ${CMAKE_BINARY_DIR}/shaders/triangle.frag.spv)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.vert -o ${CMAKE_BINARY_DIR}/shaders/triangle.vert.spv)
+
+execute_process(COMMAND cp -r ${CMAKE_SOURCE_DIR}/Tests/banan_assets ${CMAKE_BINARY_DIR})
 

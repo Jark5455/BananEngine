@@ -7,6 +7,11 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <iterator>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 namespace Banan {
     BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice(device) {
@@ -117,6 +122,38 @@ namespace Banan {
     }
 
     void BananModel::Builder::loadModel(const std::string &filepath) {
+        Assimp::Importer importer;
 
+        const aiScene *scene = importer.ReadFile(filepath,aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
+
+        vertices.clear();
+        indices.clear();
+
+        if (nullptr == scene) {
+            throw std::runtime_error(importer.GetErrorString());
+        }
+
+        for (size_t i = 0; i < scene->mNumMeshes; ++i) {
+            for (size_t j = 0; i < scene->mMeshes[i]->mNumVertices; ++j) {
+
+                const auto *mesh = &*scene->mMeshes[i];
+
+                const auto pPos = mesh.HasPositions() ? mesh.mVertices[j] : aiVector3t<float>(0.f, 0.f, 0.f);
+                const auto pNormal = mesh.HasNormals() ? mesh.mNormals[j] : aiVector3t<float>(0.f, 0.f, 0.f);
+                const auto pTexCoord = mesh.HasTextureCoords(i) ? mesh.mTextureCoords[0][j] : aiVector3t<float>(0.f, 0.f, 0.f);
+
+                Vertex vertex{};
+                //vertex.position = scene->mMeshes[i]->HasPositions() ? glm::vec3{scene->mMeshes[i]->mVertices[j].x, scene->mMeshes[i]->mVertices[j].y, scene->mMeshes[i]->mVertices[j].z} : glm::vec3{0.0f, 0.0f, 0.0f};
+                //vertex.normal = scene->mMeshes[i]->HasNormals() ? glm::vec3{scene->mMeshes[i]->mNormals[j].x, scene->mMeshes[i]->mNormals[j].y, scene->mMeshes[i]->mNormals[j].z} : glm::vec3{0.0f, 0.0f, 0.0f};
+                //vertex.color = scene->mMeshes[i]->HasVertexColors(j) ? glm::vec3{scene->mMeshes[i]->mColors[j]->r, scene->mMeshes[i]->mColors[j]->g, scene->mMeshes[i]->mColors[j]->b} : glm::vec3{0.0f, 0.0f, 0.0f};
+                //vertex.uv = scene->mMeshes[i]->HasTextureCoordsName(j) ? glm::vec3{scene->mMeshes[i]->mTextureCoords[j]->x, scene->mMeshes[i]->mTextureCoords[j]->y, NULL} : glm::vec3{0.0f, 0.0f, 0.0f};
+
+                vertex.position = {pPos.x, pPos.y, pPos.z};
+                vertex.normal = {pNormal.x, pNormal.y, pNormal.z};
+                vertex.uv = {pTexCoord.x, pTexCoord.y, NULL};
+
+                vertices.push_back(vertex);
+            }
+        }
     }
 }

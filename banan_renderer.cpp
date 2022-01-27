@@ -21,7 +21,7 @@ namespace Banan {
     }
 
     VkCommandBuffer BananRenderer::getCurrentCommandBuffer() const {
-        assert(isFrameStarted && "Cannor get Command buffer when frame is not in progress");
+        assert(isFrameStarted && "Cannot get Command buffer when frame is not in progress");
         return commandBuffers[currentFrameIndex];
     }
 
