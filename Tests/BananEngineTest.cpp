@@ -64,6 +64,7 @@ namespace Banan{
         auto cube = BananGameObject::createGameObject();
         cube.model = bananModel;
         cube.transform.translation = {.0f, .0f, 2.5f};
+        cube.transform.rotation = {0.0f, 0.0f, glm::pi<float>()};
         cube.transform.scale = {.5f, .5f, .5f};
 
         gameObjects.push_back(std::move(cube));
