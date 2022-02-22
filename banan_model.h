@@ -5,6 +5,7 @@
 #pragma once
 
 #include "banan_device.h"
+#include "banan_buffer.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -52,12 +53,10 @@ namespace Banan {
             bool hasIndexBuffer;
             BananDevice &bananDevice;
 
-            VkBuffer vertexBuffer;
-            VkDeviceMemory vertexBufferMemory;
+            std::unique_ptr<BananBuffer> vertexBuffer;
             uint32_t vertexCount;
 
-            VkBuffer indexBuffer;
-            VkDeviceMemory indexBufferMemory;
+            std::unique_ptr<BananBuffer> indexBuffer;
             uint32_t indexCount;
     };
 }

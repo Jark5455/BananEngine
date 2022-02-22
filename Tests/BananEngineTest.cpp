@@ -16,6 +16,11 @@
 
 namespace Banan{
 
+    struct GlobalUbo {
+        glm::mat4 projectionView{1.f};
+        glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
+    };
+
     BananEngineTest::BananEngineTest() {
         bananLogger =  std::make_shared<BananLogger>(nullptr);
         loadGameObjects();

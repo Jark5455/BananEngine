@@ -19,18 +19,15 @@ namespace Banan {
         createIndexBuffers(builder.indices);
     }
 
-    BananModel::~BananModel() {
-        vkDestroyBuffer(bananDevice.device(), vertexBuffer, nullptr);
-        vkFreeMemory(bananDevice.device(), vertexBufferMemory, nullptr);
-    }
+    BananModel::~BananModel() {}
 
     void BananModel::bind(VkCommandBuffer commandBuffer) {
-        VkBuffer buffers[] = {vertexBuffer};
+        VkBuffer buffers[] = {vertexBuffer->getBuffer()};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 
         if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
         }
     }
 
@@ -47,21 +44,14 @@ namespace Banan {
         vertexCount = static_cast<uint32_t>(vertices.size());
         assert(vertexCount >= 3 && "Vertex count must be atleast 3");
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
+        uint32_t vertexSize = sizeof(vertices[0]);
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        bananDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        BananBuffer stagingBuffer{bananDevice, vertexSize, vertexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+        stagingBuffer.map();
+        stagingBuffer.writeToBuffer((void *)vertices.data());
 
-        void *data;
-        vkMapMemory(bananDevice.device(), stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
-        vkUnmapMemory(bananDevice.device(), stagingBufferMemory);
-
-        bananDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertexBuffer, vertexBufferMemory);
-        bananDevice.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-
-        vkDestroyBuffer(bananDevice.device(), stagingBuffer, nullptr);
-        vkFreeMemory(bananDevice.device(), stagingBufferMemory, nullptr);
+        vertexBuffer = std::make_unique<BananBuffer>(bananDevice, vertexSize, vertexCount, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        bananDevice.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
     }
 
     void BananModel::createIndexBuffers(const std::vector<uint32_t> &indices) {
@@ -73,21 +63,14 @@ namespace Banan {
         }
 
         VkDeviceSize bufferSize = sizeof(indices[0]) * indexCount;
+        uint32_t indexSize = sizeof(indices[0]);
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        bananDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+        BananBuffer stagingBuffer{bananDevice, indexSize, indexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+        stagingBuffer.map();
+        stagingBuffer.writeToBuffer((void *)indices.data());
 
-        void *data;
-        vkMapMemory(bananDevice.device(), stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
-        vkUnmapMemory(bananDevice.device(), stagingBufferMemory);
-
-        bananDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, indexBuffer, indexBufferMemory);
-        bananDevice.copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-
-        vkDestroyBuffer(bananDevice.device(), stagingBuffer, nullptr);
-        vkFreeMemory(bananDevice.device(), stagingBufferMemory, nullptr);
+        indexBuffer = std::make_unique<BananBuffer>(bananDevice, indexSize, indexCount, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        bananDevice.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
 
     std::unique_ptr<BananModel> BananModel::createModelFromFile(BananDevice &device, const std::string &filepath) {

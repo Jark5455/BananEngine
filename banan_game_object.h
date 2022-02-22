@@ -17,6 +17,7 @@ namespace Banan {
         glm::vec3 rotation{};
 
         glm::mat4 mat4();
+        glm::mat3 normalMatrix();
     };
 
     class BananGameObject {
