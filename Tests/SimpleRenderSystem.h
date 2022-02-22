@@ -7,6 +7,7 @@
 #include "../banan_pipeline.h"
 #include "../banan_device.h"
 #include "../banan_game_object.h"
+#include "../banan_frame_info.h"
 
 #include <memory>
 #include <vector>
@@ -20,7 +21,7 @@ namespace Banan{
             SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass);
             ~SimpleRenderSystem();
 
-            void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<BananGameObject> &gameObjects, const BananCamera &camera);
+            void renderGameObjects(BananFrameInfo &frameInfo, std::vector<BananGameObject> &gameObjects);
 
         private:
             void createPipelineLayout();

@@ -56,10 +56,10 @@ namespace Banan{
         bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/triangle.vert.spv", "shaders/triangle.frag.spv", pipelineConfig);
     }
 
-    void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, std::vector<BananGameObject> &gameObjects, const BananCamera &camera) {
-        bananPipeline->bind(commandBuffer);
+    void SimpleRenderSystem::renderGameObjects(BananFrameInfo &frameInfo, std::vector<BananGameObject> &gameObjects) {
+        bananPipeline->bind(frameInfo.commandBuffer);
 
-        auto projectionView = camera.getProjection() * camera.getView();
+        auto projectionView = frameInfo.camera.getProjection() * frameInfo.camera.getView();
 
         for (auto &obj : gameObjects) {
 
@@ -68,10 +68,10 @@ namespace Banan{
             push.transform = projectionView * obj.transform.mat4();
             push.normalMatrix = obj.transform.normalMatrix();
 
-            vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SimplePushConstantData), &push);
+            vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SimplePushConstantData), &push);
 
-            obj.model->bind(commandBuffer);
-            obj.model->draw(commandBuffer);
+            obj.model->bind(frameInfo.commandBuffer);
+            obj.model->draw(frameInfo.commandBuffer);
         }
     }
 }
