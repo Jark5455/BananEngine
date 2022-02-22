@@ -30,6 +30,17 @@ namespace Banan{
 
     void BananEngineTest::run() {
 
+        BananBuffer globalUboBuffer{
+            bananDevice,
+            sizeof(GlobalUbo),
+            BananSwapChain::MAX_FRAMES_IN_FLIGHT,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+            bananDevice.properties.limits.minUniformBufferOffsetAlignment
+        };
+
+        globalUboBuffer.map();
+
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass()};
         BananCamera camera{};
 
@@ -54,6 +65,13 @@ namespace Banan{
             camera.setPerspectiveProjection(glm::radians(90.f), aspect, 0.1f, 10.f);
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
+                int frameIndex = bananRenderer.getFrameIndex();
+
+                GlobalUbo ubo{};
+                ubo.projectionView = camera.getProjection() * camera.getView();
+                globalUboBuffer.writeToIndex(&ubo, frameIndex);
+                globalUboBuffer.flush(frameIndex);
+
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
                 renderSystem.renderGameObjects(commandBuffer, gameObjects, camera);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
