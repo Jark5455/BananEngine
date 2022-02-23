@@ -9,9 +9,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
-
 #include <chrono>
-
 #include <stdexcept>
 
 namespace Banan{
@@ -26,14 +24,14 @@ namespace Banan{
         loadGameObjects();
     }
 
-    BananEngineTest::~BananEngineTest() {}
+    BananEngineTest::~BananEngineTest() = default;
 
     void BananEngineTest::run() {
 
         std::vector<std::unique_ptr<BananBuffer>> uboBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
-        for (int i = 0; i < uboBuffers.size(); i++) {
-            uboBuffers[i] = std::make_unique<BananBuffer>(bananDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-            uboBuffers[i]->map();
+        for (auto & uboBuffer : uboBuffers) {
+            uboBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+            uboBuffer->map();
         }
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass()};
