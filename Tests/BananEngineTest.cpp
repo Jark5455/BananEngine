@@ -20,6 +20,7 @@ namespace Banan{
     };
 
     BananEngineTest::BananEngineTest() {
+        globalPool = BananDescriptorPool::Builder(bananDevice).setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT).addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT).build();
         bananLogger =  std::make_shared<BananLogger>(nullptr);
         loadGameObjects();
     }
@@ -34,7 +35,14 @@ namespace Banan{
             uboBuffer->map();
         }
 
-        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass()};
+        auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice).addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT).build();
+        std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        for (int i = 0; i < globalDescriptorSets.size(); i++) {
+            auto bufferInfo = uboBuffers[i]->descriptorInfo();
+            BananDescriptorWriter(*globalSetLayout, *globalPool).writeBuffer(0, &bufferInfo).build(globalDescriptorSets[i]);
+        }
+
+        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
         BananCamera camera{};
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -59,7 +67,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex]};
 
                 GlobalUbo ubo{};
                 ubo.projectionView = camera.getProjection() * camera.getView();

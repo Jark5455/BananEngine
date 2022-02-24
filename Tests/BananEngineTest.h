@@ -3,6 +3,7 @@
 //
 #pragma once
 
+#include "../banan_descriptor.h"
 #include "../banan_window.h"
 #include "../banan_device.h"
 #include "../banan_model.h"
@@ -35,6 +36,7 @@ namespace Banan{
         BananDevice bananDevice{bananWindow};
         BananRenderer bananRenderer{bananWindow, bananDevice};
 
+        std::unique_ptr<BananDescriptorPool> globalPool;
         std::shared_ptr<BananLogger> bananLogger;
         std::vector<BananGameObject> gameObjects;
     };

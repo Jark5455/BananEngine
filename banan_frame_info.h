@@ -14,5 +14,6 @@ namespace Banan {
         float frameTime;
         VkCommandBuffer commandBuffer;
         BananCamera &camera;
+        VkDescriptorSet globalDescriptorSet;
     };
 }

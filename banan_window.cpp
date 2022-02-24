@@ -4,12 +4,19 @@
 
 namespace Banan {
 
+    void ErrorCallback(int, const char* err_str)
+    {
+        std::cout << "GLFW Error: " << err_str << std::endl;
+    }
+
     BananWindow::BananWindow() {
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         new (this) BananWindow(mode->width, mode->height);
     }
 
     BananWindow::BananWindow(int w, int h) : width{w}, height{h} {
+        glfwSetErrorCallback(ErrorCallback);
+
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
