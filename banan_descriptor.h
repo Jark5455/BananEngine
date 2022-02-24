@@ -64,12 +64,11 @@ namespace Banan {
             bool allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor) const;
             void freeDescriptors(std::vector<VkDescriptorSet> &descriptors) const;
             void resetPool();
-            BananDevice& device() { return bananDevice; }
 
         private:
             BananDevice &bananDevice;
             VkDescriptorPool descriptorPool;
-            friend class LveDescriptorWriter;
+            friend class BananDescriptorWriter;
     };
 
     class BananDescriptorWriter {

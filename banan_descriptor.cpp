@@ -150,7 +150,7 @@ namespace Banan {
         for (auto &write : writes) {
             write.dstSet = set;
         }
-        vkUpdateDescriptorSets(pool.device().device(), writes.size(), writes.data(), 0, nullptr);
+        vkUpdateDescriptorSets(pool.bananDevice.device(), writes.size(), writes.data(), 0, nullptr);
     }
 
 }
