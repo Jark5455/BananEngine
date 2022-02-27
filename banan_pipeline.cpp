@@ -64,8 +64,8 @@ namespace Banan{
         shaderStages[1].pNext = nullptr;
         shaderStages[1].pSpecializationInfo = nullptr;
 
-        auto bindingDescriptions = BananModel::Vertex::getBindingDescriptions();
-        auto attributeDescriptions = BananModel::Vertex::getAttributeDescriptions();
+        auto &bindingDescriptions = info.bindingDescriptions;
+        auto &attributeDescriptions = info.attributeDescriptions;
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -165,6 +165,9 @@ namespace Banan{
         configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
         configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
         configInfo.dynamicStateInfo.flags = 0;
+
+        configInfo.bindingDescriptions = BananModel::Vertex::getBindingDescriptions();
+        configInfo.attributeDescriptions = BananModel::Vertex::getAttributeDescriptions();
     }
 
     void BananPipeline::createShaderModule(const std::vector<char> &code, VkShaderModule *shaderModule) {

@@ -3,7 +3,8 @@
 //
 
 #include "BananEngineTest.h"
-#include "SimpleRenderSystem.h"
+#include "Systems/PointLightSystem.h"
+#include "Systems/SimpleRenderSystem.h"
 #include "KeyboardMovementController.h"
 
 #define GLM_FORCE_RADIANS
@@ -13,13 +14,6 @@
 #include <stdexcept>
 
 namespace Banan{
-
-    struct GlobalUbo {
-        glm::mat4 projectionView{1.f};
-        glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.2f};
-        glm::vec3 lightPosition{-1.f};
-        alignas(16) glm::vec4 lightColor{1.f};
-    };
 
     BananEngineTest::BananEngineTest() {
         globalPool = BananDescriptorPool::Builder(bananDevice).setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT).addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT).build();
@@ -45,6 +39,7 @@ namespace Banan{
         }
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+        PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
         BananCamera camera{};
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -72,12 +67,15 @@ namespace Banan{
                 BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], gameObjects};
 
                 GlobalUbo ubo{};
-                ubo.projectionView = camera.getProjection() * camera.getView();
+                ubo.projection = camera.getProjection();
+                ubo.view = camera.getView();
+                pointLightSystem.update(frameInfo, ubo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
-                renderSystem.renderGameObjects(frameInfo);
+                renderSystem.render(frameInfo);
+                pointLightSystem.render(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
                 bananRenderer.endFrame();
             }
@@ -90,7 +88,7 @@ namespace Banan{
         std::shared_ptr<BananModel> vaseModel = BananModel::createModelFromFile(bananDevice, "banan_assets/ceramic_vase_01_4k.blend");
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
-        vase.transform.translation = {-.5f, .5f, 2.5f};
+        vase.transform.translation = {0.f, .5f, 0.f};
         vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.0f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
         gameObjects.emplace(vase.getId(), std::move(vase));
@@ -98,10 +96,27 @@ namespace Banan{
         std::shared_ptr<BananModel> floorModel = BananModel::createModelFromFile(bananDevice, "banan_assets/quad.obj");
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
-        floor.transform.translation = {.5f, .5f, 2.5f};
+        floor.transform.translation = {0.f, .5f, 0.f};
         floor.transform.rotation = {0.f, 0.f, 0.f};
-        floor.transform.scale = {3.f, 1.5f, 3.f};
+        floor.transform.scale = {3.f, 1.f, 3.f};
         gameObjects.emplace(floor.getId(), std::move(floor));
+
+        std::vector<glm::vec3> lightColors{
+            {1.f, .1f, .1f},
+            {.1f, .1f, 1.f},
+            {.1f, 1.f, .1f},
+            {1.f, 1.f, .1f},
+            {.1f, 1.f, 1.f},
+            {1.f, 1.f, 1.f}
+        };
+
+        for (int i = 0; i < lightColors.size(); i++) {
+            auto pointLight = BananGameObject::makePointLight(0.5f);
+            pointLight.color = lightColors[i];
+            auto rotateLight = glm::rotate(glm::mat4(1.f), (static_cast<float>(i) * glm::two_pi<float>()) / static_cast<float>(lightColors.size()), {0.f, -1.f, 0.f});
+            pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
+            gameObjects.emplace(pointLight.getId(), std::move(pointLight));
+        }
     }
 
     std::shared_ptr<BananLogger> BananEngineTest::getLogger() {

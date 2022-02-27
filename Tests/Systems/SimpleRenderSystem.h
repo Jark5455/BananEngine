@@ -3,11 +3,11 @@
 //
 #pragma once
 
-#include "../banan_camera.h"
-#include "../banan_pipeline.h"
-#include "../banan_device.h"
-#include "../banan_game_object.h"
-#include "../banan_frame_info.h"
+#include "../../banan_camera.h"
+#include "../../banan_pipeline.h"
+#include "../../banan_device.h"
+#include "../../banan_game_object.h"
+#include "../../banan_frame_info.h"
 
 #include <memory>
 #include <vector>
@@ -21,7 +21,7 @@ namespace Banan{
             SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
             ~SimpleRenderSystem();
 
-            void renderGameObjects(BananFrameInfo &frameInfo);
+            void render(BananFrameInfo &frameInfo);
 
         private:
             void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);

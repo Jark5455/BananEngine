@@ -14,6 +14,15 @@ namespace Banan {
         return id;
     }
 
+    BananGameObject BananGameObject::makePointLight(float intensity, float radius, glm::vec3 color) {
+        BananGameObject obj = BananGameObject::createGameObject();
+        obj.color = color;
+        obj.transform.scale.x = radius;
+        obj.pointLight = std::make_unique<PointLightComponent>();
+        obj.pointLight->lightIntensity = intensity;
+        return obj;
+    }
+
     glm::mat4 TransformComponent::mat4() {
         const float c3 = glm::cos(rotation.z);
         const float s3 = glm::sin(rotation.z);

@@ -58,12 +58,13 @@ namespace Banan{
         bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/triangle.vert.spv", "shaders/triangle.frag.spv", pipelineConfig);
     }
 
-    void SimpleRenderSystem::renderGameObjects(BananFrameInfo &frameInfo) {
+    void SimpleRenderSystem::render(BananFrameInfo &frameInfo) {
         bananPipeline->bind(frameInfo.commandBuffer);
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
 
         for (auto &kv : frameInfo.gameObjects) {
             auto &obj = kv.second;
+            if (obj.model == nullptr) continue;
 
             SimplePushConstantData push{};
             push.modelMatrix = obj.transform.mat4();

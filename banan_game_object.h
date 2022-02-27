@@ -21,12 +21,17 @@ namespace Banan {
         glm::mat3 normalMatrix();
     };
 
+    struct PointLightComponent {
+        float lightIntensity = 1.0f;
+    };
+
     class BananGameObject {
         public:
             using id_t = unsigned int;
             using Map = std::unordered_map<id_t, BananGameObject>;
 
             static BananGameObject createGameObject();
+            static BananGameObject makePointLight(float intensity = 10.0f, float radius = 0.1f, glm::vec3 color = glm::vec3(1.f));
 
             BananGameObject(const BananGameObject &) = delete;
             BananGameObject &operator=(const BananGameObject &) = delete;
@@ -38,6 +43,8 @@ namespace Banan {
             std::shared_ptr<BananModel> model{};
             glm::vec3 color{};
             TransformComponent transform{};
+
+            std::unique_ptr<PointLightComponent> pointLight = nullptr;
 
         private:
             BananGameObject(id_t objId) : id{objId} {}
