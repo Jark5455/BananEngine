@@ -5,6 +5,7 @@
 #pragma once
 
 #include "banan_camera.h"
+#include "banan_game_object.h"
 
 #include <vulkan/vulkan.h>
 
@@ -15,5 +16,6 @@ namespace Banan {
         VkCommandBuffer commandBuffer;
         BananCamera &camera;
         VkDescriptorSet globalDescriptorSet;
+        BananGameObject::Map &gameObjects;
     };
 }

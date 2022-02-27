@@ -38,6 +38,6 @@ namespace Banan{
 
         std::unique_ptr<BananDescriptorPool> globalPool;
         std::shared_ptr<BananLogger> bananLogger;
-        std::vector<BananGameObject> gameObjects;
+        BananGameObject::Map gameObjects;
     };
 }

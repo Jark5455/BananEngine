@@ -21,7 +21,7 @@ namespace Banan{
             SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
             ~SimpleRenderSystem();
 
-            void renderGameObjects(BananFrameInfo &frameInfo, std::vector<BananGameObject> &gameObjects);
+            void renderGameObjects(BananFrameInfo &frameInfo);
 
         private:
             void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);

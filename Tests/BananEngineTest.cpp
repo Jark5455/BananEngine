@@ -16,7 +16,9 @@ namespace Banan{
 
     struct GlobalUbo {
         glm::mat4 projectionView{1.f};
-        glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
+        glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.2f};
+        glm::vec3 lightPosition{-1.f};
+        alignas(16) glm::vec4 lightColor{1.f};
     };
 
     BananEngineTest::BananEngineTest() {
@@ -35,7 +37,7 @@ namespace Banan{
             uboBuffer->map();
         }
 
-        auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice).addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT).build();
+        auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice).addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS).build();
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
@@ -67,7 +69,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex]};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], gameObjects};
 
                 GlobalUbo ubo{};
                 ubo.projectionView = camera.getProjection() * camera.getView();
@@ -75,7 +77,7 @@ namespace Banan{
                 uboBuffers[frameIndex]->flush();
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
-                renderSystem.renderGameObjects(frameInfo, gameObjects);
+                renderSystem.renderGameObjects(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
                 bananRenderer.endFrame();
             }
@@ -85,14 +87,21 @@ namespace Banan{
     }
 
     void BananEngineTest::loadGameObjects() {
-        std::shared_ptr<BananModel> bananModel = BananModel::createModelFromFile(bananDevice, "banan_assets/cow-nonormals.obj");
-        auto cube = BananGameObject::createGameObject();
-        cube.model = bananModel;
-        cube.transform.translation = {.0f, .0f, 2.5f};
-        cube.transform.rotation = {0.0f, 0.0f, glm::pi<float>()};
-        cube.transform.scale = {.5f, .5f, .5f};
+        std::shared_ptr<BananModel> vaseModel = BananModel::createModelFromFile(bananDevice, "banan_assets/ceramic_vase_01_4k.blend");
+        auto vase = BananGameObject::createGameObject();
+        vase.model = vaseModel;
+        vase.transform.translation = {-.5f, .5f, 2.5f};
+        vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.0f, 0.0f};
+        vase.transform.scale = {3.f, 3.f, 3.f};
+        gameObjects.emplace(vase.getId(), std::move(vase));
 
-        gameObjects.push_back(std::move(cube));
+        std::shared_ptr<BananModel> floorModel = BananModel::createModelFromFile(bananDevice, "banan_assets/quad.obj");
+        auto floor = BananGameObject::createGameObject();
+        floor.model = floorModel;
+        floor.transform.translation = {.5f, .5f, 2.5f};
+        floor.transform.rotation = {0.f, 0.f, 0.f};
+        floor.transform.scale = {3.f, 1.5f, 3.f};
+        gameObjects.emplace(floor.getId(), std::move(floor));
     }
 
     std::shared_ptr<BananLogger> BananEngineTest::getLogger() {

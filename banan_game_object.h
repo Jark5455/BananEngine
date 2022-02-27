@@ -8,6 +8,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
+#include <unordered_map>
 
 namespace Banan {
 
@@ -23,6 +24,7 @@ namespace Banan {
     class BananGameObject {
         public:
             using id_t = unsigned int;
+            using Map = std::unordered_map<id_t, BananGameObject>;
 
             static BananGameObject createGameObject();
 
