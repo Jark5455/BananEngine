@@ -20,16 +20,20 @@ namespace Banan {
 
             struct Vertex {
                 glm::vec3 position;
+            };
+
+            struct LessImportantStuff {
                 glm::vec3 color;
                 glm::vec3 normal;
                 glm::vec2 uv;
-
-                static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
-                static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
             };
+
+            static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
+            static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
             struct Builder {
                 std::vector<Vertex> vertices{};
+                std::vector<LessImportantStuff> lessImportantStuff{};
                 std::vector<uint32_t> indices{};
 
                 void loadModel(const std::string &filepath);
@@ -47,13 +51,14 @@ namespace Banan {
             void draw(VkCommandBuffer commandBuffer);
 
         private:
-            void createVertexBuffers(const std::vector<Vertex> &vertices);
+            void createVertexBuffers(const std::vector<Vertex> &vertices, const std::vector<LessImportantStuff> &lessImportantStuff);
             void createIndexBuffers(const std::vector<uint32_t> &indices);
 
             bool hasIndexBuffer;
             BananDevice &bananDevice;
 
             std::unique_ptr<BananBuffer> vertexBuffer;
+            std::unique_ptr<BananBuffer> otherBufferForLessImportantStuff;
             uint32_t vertexCount;
 
             std::unique_ptr<BananBuffer> indexBuffer;

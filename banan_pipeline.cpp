@@ -166,8 +166,8 @@ namespace Banan{
         configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
         configInfo.dynamicStateInfo.flags = 0;
 
-        configInfo.bindingDescriptions = BananModel::Vertex::getBindingDescriptions();
-        configInfo.attributeDescriptions = BananModel::Vertex::getAttributeDescriptions();
+        configInfo.bindingDescriptions = BananModel::getBindingDescriptions();
+        configInfo.attributeDescriptions = BananModel::getAttributeDescriptions();
     }
 
     void BananPipeline::createShaderModule(const std::vector<char> &code, VkShaderModule *shaderModule) {
