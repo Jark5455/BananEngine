@@ -44,7 +44,8 @@ namespace Banan {
     }
 
     void BananRenderer::freeCommandBuffers() {
-        vkFreeCommandBuffers(bananDevice.device(), bananDevice.getCommandPool(), commandBuffers.size(), commandBuffers.data());
+        vkFreeCommandBuffers(bananDevice.device(), bananDevice.getCommandPool(), commandBuffers.size(),
+                             commandBuffers.data());
         commandBuffers.clear();
     }
 
