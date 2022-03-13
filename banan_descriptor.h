@@ -56,7 +56,7 @@ namespace Banan {
                     VkDescriptorPoolCreateFlags poolFlags = 0;
             };
 
-            BananDescriptorPool(BananDevice &lveDevice, uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize> &poolSizes);
+            BananDescriptorPool(BananDevice &bananDevice, uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize> &poolSizes);
             ~BananDescriptorPool();
             BananDescriptorPool(const BananDescriptorPool &) = delete;
             BananDescriptorPool &operator=(const BananDescriptorPool &) = delete;
