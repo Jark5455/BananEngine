@@ -20,10 +20,9 @@ namespace Banan {
         public:
 
             struct Texture {
-                std::vector<glm::vec3> pixels;
-
-                int width;
-                int height;
+                uint8_t *data = nullptr;
+                uint32_t width;
+                uint32_t height;
             };
 
             struct Vertex {
@@ -39,6 +38,7 @@ namespace Banan {
             struct Builder {
                 std::vector<Vertex> vertices{};
                 std::vector<uint32_t> indices{};
+                Texture texture{};
 
                 void loadModel(const std::string &filepath);
                 void loadTexture(const std::string &filepath);

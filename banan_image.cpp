@@ -18,11 +18,12 @@ namespace Banan {
     BananImage::BananImage(BananDevice &device, VkDeviceSize pixelSize, uint32_t width, uint32_t height, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) : bananDevice{device}, pixelSize{pixelSize}, width{width}, height{height} {
         alignmentSize = getAlignment(pixelSize, minOffsetAlignment);
         imageSize = alignmentSize * width * height;
-        device.createImage(width, height, usageFlags, memoryPropertyFlags, image, memory);
+        bananDevice.createImage(width, height, usageFlags, memoryPropertyFlags, image, memory);
     }
 
     BananImage::~BananImage() {
-
+        vkDestroyImage(bananDevice.device(), image, nullptr);
+        vkFreeMemory(bananDevice.device(), memory, nullptr);
     }
 
     VkResult BananImage::map(VkDeviceSize size, VkDeviceSize offset) {

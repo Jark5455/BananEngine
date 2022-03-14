@@ -6,6 +6,8 @@
 
 #include "banan_device.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+
 namespace Banan {
     class BananImage {
         public:
