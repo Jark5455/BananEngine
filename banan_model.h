@@ -6,6 +6,7 @@
 
 #include "banan_device.h"
 #include "banan_buffer.h"
+#include "banan_image.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -17,6 +18,13 @@
 namespace Banan {
     class BananModel {
         public:
+
+            struct Texture {
+                std::vector<glm::vec3> pixels;
+
+                int width;
+                int height;
+            };
 
             struct Vertex {
                 glm::vec3 position;
@@ -33,6 +41,7 @@ namespace Banan {
                 std::vector<uint32_t> indices{};
 
                 void loadModel(const std::string &filepath);
+                void loadTexture(const std::string &filepath);
             };
 
             BananModel(BananDevice &device, const Builder &builder);
@@ -49,6 +58,7 @@ namespace Banan {
         private:
             void createVertexBuffers(const std::vector<Vertex> &vertices);
             void createIndexBuffers(const std::vector<uint32_t> &indices);
+            void createTextureImage(const Texture &image);
 
             bool hasIndexBuffer;
             BananDevice &bananDevice;
@@ -58,5 +68,8 @@ namespace Banan {
 
             std::unique_ptr<BananBuffer> indexBuffer;
             uint32_t indexCount;
+
+            std::unique_ptr<BananImage> textureImage;
+            uint32_t pixelCount;
     };
 }

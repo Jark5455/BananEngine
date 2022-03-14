@@ -1,5 +1,5 @@
 //
-// Created by yashr on 2/20/22.
+// Created by yashr on 3/13/22.
 //
 
 #pragma once
@@ -7,31 +7,32 @@
 #include "banan_device.h"
 
 namespace Banan {
-    class BananBuffer {
+    class BananImage {
         public:
-            BananBuffer(BananDevice& device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
-            ~BananBuffer();
+            BananImage(BananDevice& device, VkDeviceSize pixelSize, uint32_t width, uint32_t height, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
+            ~BananImage();
 
-            BananBuffer(const BananBuffer&) = delete;
-            BananBuffer& operator=(const BananBuffer&) = delete;
+            BananImage(const BananImage&) = delete;
+            BananImage& operator=(const BananImage&) = delete;
 
             VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
             void unmap();
 
             void writeToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
             VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-            VkDescriptorBufferInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+            VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
             VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
             void writeToIndex(void* data, int index);
             VkResult flushIndex(int index);
-            VkDescriptorBufferInfo descriptorInfoForIndex(int index);
+            VkDescriptorImageInfo descriptorInfoForIndex(int index);
             VkResult invalidateIndex(int index);
 
-            VkBuffer getBuffer();
+            VkImage getImage();
             void* getMappedMemory();
-            uint32_t getInstanceCount() const;
-            VkDeviceSize getInstanceSize() const;
+            uint32_t getWidth() const;
+            uint32_t getHeight() const;
+            VkDeviceSize getPixelSize() const;
             VkDeviceSize getAlignmentSize() const;
             VkBufferUsageFlags getUsageFlags() const;
             VkMemoryPropertyFlags getMemoryPropertyFlags() const;
@@ -42,12 +43,13 @@ namespace Banan {
 
             BananDevice& bananDevice;
             void* mapped = nullptr;
-            VkBuffer buffer = VK_NULL_HANDLE;
+            VkImage image = VK_NULL_HANDLE;
             VkDeviceMemory memory = VK_NULL_HANDLE;
 
-            VkDeviceSize bufferSize;
-            uint32_t instanceCount;
-            VkDeviceSize instanceSize;
+            VkDeviceSize imageSize;
+            uint32_t width;
+            uint32_t height;
+            VkDeviceSize pixelSize;
             VkDeviceSize alignmentSize;
             VkBufferUsageFlags usageFlags;
             VkMemoryPropertyFlags memoryPropertyFlags;
