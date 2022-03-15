@@ -7,7 +7,6 @@
 
 #include <cassert>
 #include <cstring>
-#include <iostream>
 #include <iterator>
 
 #include <assimp/Importer.hpp>
