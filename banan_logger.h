@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <sstream>
 
 namespace Banan {
     enum LogLevel {
@@ -17,21 +18,63 @@ namespace Banan {
         FATAL = 0
     };
 
-    class BananLogger {
-        public:
-            BananLogger(const char *filepath);
-            ~BananLogger();
+    class LogInfo {
+    public:
+        LogInfo(std::ostream& out = std::cout) : m_Out(out) {}
+        ~LogInfo() {
+            m_Stream << "\n";
+            m_Out << m_Stream.rdbuf();
+            m_Out.flush();
+        }
+        template <class T>
+        LogInfo& operator<<(const T& thing) { m_Stream << "[INFO]: " << thing; return *this; }
+    private:
+        std::stringstream m_Stream;
+        std::ostream& m_Out;
+    };
 
-            void write(LogLevel level, const std::string &message);
-            void flush();
+    class LogWarn {
+    public:
+        LogWarn(std::ostream& out = std::cout) : m_Out(out) {}
+        ~LogWarn() {
+            m_Stream << "\n";
+            m_Out << m_Stream.rdbuf();
+            m_Out.flush();
+        }
+        template <class T>
+        LogWarn& operator<<(const T& thing) { m_Stream << "[Error]: "<< thing; return *this; }
+    private:
+        std::stringstream m_Stream;
+        std::ostream& m_Out;
+    };
 
-        private:
-            void writeToConsole(const std::string &message);
-            void writeToFile(const std::string &message);
+    class LogError {
+    public:
+        LogError(std::ostream& out = std::cout) : m_Out(out) {}
+        ~LogError() {
+            m_Stream << "\n";
+            m_Out << m_Stream.rdbuf();
+            m_Out.flush();
+        }
+        template <class T>
+        LogError& operator<<(const T& thing) { m_Stream << "[Error]: "<< thing; return *this; }
+    private:
+        std::stringstream m_Stream;
+        std::ostream& m_Out;
+    };
 
-            static std::string unixMsTs();
-
-            std::unique_ptr<std::ofstream> file;
-
+    class LogFatal {
+    public:
+        LogFatal(std::ostream& out = std::cout) : m_Out(out) {}
+        ~LogFatal() {
+            m_Stream << "\n";
+            m_Out << m_Stream.rdbuf();
+            m_Out.flush();
+        }
+        template <class T>
+        LogFatal& operator<<(const T& thing) { m_Stream << "[FATAL]: "<< thing; return *this; }
+    private:
+        std::stringstream m_Stream;
+        std::ostream& m_Out;
     };
 }

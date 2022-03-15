@@ -3,6 +3,7 @@
 //
 
 #include "banan_swap_chain.h"
+#include "banan_logger.h"
 
 #include <array>
 #include <cstring>
@@ -348,12 +349,12 @@ namespace Banan {
     VkPresentModeKHR BananSwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
         for (const auto &availablePresentMode : availablePresentModes) {
             if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-                std::cout << "Present mode: Mailbox" << std::endl;
+                LogInfo() << "Present mode: Mailbox";
                 return availablePresentMode;
             }
         }
 
-        std::cout << "Present mode: V-Sync" << std::endl;
+        LogInfo() << "Present mode: V-Sync";
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 

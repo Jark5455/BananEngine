@@ -1,4 +1,5 @@
 #include "banan_window.h"
+#include "banan_logger.h"
 
 #include <iostream>
 
@@ -6,7 +7,7 @@ namespace Banan {
 
     void ErrorCallback(int, const char* err_str)
     {
-        std::cout << "GLFW Error: " << err_str << std::endl;
+        LogError() << "GLFW Error: " << err_str;
     }
 
     BananWindow::BananWindow() {
