@@ -16,7 +16,7 @@
 #include <stb_image.h>
 
 namespace Banan {
-    BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice(device) {
+    BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice{device} {
         createTextureImage(builder.texture);
         createVertexBuffers(builder.vertices);
         createIndexBuffers(builder.indices);
@@ -98,6 +98,10 @@ namespace Banan {
             bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), textureImage->getImage(), texture.width, texture.height, 1);
             bananDevice.transitionImageLayout(textureImage->getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         }
+    }
+
+    bool BananModel::hasTexture() {
+        return textureImage != nullptr;
     }
 
     std::vector<VkVertexInputBindingDescription> BananModel::Vertex::getBindingDescriptions() {
