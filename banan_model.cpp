@@ -97,11 +97,20 @@ namespace Banan {
             bananDevice.transitionImageLayout(textureImage->getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
             bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), textureImage->getImage(), texture.width, texture.height, 1);
             bananDevice.transitionImageLayout(textureImage->getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+            hasTexture = true;
+        } else {
+            hasTexture = false;
         }
+
     }
 
-    bool BananModel::hasTexture() {
-        return textureImage != nullptr;
+    bool BananModel::isTextureLoaded() {
+        return hasTexture && textureImage != nullptr;
+    }
+
+    VkDescriptorImageInfo BananModel::getDescriptorImageInfo() {
+        return textureImage->descriptorInfo();
     }
 
     std::vector<VkVertexInputBindingDescription> BananModel::Vertex::getBindingDescriptions() {

@@ -8,6 +8,9 @@
 #include <cstdlib>
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 int main() {
     Banan::BananEngineTest app{};
 

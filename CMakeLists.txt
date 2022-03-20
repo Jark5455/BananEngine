@@ -25,6 +25,8 @@ pkg_search_module(GLFW REQUIRED glfw3)
 target_link_libraries(${PROJECT_NAME} ${GLFW_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${GLFW_INCLUDE_DIRS})
 
+target_include_directories(${PROJECT_NAME} PUBLIC /usr/include/stb/)
+
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 
 execute_process(COMMAND mkdir ${CMAKE_BINARY_DIR}/shaders)

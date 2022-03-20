@@ -55,7 +55,8 @@ namespace Banan {
             void bind(VkCommandBuffer commandBuffer);
             void draw(VkCommandBuffer commandBuffer);
 
-            bool hasTexture();
+            bool isTextureLoaded();
+            VkDescriptorImageInfo getDescriptorImageInfo();
 
         private:
             void createVertexBuffers(const std::vector<Vertex> &vertices);
@@ -63,6 +64,8 @@ namespace Banan {
             void createTextureImage(const Texture &image);
 
             bool hasIndexBuffer;
+            bool hasTexture;
+
             BananDevice &bananDevice;
 
             std::unique_ptr<BananBuffer> vertexBuffer;

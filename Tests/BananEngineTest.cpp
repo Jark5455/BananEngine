@@ -12,6 +12,8 @@
 #include <glm/glm.hpp>
 #include <chrono>
 
+#include "../banan_logger.h"
+
 namespace Banan{
 
     BananEngineTest::BananEngineTest() {
@@ -32,9 +34,22 @@ namespace Banan{
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice).addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS).addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).build();
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
+            BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
+            writer.writeBuffer(0, &bufferInfo);
 
-            BananDescriptorWriter(*globalSetLayout, *globalPool).writeBuffer(0, &bufferInfo).build(globalDescriptorSets[i]);
+            auto it = gameObjects.begin();
+            for (it = gameObjects.begin(); it != gameObjects.end(); it++)
+            {
+                if (it->second.model != nullptr) {
+                    if (it->second.model->isTextureLoaded()) {
+                        auto imageInfo = it->second.model->getDescriptorImageInfo();
+                        writer.writeImage(1, &imageInfo);
+                    }
+                }
+            }
+
+            writer.build(globalDescriptorSets[i]);
         }
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
@@ -85,8 +100,8 @@ namespace Banan{
 
     void BananEngineTest::loadGameObjects() {
         BananModel::Builder vaseBuilder{};
-        vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
-        vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
+        vaseBuilder.loadModel("banan_assets/source/obamium.blend");
+        vaseBuilder.loadTexture("banan_assets/textures/base.png");
 
         std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
