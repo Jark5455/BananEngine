@@ -121,7 +121,11 @@ namespace Banan{
         vase.transform.scale = {1.f, 1.f, 1.f};
         gameObjects.emplace(vase.getId(), std::move(vase));
 
-        std::shared_ptr<BananModel> floorModel = BananModel::createModelFromFile(bananDevice, "banan_assets/quad.obj");
+        BananModel::Builder floorBuilder{};
+        floorBuilder.loadModel("banan_assets/quad.obj");
+        floorBuilder.loadTexture("banan_assets/textures/pepe.png");
+
+        std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
         floor.transform.translation = {0.f, .5f, 0.f};
