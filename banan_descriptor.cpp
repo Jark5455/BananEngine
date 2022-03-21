@@ -3,6 +3,7 @@
 //
 
 #include "banan_descriptor.h"
+#include "banan_logger.h"
 
 // std
 #include <cassert>
@@ -92,6 +93,7 @@ namespace Banan {
         if (vkAllocateDescriptorSets(bananDevice.device(), &allocInfo, &descriptor) != VK_SUCCESS) {
             return false;
         }
+
         return true;
     }
 
@@ -142,6 +144,7 @@ namespace Banan {
         if (!success) {
             return false;
         }
+
         overwrite(set);
         return true;
     }
