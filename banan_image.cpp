@@ -4,7 +4,8 @@
 
 #include "banan_image.h"
 
-#include <stdexcept>
+#include <cassert>
+#include <cstring>
 
 namespace Banan {
     VkDeviceSize BananImage::getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment) {
@@ -14,7 +15,9 @@ namespace Banan {
         return instanceSize;
     }
 
-    BananImage::BananImage(BananDevice &device, VkDeviceSize pixelSize, uint32_t width, uint32_t height, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) : bananDevice{device}, width{width}, height{height} {
+    BananImage::BananImage(BananDevice &device, VkDeviceSize pixelSize, uint32_t width, uint32_t height, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) : bananDevice{device}, pixelSize{pixelSize}, width{width}, height{height} {
+        alignmentSize = getAlignment(pixelSize, minOffsetAlignment);
+        imageSize = alignmentSize * width * height;
         bananDevice.createImage(width, height, usageFlags, memoryPropertyFlags, image, memory);
     }
 
@@ -23,32 +26,103 @@ namespace Banan {
         vkFreeMemory(bananDevice.device(), memory, nullptr);
     }
 
-    void BananImage::createTextureImageView() {
-        VkImageViewCreateInfo viewInfo{};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = image;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
+    VkResult BananImage::map(VkDeviceSize size, VkDeviceSize offset) {
+        assert(image && memory && "Called map on buffer before create");
+        return vkMapMemory(bananDevice.device(), memory, offset, size, 0, &mapped);
+    }
 
-        if (vkCreateImageView(bananDevice.device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
+    void BananImage::unmap() {
+        if (mapped) {
+            vkUnmapMemory(bananDevice.device(), memory);
+            mapped = nullptr;
         }
     }
 
-    VkDescriptorImageInfo BananImage::descriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
-        VkDescriptorImageInfo info{};
-        info.imageView = imageView;
-        info.imageLayout = imageLayout;
+    void BananImage::writeToBuffer(void *data, VkDeviceSize size, VkDeviceSize offset) {
+        assert(mapped && "Cannot copy to unmapped buffer");
 
-        return info;
+        if (size == VK_WHOLE_SIZE) {
+            memcpy(mapped, data, imageSize);
+        } else {
+            char *memOffset = (char *)mapped;
+            memOffset += offset;
+            memcpy(memOffset, data, size);
+        }
+    }
+
+    VkResult BananImage::flush(VkDeviceSize size, VkDeviceSize offset) {
+        VkMappedMemoryRange mappedRange = {};
+        mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        mappedRange.memory = memory;
+        mappedRange.offset = offset;
+        mappedRange.size = size;
+        return vkFlushMappedMemoryRanges(bananDevice.device(), 1, &mappedRange);
+    }
+
+    //TODO
+    //VkDescriptorImageInfo BananImage::descriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
+    //    return VkDescriptorImageInfo{image, offset, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    //}
+
+    VkResult BananImage::invalidate(VkDeviceSize size, VkDeviceSize offset) {
+        VkMappedMemoryRange mappedRange = {};
+        mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        mappedRange.memory = memory;
+        mappedRange.offset = offset;
+        mappedRange.size = size;
+        return vkInvalidateMappedMemoryRanges(bananDevice.device(), 1, &mappedRange);
+    }
+
+    void BananImage::writeToIndex(void *data, int index) {
+        writeToBuffer(data, pixelSize, index * alignmentSize);
+    }
+
+    VkResult BananImage::flushIndex(int index) {
+        return flush(alignmentSize, index * alignmentSize);
+    }
+
+    //TODO
+    //VkDescriptorImageInfo BananImage::descriptorInfoForIndex(int index) {
+    //    return descriptorInfo(alignmentSize, index * alignmentSize);
+    //}
+
+    VkResult BananImage::invalidateIndex(int index) {
+        return invalidate(alignmentSize, index * alignmentSize);
     }
 
     VkImage BananImage::getImage() {
         return image;
+    }
+
+    void *BananImage::getMappedMemory() {
+        return mapped;
+    }
+
+    uint32_t BananImage::getWidth() const {
+        return width;
+    }
+
+    uint32_t BananImage::getHeight() const {
+        return height;
+    }
+
+    VkDeviceSize BananImage::getPixelSize() const {
+        return pixelSize;
+    }
+
+    VkDeviceSize BananImage::getAlignmentSize() const {
+        return alignmentSize;
+    }
+
+    VkBufferUsageFlags BananImage::getUsageFlags() const {
+        return usageFlags;
+    }
+
+    VkMemoryPropertyFlags BananImage::getMemoryPropertyFlags() const {
+        return memoryPropertyFlags;
+    }
+
+    VkDeviceSize BananImage::getBufferSize() const {
+        return imageSize;
     }
 }
