@@ -3,7 +3,6 @@
 //
 
 #include "banan_model.h"
-#include "banan_logger.h"
 
 #include <cassert>
 #include <cstring>
@@ -18,9 +17,9 @@
 
 namespace Banan {
     BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice(device) {
-        createTextureImage(builder.texture);
         createVertexBuffers(builder.vertices);
         createIndexBuffers(builder.indices);
+        createTextureImage(builder.texture);
     }
 
     BananModel::~BananModel() {}
@@ -80,7 +79,7 @@ namespace Banan {
     std::unique_ptr<BananModel> BananModel::createModelFromFile(BananDevice &device, const std::string &filepath) {
         Builder builder{};
         builder.loadModel(filepath);
-        LogInfo() << "Model Vertex Count: " + std::to_string(builder.vertices.size());
+        std::cout << "Model Vertex Count:" << builder.vertices.size() << '\n';
         return std::make_unique<BananModel>(device, builder);
     }
 

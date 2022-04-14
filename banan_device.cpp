@@ -3,7 +3,6 @@
 //
 
 #include "banan_device.h"
-#include "banan_logger.h"
 
 #include <cstring>
 #include <iostream>
@@ -11,8 +10,9 @@
 #include <unordered_set>
 
 namespace Banan {
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
         return VK_FALSE;
     }
 
@@ -100,7 +100,7 @@ namespace Banan {
         if (deviceCount == 0) {
             throw std::runtime_error("failed to find GPUs with Vulkan support!");
         }
-        LogInfo() << "Device count: " + std::to_string(deviceCount);
+        std::cout << "Device count: " << deviceCount << std::endl;
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
@@ -116,7 +116,7 @@ namespace Banan {
         }
 
         vkGetPhysicalDeviceProperties(physicalDevice, &properties);
-        LogInfo() << "physical device: " + std::string(properties.deviceName);
+        std::cout << "physical device: " << properties.deviceName << std::endl;
     }
 
     void BananDevice::createLogicalDevice() {
@@ -266,17 +266,17 @@ namespace Banan {
         std::vector<VkExtensionProperties> extensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-        LogInfo() << "available extensions:";
+        std::cout << "available extensions:" << std::endl;
         std::unordered_set<std::string> available;
         for (const auto &extension : extensions) {
-            LogInfo() << "\t" + std::string(extension.extensionName);
+            std::cout << "\t" << extension.extensionName << std::endl;
             available.insert(extension.extensionName);
         }
 
-        LogInfo() << "required extensions:";
+        std::cout << "required extensions:" << std::endl;
         auto requiredExtensions = getRequiredExtensions();
         for (const auto &required : requiredExtensions) {
-            LogInfo() << "\t" + std::string(required);
+            std::cout << "\t" << required << std::endl;
             if (available.find(required) == available.end()) {
                 throw std::runtime_error("Missing required glfw extension");
             }

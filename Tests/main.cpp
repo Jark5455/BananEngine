@@ -3,21 +3,23 @@
 //
 
 #include "BananEngineTest.h"
-#include "../banan_logger.h"
 
 #include <cstdlib>
 #include <iostream>
 
 int main() {
     Banan::BananEngineTest app{};
+    auto logger = app.getLogger();
 
     try {
         app.run();
     } catch (const std::exception &e) {
-        Banan::LogFatal() << e.what() << "\n";
+        logger->write(Banan::LogLevel::FATAL, e.what());
+        logger->flush();
         return EXIT_FAILURE;
     }
 
-    Banan::LogInfo() << "Banan exited sucessfully";
+    logger->write(Banan::LogLevel::INFO, "Banan exited successfully");
+    logger->flush();
     return EXIT_SUCCESS;
 }

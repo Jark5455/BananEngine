@@ -11,11 +11,13 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <chrono>
+#include <stdexcept>
 
 namespace Banan{
 
     BananEngineTest::BananEngineTest() {
         globalPool = BananDescriptorPool::Builder(bananDevice).setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT).addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT).build();
+        bananLogger =  std::make_shared<BananLogger>(nullptr);
         loadGameObjects();
     }
 
@@ -83,11 +85,7 @@ namespace Banan{
     }
 
     void BananEngineTest::loadGameObjects() {
-        BananModel::Builder vaseBuilder{};
-        vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
-        vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
-
-        std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
+        std::shared_ptr<BananModel> vaseModel = BananModel::createModelFromFile(bananDevice, "banan_assets/ceramic_vase_01_4k.blend");
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
         vase.transform.translation = {0.f, .5f, 0.f};
@@ -119,6 +117,10 @@ namespace Banan{
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
             gameObjects.emplace(pointLight.getId(), std::move(pointLight));
         }
+    }
+
+    std::shared_ptr<BananLogger> BananEngineTest::getLogger() {
+        return bananLogger;
     }
 }
 
