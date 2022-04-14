@@ -41,7 +41,7 @@ namespace Banan {
     private:
         static VkDeviceSize getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment);
 
-        BananDevice& bananDevice;
+        BananDevice& lveDevice;
         void* mapped = nullptr;
         VkBuffer buffer = VK_NULL_HANDLE;
         VkDeviceMemory memory = VK_NULL_HANDLE;
