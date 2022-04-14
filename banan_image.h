@@ -11,15 +11,13 @@
 namespace Banan {
     class BananImage {
         public:
-            BananImage(BananDevice &device, VkDeviceSize pixelSize, uint32_t width, uint32_t height, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
+            BananImage(BananDevice& device, VkDeviceSize pixelSize, uint32_t width, uint32_t height, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
             ~BananImage();
 
             BananImage(const BananImage&) = delete;
             BananImage& operator=(const BananImage&) = delete;
 
             void createTextureImageView();
-            void createTextureSampler();
-
             VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
             VkImage getImage();
@@ -27,10 +25,9 @@ namespace Banan {
         private:
             static VkDeviceSize getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment);
 
-            BananDevice &bananDevice;
+            BananDevice& bananDevice;
             VkImage image = VK_NULL_HANDLE;
             VkImageView imageView = VK_NULL_HANDLE;
-            VkSampler imageSampler = VK_NULL_HANDLE;
             VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             VkDeviceMemory memory = VK_NULL_HANDLE;
 

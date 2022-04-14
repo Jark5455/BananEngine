@@ -579,10 +579,4 @@ namespace Banan {
             throw std::runtime_error("failed to bind image memory!");
         }
     }
-
-    VkPhysicalDeviceProperties BananDevice::getPhysicalDeviceProperties() {
-        VkPhysicalDeviceProperties props{};
-        vkGetPhysicalDeviceProperties(physicalDevice, &props);
-        return props;
-    }
 }
