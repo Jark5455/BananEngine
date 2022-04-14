@@ -80,22 +80,6 @@ namespace Banan {
         return std::make_unique<BananModel>(device, builder);
     }
 
-    void BananModel::createTextureImage(const Texture &texture) {
-        pixelCount = static_cast<uint32_t>(texture.pixels.size());
-        assert(pixelCount >= 0 && "Failed to load image: 0 pixels");
-        VkDeviceSize bufferSize = texture.pixels.size() * sizeof(texture.pixels[0]);
-        uint32_t pixelSize = sizeof(texture.pixels[0]);
-
-        BananBuffer stagingBuffer{bananDevice, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer((void *)texture.pixels.data());
-
-        textureImage = std::make_unique<BananImage>(bananDevice, pixelSize, texture.height, texture.width, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        bananDevice.transitionImageLayout(textureImage->getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), textureImage->getImage(), texture.width, texture.height, 1);
-        bananDevice.transitionImageLayout(textureImage->getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
-
     std::vector<VkVertexInputBindingDescription> BananModel::Vertex::getBindingDescriptions() {
         std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
         bindingDescriptions[0].binding = 0;
@@ -145,9 +129,5 @@ namespace Banan {
         } else {
             throw std::runtime_error(importer.GetErrorString());
         }
-    }
-
-    void BananModel::Builder::loadTexture(const std::string &filepath) {
-
     }
 }
