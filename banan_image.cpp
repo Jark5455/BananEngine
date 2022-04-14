@@ -33,7 +33,6 @@ namespace Banan {
         VkDescriptorImageInfo info{};
         info.imageView = imageView;
         info.imageLayout = imageLayout;
-        info.sampler = imageSampler;
         return info;
     }
 
