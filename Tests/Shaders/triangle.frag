@@ -48,7 +48,7 @@ void main() {
         vec3 halfAngle = normalize(directionToLight + viewDirection);
         float blinnTerm = dot(surfaceNormal, halfAngle);
         blinnTerm = clamp(blinnTerm, 0, 1);
-        blinnTerm = pow(blinnTerm, 512.0);
+        blinnTerm = pow(blinnTerm, 512.0f);
         specularLight += light.color.xyz * attenuation * blinnTerm;
     }
 

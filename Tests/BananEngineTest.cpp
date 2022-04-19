@@ -70,6 +70,7 @@ namespace Banan{
                 ubo.projection = camera.getProjection();
                 ubo.view = camera.getView();
                 ubo.inverseView = camera.getInverseView();
+
                 pointLightSystem.update(frameInfo, ubo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
@@ -86,18 +87,22 @@ namespace Banan{
     }
 
     void BananEngineTest::loadGameObjects() {
-        std::shared_ptr<BananModel> vaseModel = BananModel::createModelFromFile(bananDevice, "banan_assets/ceramic_vase_01_4k.blend");
+
+        BananModel::Builder vaseBuilder{};
+        vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
+
+        std::shared_ptr<BananModel> vaseModel = std::make_unique<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
-        vase.transform.translation = {0.f, .5f, 0.f};
-        vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.0f, 0.0f};
+        vase.transform.translation = {0.f, 0.5f, 0.f};
+        vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
         gameObjects.emplace(vase.getId(), std::move(vase));
 
         std::shared_ptr<BananModel> floorModel = BananModel::createModelFromFile(bananDevice, "banan_assets/quad.obj");
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
-        floor.transform.translation = {0.f, .5f, 0.f};
+        floor.transform.translation = {0.f, 0.5f, 0.f};
         floor.transform.rotation = {0.f, 0.f, 0.f};
         floor.transform.scale = {3.f, 1.f, 3.f};
         gameObjects.emplace(floor.getId(), std::move(floor));
