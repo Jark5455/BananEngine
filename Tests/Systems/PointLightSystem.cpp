@@ -9,6 +9,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
+#include <array>
+#include <cassert>
+#include <map>
 #include <stdexcept>
 
 namespace Banan{
@@ -56,18 +59,28 @@ namespace Banan{
         pipelineConfig.attributeDescriptions.clear();
         pipelineConfig.bindingDescriptions.clear();
         BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
+        BananPipeline::alphaBlendingPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
         bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/point_light.vert.spv", "shaders/point_light.frag.spv", pipelineConfig);
     }
 
     void PointLightSystem::render(BananFrameInfo &frameInfo) {
-        bananPipeline->bind(frameInfo.commandBuffer);
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
-
+        std::map<float, BananGameObject::id_t> sorted;
         for (auto &kv : frameInfo.gameObjects) {
             auto &obj = kv.second;
             if (obj.pointLight == nullptr) continue;
+
+            auto offset = frameInfo.camera.getPosition() - obj.transform.translation;
+            float disSquared = glm::dot(offset, offset);
+            sorted[disSquared] = obj.getId();
+        }
+
+        bananPipeline->bind(frameInfo.commandBuffer);
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
+
+        for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
+            auto &obj = frameInfo.gameObjects.at(it->second);
 
             PointLightPushConstants push{};
             push.position = glm::vec4(obj.transform.translation, 1.f);

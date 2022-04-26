@@ -12,6 +12,7 @@
 namespace Banan {
 
     struct PipelineConfigInfo {
+        PipelineConfigInfo() = default;
         PipelineConfigInfo(const PipelineConfigInfo&) = delete;
         PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
 
@@ -42,6 +43,7 @@ namespace Banan {
 
             void bind(VkCommandBuffer buffer);
             static void defaultPipelineConfigInfo(PipelineConfigInfo &configInfo);
+            static void alphaBlendingPipelineConfigInfo(PipelineConfigInfo &configInfo);
 
         private:
             static std::vector<char> readFile(const std::string &filepath);

@@ -21,6 +21,7 @@ namespace Banan {
             const glm::mat4& getProjection() const;
             const glm::mat4& getView() const;
             const glm::mat4& getInverseView() const;
+            const glm::vec3 getPosition() const;
         private:
             glm::mat4 projectionMatrix{1.f};
             glm::mat4 viewMatrix{1.f};
