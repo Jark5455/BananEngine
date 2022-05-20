@@ -6,6 +6,7 @@
 
 #include "banan_device.h"
 #include "banan_buffer.h"
+#include "banan_image.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -16,47 +17,64 @@
 
 namespace Banan {
     class BananModel {
-        public:
+    public:
 
-            struct Vertex {
-                glm::vec3 position;
-                glm::vec3 color;
-                glm::vec3 normal;
-                glm::vec2 uv;
+        struct Texture {
+            uint8_t *data = nullptr;
+            uint32_t width;
+            uint32_t height;
+        };
 
-                static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
-                static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
-            };
+        struct Vertex {
+            glm::vec3 position;
+            glm::vec3 color;
+            glm::vec3 normal;
+            glm::vec2 uv;
 
-            struct Builder {
-                std::vector<Vertex> vertices{};
-                std::vector<uint32_t> indices{};
+            static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
+            static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        };
 
-                void loadModel(const std::string &filepath);
-            };
+        struct Builder {
+            std::vector<Vertex> vertices{};
+            std::vector<uint32_t> indices{};
+            Texture texture{};
 
-            BananModel(BananDevice &device, const Builder &builder);
-            ~BananModel();
+            void loadModel(const std::string &filepath);
+            void loadTexture(const std::string &filepath);
+        };
 
-            BananModel(const BananModel &) = delete;
-            BananModel &operator=(const BananModel &) = delete;
+        BananModel(BananDevice &device, const Builder &builder);
+        ~BananModel();
 
-            static std::unique_ptr<BananModel> createModelFromFile(BananDevice &device, const std::string &filepath);
+        BananModel(const BananModel &) = delete;
+        BananModel &operator=(const BananModel &) = delete;
 
-            void bind(VkCommandBuffer commandBuffer);
-            void draw(VkCommandBuffer commandBuffer);
+        static std::unique_ptr<BananModel> createModelFromFile(BananDevice &device, const std::string &filepath);
 
-        private:
-            void createVertexBuffers(const std::vector<Vertex> &vertices);
-            void createIndexBuffers(const std::vector<uint32_t> &indices);
+        void bind(VkCommandBuffer commandBuffer);
+        void draw(VkCommandBuffer commandBuffer);
 
-            bool hasIndexBuffer;
-            BananDevice &bananDevice;
+        bool isTextureLoaded();
+        VkDescriptorImageInfo getDescriptorImageInfo();
 
-            std::unique_ptr<BananBuffer> vertexBuffer;
-            uint32_t vertexCount;
+    private:
+        void createVertexBuffers(const std::vector<Vertex> &vertices);
+        void createIndexBuffers(const std::vector<uint32_t> &indices);
+        void createTextureImage(const Texture &image);
 
-            std::unique_ptr<BananBuffer> indexBuffer;
-            uint32_t indexCount;
+        bool hasIndexBuffer;
+        bool hasTexture;
+
+        BananDevice &bananDevice;
+
+        std::unique_ptr<BananBuffer> vertexBuffer;
+        uint32_t vertexCount;
+
+        std::unique_ptr<BananBuffer> indexBuffer;
+        uint32_t indexCount;
+
+        std::unique_ptr<BananImage> textureImage;
+        uint32_t pixelCount;
     };
 }

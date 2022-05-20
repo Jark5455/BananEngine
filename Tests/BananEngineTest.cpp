@@ -11,13 +11,18 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <chrono>
-#include <stdexcept>
+
+#include "../banan_logger.h"
 
 namespace Banan{
 
     BananEngineTest::BananEngineTest() {
-        globalPool = BananDescriptorPool::Builder(bananDevice).setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT).addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT).build();
-        bananLogger =  std::make_shared<BananLogger>(nullptr);
+        globalPool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .build();
+
         loadGameObjects();
     }
 
@@ -31,11 +36,30 @@ namespace Banan{
             uboBuffer->map();
         }
 
-        auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice).addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS).build();
+        auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .build();
+
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
+
+            BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
-            BananDescriptorWriter(*globalSetLayout, *globalPool).writeBuffer(0, &bufferInfo).build(globalDescriptorSets[i]);
+            writer.writeBuffer(0, &bufferInfo);
+
+            auto it = gameObjects.begin();
+            for (it = gameObjects.begin(); it != gameObjects.end(); it++)
+            {
+                if (it->second.model != nullptr) {
+                    if (it->second.model->isTextureLoaded()) {
+                        auto imageInfo = it->second.model->getDescriptorImageInfo();
+                        writer.writeImage(1, &imageInfo);
+                    }
+                }
+            }
+
+            writer.build(globalDescriptorSets[i]);
         }
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
@@ -69,8 +93,6 @@ namespace Banan{
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();
                 ubo.view = camera.getView();
-                ubo.inverseView = camera.getInverseView();
-
                 pointLightSystem.update(frameInfo, ubo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
@@ -87,11 +109,11 @@ namespace Banan{
     }
 
     void BananEngineTest::loadGameObjects() {
-
         BananModel::Builder vaseBuilder{};
         vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
+        vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_rough_4k.jpg");
 
-        std::shared_ptr<BananModel> vaseModel = std::make_unique<BananModel>(bananDevice, vaseBuilder);
+        std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
         vase.transform.translation = {0.f, 0.5f, 0.f};
@@ -99,21 +121,25 @@ namespace Banan{
         vase.transform.scale = {3.f, 3.f, 3.f};
         gameObjects.emplace(vase.getId(), std::move(vase));
 
-        std::shared_ptr<BananModel> floorModel = BananModel::createModelFromFile(bananDevice, "banan_assets/quad.obj");
+        BananModel::Builder floorBuilder{};
+        floorBuilder.loadModel("banan_assets/quad.obj");
+        floorBuilder.loadTexture("banan_assets/textures/pepe.png");
+
+        std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
-        floor.transform.translation = {0.f, 0.5f, 0.f};
+        floor.transform.translation = {0.f, .5f, 0.f};
         floor.transform.rotation = {0.f, 0.f, 0.f};
         floor.transform.scale = {3.f, 1.f, 3.f};
         gameObjects.emplace(floor.getId(), std::move(floor));
 
         std::vector<glm::vec3> lightColors{
-            {1.f, .1f, .1f},
-            {.1f, .1f, 1.f},
-            {.1f, 1.f, .1f},
-            {1.f, 1.f, .1f},
-            {.1f, 1.f, 1.f},
-            {1.f, 1.f, 1.f}
+                {1.f, .1f, .1f},
+                {.1f, .1f, 1.f},
+                {.1f, 1.f, .1f},
+                {1.f, 1.f, .1f},
+                {.1f, 1.f, 1.f},
+                {1.f, 1.f, 1.f}
         };
 
         for (int i = 0; i < lightColors.size(); i++) {

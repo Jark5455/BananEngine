@@ -8,6 +8,7 @@ layout(location = 3) in vec2 uv;
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec3 fragPosWorld;
 layout(location = 2) out vec3 fragNormalWorld;
+layout(location = 3) out vec2 fragTexCoord;
 
 struct PointLight {
     vec4 position;
@@ -33,5 +34,6 @@ void main() {
     gl_Position = ubo.projection * ubo.view * positionWorld;
     fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
     fragPosWorld = positionWorld.xyz;
+    fragTexCoord = uv;
     fragColor = color;
 }

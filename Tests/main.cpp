@@ -14,12 +14,9 @@ int main() {
     try {
         app.run();
     } catch (const std::exception &e) {
-        logger->write(Banan::LogLevel::FATAL, e.what());
-        logger->flush();
+        std::cout << e.what();
         return EXIT_FAILURE;
     }
 
-    logger->write(Banan::LogLevel::INFO, "Banan exited successfully");
-    logger->flush();
     return EXIT_SUCCESS;
 }

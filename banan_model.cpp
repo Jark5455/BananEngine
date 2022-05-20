@@ -3,18 +3,21 @@
 //
 
 #include "banan_model.h"
+#include "banan_logger.h"
 
 #include <cassert>
 #include <cstring>
-#include <iostream>
 #include <iterator>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <stb_image.h>
+
 namespace Banan {
-    BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice(device) {
+    BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice{device} {
+        createTextureImage(builder.texture);
         createVertexBuffers(builder.vertices);
         createIndexBuffers(builder.indices);
     }
@@ -76,8 +79,38 @@ namespace Banan {
     std::unique_ptr<BananModel> BananModel::createModelFromFile(BananDevice &device, const std::string &filepath) {
         Builder builder{};
         builder.loadModel(filepath);
-        std::cout << "Model Vertex Count:" << builder.vertices.size() << '\n';
+        std::cout << "Model Vertex Count: " + std::to_string(builder.vertices.size());
         return std::make_unique<BananModel>(device, builder);
+    }
+
+    void BananModel::createTextureImage(const Texture &texture) {
+        if (texture.width > 0 && texture.height > 0) {
+            pixelCount = texture.width * texture.height;
+            assert(pixelCount >= 0 && "Failed to load image: 0 pixels");
+            uint32_t pixelSize = sizeof(unsigned char);
+
+            BananBuffer stagingBuffer{bananDevice, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+            stagingBuffer.map();
+            stagingBuffer.writeToBuffer((void *)texture.data);
+
+            textureImage = std::make_unique<BananImage>(bananDevice, pixelSize, texture.height, texture.width, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            bananDevice.transitionImageLayout(textureImage->getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), textureImage->getImage(), texture.width, texture.height, 1);
+            bananDevice.transitionImageLayout(textureImage->getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+            hasTexture = true;
+        } else {
+            hasTexture = false;
+        }
+
+    }
+
+    bool BananModel::isTextureLoaded() {
+        return hasTexture && textureImage != nullptr;
+    }
+
+    VkDescriptorImageInfo BananModel::getDescriptorImageInfo() {
+        return textureImage->descriptorInfo();
     }
 
     std::vector<VkVertexInputBindingDescription> BananModel::Vertex::getBindingDescriptions() {
@@ -102,7 +135,7 @@ namespace Banan {
 
     void BananModel::Builder::loadModel(const std::string &filepath) {
         Assimp::Importer importer;
-        const aiScene *scene = importer.ReadFile(filepath,aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+        const aiScene *scene = importer.ReadFile(filepath,aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenUVCoords);
 
         vertices.clear();
         indices.clear();
@@ -116,7 +149,7 @@ namespace Banan {
                     v.normal = glm::vec3{mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z};
 
                     v.color =  mesh->HasVertexColors(j) ? glm::vec3{mesh->mColors[j]->r, mesh->mColors[j]->g, mesh->mColors[j]->b} : glm::vec3{1.0f, 1.0f, 1.0f};
-                    v.uv = mesh->HasTextureCoords(j) ? glm::vec2{mesh->mTextureCoords[j]->x, mesh->mTextureCoords[j]->y} : glm::vec2{0.0f, 0.0f};
+                    v.uv = glm::vec2{mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].x};
                     vertices.push_back(v);
                 }
 
@@ -126,8 +159,39 @@ namespace Banan {
                     indices.push_back(mesh->mFaces[k].mIndices[2]);
                 }
             }
+
+            if (scene->HasTextures()) {
+                if (scene->mNumTextures == 1) {
+                    const aiTexture *sceneTexture = scene->mTextures[0];
+
+                    int width = 0;
+                    int height = 0;
+                    int texChannels = 0;
+
+                    if (sceneTexture->mHeight == 0)
+                    {
+                        texture.data = stbi_load_from_memory(reinterpret_cast<uint8_t *>(sceneTexture->pcData), static_cast<int>(sceneTexture->mWidth), &width, &height, &texChannels, STBI_rgb_alpha);
+                    }
+                    else
+                    {
+                        texture.data = stbi_load_from_memory(reinterpret_cast<uint8_t *>(sceneTexture->pcData), static_cast<int>(sceneTexture->mWidth * sceneTexture->mHeight), &width, &height, &texChannels, STBI_rgb_alpha);
+                    }
+
+                    texture.width = width;
+                    texture.height = height;
+                }
+            }
         } else {
             throw std::runtime_error(importer.GetErrorString());
         }
+    }
+
+    void BananModel::Builder::loadTexture(const std::string &filepath) {
+        int texWidth, texHeight, texChannels;
+        uint8_t *data = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+        texture.data = data;
+        texture.width = texWidth;
+        texture.height = texHeight;
     }
 }
