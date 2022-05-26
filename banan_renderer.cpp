@@ -5,6 +5,7 @@
 #include "banan_renderer.h"
 
 #include <stdexcept>
+#include <array>
 
 namespace Banan {
     BananRenderer::BananRenderer(BananWindow &window, BananDevice &device) : bananWindow{window}, bananDevice{device} {

@@ -26,12 +26,7 @@ namespace Banan {
 
     class BananDevice {
     public:
-
-#ifndef NDEBUG
-        const bool enableValidationLayers = false;
-#else
         const bool enableValidationLayers = true;
-#endif
 
         BananDevice(BananWindow &window);
         ~BananDevice();

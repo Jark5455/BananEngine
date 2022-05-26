@@ -87,7 +87,7 @@ namespace Banan {
         if (texture.width > 0 && texture.height > 0) {
             pixelCount = texture.width * texture.height;
             assert(pixelCount >= 0 && "Failed to load image: 0 pixels");
-            uint32_t pixelSize = sizeof(unsigned char);
+            uint32_t pixelSize = 4; //for some reason sizeof(uint8_t) returns 1, idk lol im pretty dumb
 
             BananBuffer stagingBuffer{bananDevice, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
             stagingBuffer.map();
