@@ -17,13 +17,15 @@
 namespace Banan{
 
     BananEngineTest::BananEngineTest() {
-        globalPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .build();
 
         loadGameObjects();
+
+        globalPool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
+                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
+                .build();
     }
 
     BananEngineTest::~BananEngineTest() = default;
@@ -38,7 +40,7 @@ namespace Banan{
 
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjects.size())
                 .build();
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
@@ -48,18 +50,18 @@ namespace Banan{
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
             writer.writeBuffer(0, &bufferInfo);
 
-            auto it = gameObjects.begin();
-            for (it = gameObjects.begin(); it != gameObjects.end(); it++)
+            std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsTextureInfo{};
+            for (auto &kv : gameObjects)
             {
-                if (it->second.model != nullptr) {
-                    if (it->second.model->isTextureLoaded()) {
-                        auto imageInfo = it->second.model->getDescriptorImageInfo();
-                        writer.writeImage(1, &imageInfo);
+                if (kv.second.model != nullptr) {
+                    if (kv.second.model->isTextureLoaded()) {
+                        gameObjectsTextureInfo.emplace(kv.first, kv.second.model->getDescriptorImageInfo());
                     }
                 }
             }
 
-            writer.build(globalDescriptorSets[i]);
+            writer.writeImages(1, gameObjectsTextureInfo);
+            writer.build(globalDescriptorSets[i], gameObjects.size() - 1);
         }
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
@@ -118,14 +120,14 @@ namespace Banan{
         std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
-        vase.transform.translation = {0.f, 0.5f, 0.f};
+        vase.transform.translation = {0.f, 1.f, 0.f};
         vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
         gameObjects.emplace(vase.getId(), std::move(vase));
 
-        /*BananModel::Builder floorBuilder{};
+        BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/pepe.png");
+        floorBuilder.loadTexture("banan_assets/textures/pepe.jpg");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
@@ -133,7 +135,7 @@ namespace Banan{
         floor.transform.translation = {0.f, .5f, 0.f};
         floor.transform.rotation = {0.f, 0.f, 0.f};
         floor.transform.scale = {3.f, 1.f, 3.f};
-        gameObjects.emplace(floor.getId(), std::move(floor));*/
+        gameObjects.emplace(floor.getId(), std::move(floor));
 
         std::vector<glm::vec3> lightColors{
                 {1.f, .1f, .1f},

@@ -1,4 +1,5 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : enable
 
 layout (location = 0) in vec3 fragColor;
 layout (location = 1) in vec3 fragPosWorld;
@@ -24,13 +25,14 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
 layout(push_constant) uniform Push {
     mat4 modelMatrix;
     mat4 normalMatrix;
+    int gameObjectId;
 } push;
 
-layout(binding = 1) uniform sampler2D texSampler;
+layout(binding = 1) uniform sampler2D texSampler[];
 
 void main() {
 
-    vec3 diffuseLight = (texture(texSampler, fragTexCoord).rgb + ubo.ambientLightColor.xyz) * ubo.ambientLightColor.w;
+    vec3 diffuseLight = (texture(texSampler[push.gameObjectId], fragTexCoord).rgb + ubo.ambientLightColor.xyz) * ubo.ambientLightColor.w;
     vec3 specularLight = vec3(0.0);
     vec3 surfaceNormal = normalize(fragNormalWorld);
 

@@ -65,7 +65,7 @@ namespace Banan {
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "BananEngine";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_0;
+        appInfo.apiVersion = VK_API_VERSION_1_1;
 
         VkInstanceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -135,6 +135,13 @@ namespace Banan {
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
+        VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
+        indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+        indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+        indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+        indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+        indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
@@ -147,6 +154,7 @@ namespace Banan {
         createInfo.pEnabledFeatures = &deviceFeatures;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+        createInfo.pNext = &indexingFeatures;
 
         // might not really be necessary anymore because device specific validation layers
         // have been deprecated
@@ -195,8 +203,17 @@ namespace Banan {
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-        return indices.isComplete() && extensionsSupported && swapChainAdequate &&
-               supportedFeatures.samplerAnisotropy;
+        VkPhysicalDeviceDescriptorIndexingFeatures indexing_features = {};
+        indexing_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+        indexing_features.pNext = nullptr;
+
+        VkPhysicalDeviceFeatures2 device_features2 = {};
+        device_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        device_features2.pNext = &indexing_features;
+
+        vkGetPhysicalDeviceFeatures2(device, &device_features2);
+
+        return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy && indexing_features.descriptorBindingPartiallyBound && indexing_features.runtimeDescriptorArray;
     }
 
     void BananDevice::populateDebugMessengerCreateInfo(
