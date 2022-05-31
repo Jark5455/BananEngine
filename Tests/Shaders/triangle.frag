@@ -32,7 +32,7 @@ layout(binding = 1) uniform sampler2D texSampler[];
 
 void main() {
 
-    vec3 diffuseLight = (texture(texSampler[push.gameObjectId], fragTexCoord).rgb + ubo.ambientLightColor.xyz) * ubo.ambientLightColor.w;
+    vec3 diffuseLight = (texture(texSampler[push.gameObjectId], fragTexCoord).rgb);
     vec3 specularLight = vec3(0.0);
     vec3 surfaceNormal = normalize(fragNormalWorld);
 

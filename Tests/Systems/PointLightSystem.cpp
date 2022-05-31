@@ -56,9 +56,9 @@ namespace Banan{
 
         // why not use the existing variables HEIGHT or WIDTH? - On high pixel density displays such as apples "retina" display these values are incorrect, but the swap chain corrects these values
         PipelineConfigInfo pipelineConfig{};
+        BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
         pipelineConfig.attributeDescriptions.clear();
         pipelineConfig.bindingDescriptions.clear();
-        BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
         BananPipeline::alphaBlendingPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;

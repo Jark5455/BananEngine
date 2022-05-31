@@ -16,7 +16,7 @@ namespace Banan{
     struct SimplePushConstantData {
         glm::mat4 modelMatrix{1.f};
         glm::mat4 normalMatrix{1.f};
-        int gameObjectId;
+        int gameObjectId = INT_MAX;
     };
 
     SimpleRenderSystem::SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout) : bananDevice{device} {

@@ -113,17 +113,17 @@ namespace Banan{
     }
 
     void BananEngineTest::loadGameObjects() {
-        BananModel::Builder vaseBuilder{};
+        /*BananModel::Builder vaseBuilder{};
         vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
         vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
 
         std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
-        vase.transform.translation = {0.f, 1.f, 0.f};
+        vase.transform.translation = {8.f, 0.5f, 0.f};
         vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
-        gameObjects.emplace(vase.getId(), std::move(vase));
+        gameObjects.emplace(vase.getId(), std::move(vase));*/
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
@@ -136,6 +136,18 @@ namespace Banan{
         floor.transform.rotation = {0.f, 0.f, 0.f};
         floor.transform.scale = {3.f, 1.f, 3.f};
         gameObjects.emplace(floor.getId(), std::move(floor));
+
+        BananModel::Builder otherfloorBuilder{};
+        otherfloorBuilder.loadModel("banan_assets/obamium.blend");
+        otherfloorBuilder.loadTexture("banan_assets/textures/base.png");
+
+        std::shared_ptr<BananModel> otherfloorModel = std::make_shared<BananModel>(bananDevice, otherfloorBuilder);
+        auto otherfloor = BananGameObject::createGameObject();
+        otherfloor.model = otherfloorModel;
+        otherfloor.transform.translation = {0.f, .3f, 0.f};
+        otherfloor.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.f};
+        otherfloor.transform.scale = {1.f, 1.f, 1.f};
+        gameObjects.emplace(otherfloor.getId(), std::move(otherfloor));
 
         std::vector<glm::vec3> lightColors{
                 {1.f, .1f, .1f},
