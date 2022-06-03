@@ -25,14 +25,16 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
 layout(push_constant) uniform Push {
     mat4 modelMatrix;
     mat4 normalMatrix;
-    int gameObjectId;
 } push;
 
 layout(binding = 1) uniform sampler2D texSampler[];
 
 void main() {
 
-    vec3 diffuseLight = (texture(texSampler[push.gameObjectId], fragTexCoord).rgb);
+    int index = int(push.modelMatrix[3][3]);
+    vec4 texture = texture(texSampler[index], fragTexCoord);
+
+    vec3 diffuseLight = texture.rgb;
     vec3 specularLight = vec3(0.0);
     vec3 surfaceNormal = normalize(fragNormalWorld);
 
