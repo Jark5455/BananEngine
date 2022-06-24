@@ -16,6 +16,7 @@ namespace Banan {
         createSwapChain();
         createImageViews();
         createRenderPass();
+        createColorResources();
         createDepthResources();
         createFramebuffers();
         createSyncObjects();
@@ -308,6 +309,10 @@ namespace Banan {
                 throw std::runtime_error("failed to create texture image view!");
             }
         }
+    }
+
+    void BananSwapChain::createColorResources() {
+        colorImage = std::make_unique<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, swapChainImageFormat, VK_IMAGE_TILING_OPTIMAL, device.getMaxUsableSampleCount(), VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     }
 
     void BananSwapChain::createSyncObjects() {

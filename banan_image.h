@@ -11,7 +11,7 @@
 namespace Banan {
     class BananImage {
     public:
-        BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
+        BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
         ~BananImage();
 
         BananImage(const BananImage&) = delete;
@@ -33,11 +33,12 @@ namespace Banan {
         static VkDeviceSize getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment);
 
         BananDevice &bananDevice;
-        VkImage image = VK_NULL_HANDLE;
-        VkImageView imageView = VK_NULL_HANDLE;
-        VkSampler imageSampler = VK_NULL_HANDLE;
+        VkImage image;
+        VkFormat imageFormat;
+        VkImageView imageView;
+        VkSampler imageSampler;
         VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        VkDeviceMemory memory = VK_NULL_HANDLE;
+        VkDeviceMemory memory;
 
         uint32_t width;
         uint32_t height;

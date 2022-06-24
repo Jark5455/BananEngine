@@ -5,6 +5,7 @@
 #pragma once
 
 #include "banan_device.h"
+#include "banan_image.h"
 
 // vulkan headers
 #include <vulkan/vulkan.h>
@@ -52,6 +53,7 @@ namespace Banan {
         void createRenderPass();
         void createFramebuffers();
         void createSyncObjects();
+        void createColorResources();
 
         // Helper functions
         VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
@@ -70,6 +72,8 @@ namespace Banan {
         std::vector<VkImageView> depthImageViews;
         std::vector<VkImage> swapChainImages;
         std::vector<VkImageView> swapChainImageViews;
+
+        std::unique_ptr<BananImage> colorImage;
 
         BananDevice &device;
         VkExtent2D windowExtent;
