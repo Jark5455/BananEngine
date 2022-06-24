@@ -135,7 +135,7 @@ namespace Banan {
 
     void BananModel::Builder::loadModel(const std::string &filepath) {
         Assimp::Importer importer;
-        const aiScene *scene = importer.ReadFile(filepath,aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenUVCoords);
+        const aiScene *scene = importer.ReadFile(filepath,aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
         vertices.clear();
         indices.clear();

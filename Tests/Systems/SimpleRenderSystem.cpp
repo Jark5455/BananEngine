@@ -16,7 +16,6 @@ namespace Banan{
     struct SimplePushConstantData {
         glm::mat4 modelMatrix{1.f};
         glm::mat4 normalMatrix{1.f};
-        int gameObjectId = INT_MAX;
     };
 
     SimpleRenderSystem::SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout) : bananDevice{device} {
@@ -70,7 +69,6 @@ namespace Banan{
             SimplePushConstantData push{};
             push.modelMatrix = obj.transform.mat4();
             push.normalMatrix = obj.transform.normalMatrix();
-            push.gameObjectId = (int) obj.getId();
 
             vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SimplePushConstantData), &push);
 

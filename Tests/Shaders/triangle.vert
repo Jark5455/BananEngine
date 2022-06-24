@@ -30,7 +30,11 @@ layout(push_constant) uniform Push {
 } push;
 
 void main() {
-    vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
+
+    mat4 actuallModelMatrix = push.modelMatrix;
+    actuallModelMatrix[3][3] = 1.0;
+
+    vec4 positionWorld = actuallModelMatrix * vec4(position, 1.0);
     gl_Position = ubo.projection * ubo.view * positionWorld;
     fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
     fragPosWorld = positionWorld.xyz;
