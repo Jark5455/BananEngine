@@ -62,6 +62,7 @@ namespace Banan{
         BananPipeline::alphaBlendingPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
+        pipelineConfig.multisampleInfo.rasterizationSamples = bananDevice.getMaxUsableSampleCount();
         bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/point_light.vert.spv", "shaders/point_light.frag.spv", pipelineConfig);
     }
 

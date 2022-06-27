@@ -127,7 +127,7 @@ namespace Banan{
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/pepe.png");
+        floorBuilder.loadTexture("banan_assets/textures/pepe.jpg");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();

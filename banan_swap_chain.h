@@ -70,10 +70,13 @@ namespace Banan {
         std::vector<VkImage> depthImages;
         std::vector<VkDeviceMemory> depthImageMemorys;
         std::vector<VkImageView> depthImageViews;
+
+        std::vector<VkImage> colorImages;
+        std::vector<VkDeviceMemory> colorImageMemorys;
+        std::vector<VkImageView> colorImageViews;
+
         std::vector<VkImage> swapChainImages;
         std::vector<VkImageView> swapChainImageViews;
-
-        std::unique_ptr<BananImage> colorImage;
 
         BananDevice &device;
         VkExtent2D windowExtent;

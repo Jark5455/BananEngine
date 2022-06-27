@@ -17,8 +17,6 @@ namespace Banan {
         BananImage(const BananImage&) = delete;
         BananImage& operator=(const BananImage&) = delete;
 
-        void generateMipMaps(VkFormat imageFormat);
-
         VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
         VkImage getImageHandle();
