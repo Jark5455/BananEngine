@@ -24,7 +24,7 @@ namespace Banan{
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
                 .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsTextureInfo.size())
                 .build();
     }
 
@@ -40,7 +40,7 @@ namespace Banan{
 
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjects.size())
+                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsTextureInfo.size())
                 .build();
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
@@ -50,18 +50,8 @@ namespace Banan{
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
             writer.writeBuffer(0, &bufferInfo);
 
-            std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsTextureInfo{};
-            for (auto &kv : gameObjects)
-            {
-                if (kv.second.model != nullptr) {
-                    if (kv.second.model->isTextureLoaded()) {
-                        gameObjectsTextureInfo.emplace(kv.first, kv.second.model->getDescriptorImageInfo());
-                    }
-                }
-            }
-
             writer.writeImages(1, gameObjectsTextureInfo);
-            writer.build(globalDescriptorSets[i], gameObjects.size() - 1);
+            writer.build(globalDescriptorSets[i], gameObjectsTextureInfo.size());
         }
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
@@ -139,7 +129,7 @@ namespace Banan{
         gameObjects.emplace(floor.getId(), std::move(floor));
 
         BananModel::Builder otherfloorBuilder{};
-        otherfloorBuilder.loadModel("banan_assets/source/obamium.blend");
+        otherfloorBuilder.loadModel("banan_assets/obamium.blend");
         otherfloorBuilder.loadTexture("banan_assets/textures/base.png");
 
         std::shared_ptr<BananModel> otherfloorModel = std::make_shared<BananModel>(bananDevice, otherfloorBuilder);
@@ -166,6 +156,15 @@ namespace Banan{
             auto rotateLight = glm::rotate(glm::mat4(1.f), (static_cast<float>(i) * glm::two_pi<float>()) / static_cast<float>(lightColors.size()), {0.f, -1.f, 0.f});
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
             gameObjects.emplace(pointLight.getId(), std::move(pointLight));
+        }
+
+        for (auto &kv : gameObjects)
+        {
+            if (kv.second.model != nullptr) {
+                if (kv.second.model->isTextureLoaded()) {
+                    gameObjectsTextureInfo.emplace(kv.first, kv.second.model->getDescriptorImageInfo());
+                }
+            }
         }
     }
 
