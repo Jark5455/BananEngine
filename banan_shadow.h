@@ -1,27 +1,20 @@
 //
-// Created by yashr on 12/30/21.
+// Created by yashr on 6/29/22.
 //
 
 #pragma once
 
 #include "banan_device.h"
-#include "banan_image.h"
 
-// vulkan headers
-#include <vulkan/vulkan.h>
-
-// std lib headers
-#include <string>
-#include <vector>
 #include <memory>
 
 namespace Banan {
-    class BananSwapChain {
+    class BananShadows {
     public:
 
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-        BananSwapChain(BananDevice &deviceRef, VkExtent2D extent, std::shared_ptr<BananSwapChain> previous);
-        ~BananSwapChain();
+        BananShadows(BananDevice &deviceRef, VkExtent2D extent);
+        ~BananShadows();
 
         BananSwapChain(const BananSwapChain &) = delete;
         BananSwapChain &operator=(const BananSwapChain &) = delete;

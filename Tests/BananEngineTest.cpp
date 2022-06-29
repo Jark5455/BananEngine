@@ -110,12 +110,12 @@ namespace Banan{
         std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
-        vase.transform.translation = {8.f, 0.5f, 0.f};
+        vase.transform.translation = {0.f, 0.5f, 0.f};
         vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
         gameObjects.emplace(vase.getId(), std::move(vase));
 
-        BananModel::Builder floorBuilder{};
+        /*BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
         floorBuilder.loadTexture("banan_assets/textures/pepe.jpg");
 
@@ -126,10 +126,10 @@ namespace Banan{
         floor.transform.rotation = {0.f, 0.f, 0.f};
         floor.transform.scale = {3.f, 1.f, 3.f};
         floor.transform.id = (int) floor.getId();
-        gameObjects.emplace(floor.getId(), std::move(floor));
+        gameObjects.emplace(floor.getId(), std::move(floor));*/
 
-        BananModel::Builder otherfloorBuilder{};
-        otherfloorBuilder.loadModel("banan_assets/obamium.blend");
+        /*BananModel::Builder otherfloorBuilder{};
+        otherfloorBuilder.loadModel("banan_assets/source/obamium.blend");
         otherfloorBuilder.loadTexture("banan_assets/textures/base.png");
 
         std::shared_ptr<BananModel> otherfloorModel = std::make_shared<BananModel>(bananDevice, otherfloorBuilder);
@@ -139,14 +139,9 @@ namespace Banan{
         otherfloor.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.f};
         otherfloor.transform.scale = {1.f, 1.f, 1.f};
         otherfloor.transform.id = (int) otherfloor.getId();
-        gameObjects.emplace(otherfloor.getId(), std::move(otherfloor));
+        gameObjects.emplace(otherfloor.getId(), std::move(otherfloor));*/
 
         std::vector<glm::vec3> lightColors{
-                {1.f, .1f, .1f},
-                {.1f, .1f, 1.f},
-                {.1f, 1.f, .1f},
-                {1.f, 1.f, .1f},
-                {.1f, 1.f, 1.f},
                 {1.f, 1.f, 1.f}
         };
 

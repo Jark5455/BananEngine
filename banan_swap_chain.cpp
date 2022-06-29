@@ -18,8 +18,6 @@ namespace Banan {
         createRenderPass();
         createColorResources();
         createDepthResources();
-        createShadowRenderPass();
-        createShadowDepthResources();
         createFramebuffers();
         createSyncObjects();
     }
@@ -441,9 +439,5 @@ namespace Banan {
 
     bool BananSwapChain::compareSwapFormats(const BananSwapChain &otherSwapChain) const {
         return otherSwapChain.swapChainDepthFormat == swapChainDepthFormat && otherSwapChain.swapChainImageFormat == swapChainImageFormat;
-    }
-
-    void BananSwapChain::createShadowDepthResources() {
-
     }
 }
