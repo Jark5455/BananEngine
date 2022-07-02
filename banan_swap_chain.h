@@ -51,7 +51,10 @@ namespace Banan {
         void createImageViews();
         void createDepthResources();
         void createRenderPass();
+        void createShadowRenderPass();
+        void createShadowDepthResources();
         void createFramebuffers();
+        void createShadowFramebuffers();
         void createSyncObjects();
         void createColorResources();
 
@@ -67,6 +70,7 @@ namespace Banan {
         std::vector<VkFramebuffer> swapChainFramebuffers;
         std::vector<VkFramebuffer> shadowFrameBuffers;
         VkRenderPass renderPass;
+        VkRenderPass shadowRenderPass;
 
         std::vector<VkImage> depthImages;
         std::vector<VkDeviceMemory> depthImageMemorys;

@@ -2,13 +2,24 @@
 // Created by yashr on 6/29/22.
 //
 
-#ifndef BANANENGINE_SHADOWSYSTEM_H
-#define BANANENGINE_SHADOWSYSTEM_H
+#pragma once
 
+#include "../../banan_device.h"
 
-class ShadowSystem {
+namespace Banan {
+    class ShadowSystem {
+        public:
 
-};
+        private:
+            void createShadowRenderPass();
+            void createShadowDepthResources();
+            void createShadowFramebuffers();
 
+            VkImage shadowDepthImage;
+            VkDeviceMemory shadowDepthImageMemory;
+            VkImageView shadowDepthImageView;
+            VkSampler shadowDepthImageSampler;
 
-#endif //BANANENGINE_SHADOWSYSTEM_H
+            BananDevice &device;
+    };
+}
