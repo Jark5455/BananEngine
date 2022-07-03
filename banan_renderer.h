@@ -6,6 +6,7 @@
 
 #include "banan_window.h"
 #include "banan_swap_chain.h"
+#include "banan_shadow_mapper.h"
 #include "banan_device.h"
 #include "banan_model.h"
 
@@ -23,6 +24,7 @@ namespace Banan{
         ~BananRenderer();
 
         VkRenderPass getSwapChainRenderPass() const;
+        VkRenderPass getShadowRenderPass() const;
         float getAspectRatio() const;
         bool isFrameInProgress() const;
         VkCommandBuffer getCurrentCommandBuffer() const;
@@ -33,6 +35,8 @@ namespace Banan{
         void endFrame();
         void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
         void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
+        void beginShadowRenderPass(VkCommandBuffer commandBuffer);
+        void endShadowRenderPass(VkCommandBuffer commandBuffer);
 
     private:
         void createCommandBuffers();
@@ -42,6 +46,7 @@ namespace Banan{
         BananWindow &bananWindow;
         BananDevice &bananDevice;
         std::unique_ptr<BananSwapChain> bananSwapChain;
+        std::unique_ptr<BananShadowMapper> bananShadowMapper;
         std::vector<VkCommandBuffer> commandBuffers;
 
         uint32_t currentImageIndex;

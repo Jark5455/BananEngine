@@ -14,36 +14,14 @@ namespace Banan {
             ShadowSystem(const ShadowSystem &) = delete;
             ShadowSystem &operator=(const ShadowSystem &) = delete;
 
-            ShadowSystem(BananDevice &device, VkDescriptorSetLayout globalSetLayout);
+            ShadowSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
 
             void update(BananFrameInfo &frameInfo, GlobalUbo &ubo);
             void render(BananFrameInfo &frameInfo);
 
-            VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         private:
-            void createShadowRenderPass();
-            void createShadowDepthResources();
-            void createShadowFramebuffers();
-
             void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
-            void createPipeline();
-
-            VkRenderPass renderPass;
-            VkFormat frameBufferDepthFormat;
-            VkFramebuffer frameBuffer;
-
-            VkImage shadowDepthCubemapImage;
-            VkDeviceMemory shadowDepthCubemapImageMemory;
-            VkImageView shadowDepthCubemapImageView;
-            VkSampler shadowDepthCubemapImageSampler;
-
-            VkImage shadowDepthImage;
-            VkDeviceMemory shadowDepthImageMemory;
-            VkImageView shadowDepthImageView;
-
-            VkImage shadowColorImage;
-            VkDeviceMemory shadowColorImageMemory;
-            VkImageView shadowColorImageView;
+            void createPipeline(VkRenderPass renderPass);
 
             BananDevice &bananDevice;
             std::unique_ptr<BananPipeline> bananPipeline;
