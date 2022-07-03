@@ -25,6 +25,7 @@ namespace Banan{
                 .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsTextureInfo.size())
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .build();
     }
 
@@ -41,7 +42,13 @@ namespace Banan{
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsTextureInfo.size())
+                .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
+
+
+        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+        PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+        BananCamera camera{};
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
@@ -53,10 +60,6 @@ namespace Banan{
             writer.writeImages(1, gameObjectsTextureInfo);
             writer.build(globalDescriptorSets[i], gameObjectsTextureInfo.size());
         }
-
-        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
-        PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
-        BananCamera camera{};
 
         auto viewerObject = BananGameObject::createGameObject();
         KeyboardMovementController cameraController{};
@@ -103,7 +106,7 @@ namespace Banan{
     }
 
     void BananEngineTest::loadGameObjects() {
-        BananModel::Builder vaseBuilder{};
+        /*BananModel::Builder vaseBuilder{};
         vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
         vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
 
@@ -113,20 +116,20 @@ namespace Banan{
         vase.transform.translation = {0.f, 0.5f, 0.f};
         vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
-        gameObjects.emplace(vase.getId(), std::move(vase));
+        gameObjects.emplace(vase.getId(), std::move(vase));*/
 
-        /*BananModel::Builder floorBuilder{};
+        BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/pepe.jpg");
+        floorBuilder.loadTexture("banan_assets/textures/checkers.png");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
         floor.transform.translation = {0.f, .5f, 0.f};
         floor.transform.rotation = {0.f, 0.f, 0.f};
-        floor.transform.scale = {3.f, 1.f, 3.f};
+        floor.transform.scale = {100.f, 1.f, 100.f};
         floor.transform.id = (int) floor.getId();
-        gameObjects.emplace(floor.getId(), std::move(floor));*/
+        gameObjects.emplace(floor.getId(), std::move(floor));
 
         /*BananModel::Builder otherfloorBuilder{};
         otherfloorBuilder.loadModel("banan_assets/source/obamium.blend");

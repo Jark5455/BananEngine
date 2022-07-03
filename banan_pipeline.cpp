@@ -195,4 +195,37 @@ namespace Banan{
         configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
     }
+
+    void BananPipeline::shadowPipelineConfigInfo(PipelineConfigInfo &configInfo) {
+        configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+        configInfo.inputAssemblyInfo.flags = 0;
+
+        configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
+        configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+        configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        configInfo.rasterizationInfo.flags = 0;
+
+        configInfo.colorBlendAttachment.colorWriteMask = 0xf;
+        configInfo.colorBlendAttachment.blendEnable = VK_FALSE;
+
+        configInfo.colorBlendInfo.attachmentCount = 1;
+        configInfo.colorBlendInfo.pAttachments = &configInfo.colorBlendAttachment;
+
+        configInfo.depthStencilInfo.depthTestEnable = VK_TRUE;
+        configInfo.depthStencilInfo.depthWriteEnable = VK_TRUE;
+        configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+
+        configInfo.viewportInfo.viewportCount = 1;
+        configInfo.viewportInfo.scissorCount = 1;
+        configInfo.viewportInfo.flags = 0;
+
+        configInfo.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        configInfo.multisampleInfo.flags = 0;
+
+        std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        configInfo.dynamicStateInfo.pDynamicStates = dynamicStateEnables.data();
+        configInfo.dynamicStateInfo.dynamicStateCount = dynamicStateEnables.size();
+        configInfo.dynamicStateInfo.flags = 0;
+    }
 }

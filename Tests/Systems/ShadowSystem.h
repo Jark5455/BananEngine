@@ -5,6 +5,8 @@
 #pragma once
 
 #include "../../banan_device.h"
+#include "../../banan_pipeline.h"
+#include "../../banan_frame_info.h"
 
 namespace Banan {
     class ShadowSystem {
@@ -12,13 +14,19 @@ namespace Banan {
             ShadowSystem(const ShadowSystem &) = delete;
             ShadowSystem &operator=(const ShadowSystem &) = delete;
 
-            ShadowSystem(BananDevice &device);
+            ShadowSystem(BananDevice &device, VkDescriptorSetLayout globalSetLayout);
+
+            void update(BananFrameInfo &frameInfo, GlobalUbo &ubo);
+            void render(BananFrameInfo &frameInfo);
 
             VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         private:
             void createShadowRenderPass();
             void createShadowDepthResources();
             void createShadowFramebuffers();
+
+            void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
+            void createPipeline();
 
             VkRenderPass renderPass;
             VkFormat frameBufferDepthFormat;
@@ -38,5 +46,7 @@ namespace Banan {
             VkImageView shadowColorImageView;
 
             BananDevice &bananDevice;
+            std::unique_ptr<BananPipeline> bananPipeline;
+            VkPipelineLayout pipelineLayout;
     };
 }

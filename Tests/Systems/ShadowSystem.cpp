@@ -8,12 +8,64 @@
 
 namespace Banan {
 
-    ShadowSystem::ShadowSystem(BananDevice &device) : bananDevice{device} {
+    ShadowSystem::ShadowSystem(BananDevice &device, VkDescriptorSetLayout globalSetLayout) : bananDevice{device} {
         frameBufferDepthFormat = device.findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},VK_IMAGE_TILING_OPTIMAL,VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        createShadowDepthResources();
+        createShadowRenderPass();
+        createPipelineLayout(globalSetLayout);
+        createPipeline();
+        createShadowFramebuffers();
     }
 
     void ShadowSystem::createShadowRenderPass() {
+        VkAttachmentDescription osAttachments[2] = {};
 
+        // Find a suitable depth format
+        VkBool32 validDepthFormat = frameBufferDepthFormat;
+        assert(validDepthFormat);
+
+        osAttachments[0].format = VK_FORMAT_R32_SFLOAT;
+        osAttachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        osAttachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        osAttachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        osAttachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        osAttachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        osAttachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        osAttachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        osAttachments[1].format = frameBufferDepthFormat;
+        osAttachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        osAttachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        osAttachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        osAttachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        osAttachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        osAttachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        osAttachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference colorReference{};
+        colorReference.attachment = 0;
+        colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference depthReference{};
+        depthReference.attachment = 1;
+        depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &colorReference;
+        subpass.pDepthStencilAttachment = &depthReference;
+
+        VkRenderPassCreateInfo renderPassCreateInfo{};
+        renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassCreateInfo.attachmentCount = 2;
+        renderPassCreateInfo.pAttachments = osAttachments;
+        renderPassCreateInfo.subpassCount = 1;
+        renderPassCreateInfo.pSubpasses = &subpass;
+
+        if (vkCreateRenderPass(bananDevice.device(), &renderPassCreateInfo, nullptr, &renderPass) != VK_SUCCESS) {
+            throw std::runtime_error("unable to create shadow render pass");
+        }
     }
 
     void ShadowSystem::createShadowDepthResources() {
@@ -165,5 +217,42 @@ namespace Banan {
         info.imageView = shadowDepthCubemapImageView;
         info.sampler = shadowDepthCubemapImageSampler;
         return info;
+    }
+
+    void ShadowSystem::update(BananFrameInfo &frameInfo, GlobalUbo &ubo) {
+
+    }
+
+    void ShadowSystem::render(BananFrameInfo &frameInfo) {
+
+    }
+
+    void ShadowSystem::createPipelineLayout(VkDescriptorSetLayout globalSetLayout) {
+        VkPushConstantRange pushConstantRange{};
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        pushConstantRange.offset = 0;
+        pushConstantRange.size = 0;
+
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts{globalSetLayout};
+
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+        if (vkCreatePipelineLayout(bananDevice.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create shadow pipeline layout!");
+        }
+    }
+
+    void ShadowSystem::createPipeline() {
+        assert(pipelineLayout != nullptr && "pipelineLayout must be created before pipeline");
+
+        // why not use the existing variables HEIGHT or WIDTH? - On high pixel density displays such as apples "retina" display these values are incorrect, but the swap chain corrects these values
+        PipelineConfigInfo pipelineConfig{};
+        BananPipeline::shadowPipelineConfigInfo(pipelineConfig);
+
+        bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/shadow.vert.spv", "shaders/shadow.frag.spv", pipelineConfig);
     }
 }
