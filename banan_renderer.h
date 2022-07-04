@@ -30,16 +30,18 @@ namespace Banan{
         VkCommandBuffer getCurrentCommandBuffer() const;
 
         int getFrameIndex() const;
+        VkDescriptorImageInfo* getShadowDescriptorInfo();
 
         VkCommandBuffer beginFrame();
         void endFrame();
         void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
         void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
         void beginShadowRenderPass(VkCommandBuffer commandBuffer);
-        void endShadowRenderPass(VkCommandBuffer commandBuffer);
+        void endShadowRenderPass(VkCommandBuffer commandBuffer, uint32_t faceindex);
 
     private:
         void createCommandBuffers();
+        void createShadowMapper();
         void freeCommandBuffers();
         void recreateSwapChain();
 

@@ -16,8 +16,8 @@ namespace Banan {
 
             ShadowSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
 
-            void update(BananFrameInfo &frameInfo, GlobalUbo &ubo);
-            void render(BananFrameInfo &frameInfo);
+            void render(BananFrameInfo &frameInfo, uint32_t faceindex);
+            void update(BananFrameInfo &frameInfo, uint32_t faceindex, VkImage cubeMapImage, VkImage colorImage);
 
         private:
             void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);

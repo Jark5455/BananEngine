@@ -17,9 +17,11 @@ namespace Banan {
         BananShadowMapper(BananDevice &device);
         ~BananShadowMapper();
 
-        VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        VkDescriptorImageInfo *descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         VkRenderPass getRenderPass();
         VkFramebuffer getFramebuffer();
+
+        void update(VkCommandBuffer commandBuffer, uint32_t faceindex);
 
     private:
         void createShadowRenderPass();

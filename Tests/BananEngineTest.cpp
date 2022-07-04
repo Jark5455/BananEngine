@@ -5,6 +5,7 @@
 #include "BananEngineTest.h"
 #include "Systems/PointLightSystem.h"
 #include "Systems/SimpleRenderSystem.h"
+#include "Systems/ShadowSystem.h"
 #include "KeyboardMovementController.h"
 
 #define GLM_FORCE_RADIANS
@@ -48,6 +49,7 @@ namespace Banan{
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+        ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), globalSetLayout->getDescriptorSetLayout()};
         BananCamera camera{};
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
@@ -58,6 +60,8 @@ namespace Banan{
             writer.writeBuffer(0, &bufferInfo);
 
             writer.writeImages(1, gameObjectsTextureInfo);
+            writer.writeImage(2, bananRenderer.getShadowDescriptorInfo());
+
             writer.build(globalDescriptorSets[i], gameObjectsTextureInfo.size());
         }
 
@@ -98,6 +102,13 @@ namespace Banan{
                 renderSystem.render(frameInfo);
                 pointLightSystem.render(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
+
+                for (int i = 0; i < 6; i++) {
+                    bananRenderer.beginShadowRenderPass(commandBuffer);
+                    shadowSystem.render(frameInfo, i);
+                    bananRenderer.endShadowRenderPass(commandBuffer, i);
+                }
+
                 bananRenderer.endFrame();
             }
         }

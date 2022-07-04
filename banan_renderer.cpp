@@ -9,6 +9,7 @@
 
 namespace Banan {
     BananRenderer::BananRenderer(BananWindow &window, BananDevice &device) : bananWindow{window}, bananDevice{device} {
+        bananShadowMapper = std::make_unique<BananShadowMapper>(device);
         recreateSwapChain();
         createCommandBuffers();
     }
@@ -211,8 +212,14 @@ namespace Banan {
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
     }
 
-    void BananRenderer::endShadowRenderPass(VkCommandBuffer commandBuffer) {
+    void BananRenderer::endShadowRenderPass(VkCommandBuffer commandBuffer, uint32_t faceindex) {
         assert(commandBuffer == getCurrentCommandBuffer() && "Can't end render pass on command buffer that is different to the current frame");
         vkCmdEndRenderPass(commandBuffer);
+
+        bananShadowMapper->update(commandBuffer, faceindex);
+    }
+
+    VkDescriptorImageInfo* BananRenderer::getShadowDescriptorInfo() {
+        return bananShadowMapper->descriptorInfo();
     }
 }

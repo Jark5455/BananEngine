@@ -13,12 +13,36 @@ namespace Banan {
         createPipeline(renderPass);
     }
 
-    void ShadowSystem::update(BananFrameInfo &frameInfo, GlobalUbo &ubo) {
+    void ShadowSystem::render(BananFrameInfo &frameInfo, uint32_t faceindex) {
+        glm::mat4 viewMatrix = glm::mat4(1.0f);
+        switch (faceindex)
+        {
+            case 0: // POSITIVE_X
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                break;
+            case 1:	// NEGATIVE_X
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                break;
+            case 2:	// POSITIVE_Y
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                break;
+            case 3:	// NEGATIVE_Y
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                break;
+            case 4:	// POSITIVE_Z
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                break;
+            case 5:	// NEGATIVE_Z
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+                break;
+        }
 
-    }
-
-    void ShadowSystem::render(BananFrameInfo &frameInfo) {
-
+        bananPipeline->bind(frameInfo.commandBuffer);
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
+        vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &viewMatrix);
+        vkCmdDraw(frameInfo.commandBuffer, 6, 1, 0, 0);
     }
 
     void ShadowSystem::createPipelineLayout(VkDescriptorSetLayout globalSetLayout) {
