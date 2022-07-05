@@ -17,7 +17,7 @@ namespace Banan {
         BananShadowMapper(BananDevice &device);
         ~BananShadowMapper();
 
-        VkDescriptorImageInfo *descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         VkRenderPass getRenderPass();
         VkFramebuffer getFramebuffer();
 
@@ -36,6 +36,7 @@ namespace Banan {
         VkDeviceMemory shadowDepthCubemapImageMemory;
         VkImageView shadowDepthCubemapImageView;
         VkSampler shadowDepthCubemapImageSampler;
+        VkImageLayout shadowDepthCubemapLayout;
 
         VkImage shadowDepthImage;
         VkDeviceMemory shadowDepthImageMemory;

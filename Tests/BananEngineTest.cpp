@@ -56,13 +56,17 @@ namespace Banan{
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
 
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
+
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
             writer.writeBuffer(0, &bufferInfo);
 
             writer.writeImages(1, gameObjectsTextureInfo);
-            writer.writeImage(2, bananRenderer.getShadowDescriptorInfo());
 
-            writer.build(globalDescriptorSets[i], gameObjectsTextureInfo.size());
+            auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
+            writer.writeImage(2, &shadowInfo);
+
+            uint32_t descriptorCounts[] = {1, static_cast<uint32_t>(gameObjectsTextureInfo.size()), 1};
+            writer.build(globalDescriptorSets[i], descriptorCounts);
         }
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -117,7 +121,7 @@ namespace Banan{
     }
 
     void BananEngineTest::loadGameObjects() {
-        /*BananModel::Builder vaseBuilder{};
+        BananModel::Builder vaseBuilder{};
         vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
         vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
 
@@ -127,11 +131,11 @@ namespace Banan{
         vase.transform.translation = {0.f, 0.5f, 0.f};
         vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
-        gameObjects.emplace(vase.getId(), std::move(vase));*/
+        gameObjects.emplace(vase.getId(), std::move(vase));
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/checkers.png");
+        floorBuilder.loadTexture("banan_assets/textures/grey.png");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
@@ -143,7 +147,7 @@ namespace Banan{
         gameObjects.emplace(floor.getId(), std::move(floor));
 
         /*BananModel::Builder otherfloorBuilder{};
-        otherfloorBuilder.loadModel("banan_assets/source/obamium.blend");
+        otherfloorBuilder.loadModel("banan_assets/obamium.blend");
         otherfloorBuilder.loadTexture("banan_assets/textures/base.png");
 
         std::shared_ptr<BananModel> otherfloorModel = std::make_shared<BananModel>(bananDevice, otherfloorBuilder);

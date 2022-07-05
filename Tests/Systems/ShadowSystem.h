@@ -15,6 +15,7 @@ namespace Banan {
             ShadowSystem &operator=(const ShadowSystem &) = delete;
 
             ShadowSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
+            ~ShadowSystem();
 
             void render(BananFrameInfo &frameInfo, uint32_t faceindex);
             void update(BananFrameInfo &frameInfo, uint32_t faceindex, VkImage cubeMapImage, VkImage colorImage);

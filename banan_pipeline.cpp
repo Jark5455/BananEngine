@@ -206,6 +206,8 @@ namespace Banan{
         configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
         configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
         configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
+        configInfo.rasterizationInfo.lineWidth = 1.0f;
         configInfo.rasterizationInfo.flags = 0;
 
         configInfo.colorBlendAttachment.colorWriteMask = 0xf;
@@ -229,10 +231,10 @@ namespace Banan{
         configInfo.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
         configInfo.multisampleInfo.flags = 0;
 
-        std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        configInfo.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
         configInfo.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        configInfo.dynamicStateInfo.pDynamicStates = dynamicStateEnables.data();
-        configInfo.dynamicStateInfo.dynamicStateCount = dynamicStateEnables.size();
+        configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
+        configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
         configInfo.dynamicStateInfo.flags = 0;
     }
 }

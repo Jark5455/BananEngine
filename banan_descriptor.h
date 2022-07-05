@@ -62,7 +62,7 @@ namespace Banan {
             BananDescriptorPool(const BananDescriptorPool &) = delete;
             BananDescriptorPool &operator=(const BananDescriptorPool &) = delete;
 
-            bool allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, uint32_t descriptor_count) const;
+            bool allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, uint32_t *descriptor_count) const;
             void freeDescriptors(std::vector<VkDescriptorSet> &descriptors) const;
             void resetPool();
 
@@ -80,7 +80,7 @@ namespace Banan {
             BananDescriptorWriter &writeImage(uint32_t binding, VkDescriptorImageInfo *imageInfo);
             BananDescriptorWriter &writeImages(uint32_t binding, std::unordered_map<uint32_t, VkDescriptorImageInfo> &imageInfos);
 
-            bool build(VkDescriptorSet &set, uint32_t descriptor_count);
+            bool build(VkDescriptorSet &set, uint32_t *descriptor_count);
             void overwrite(VkDescriptorSet &set);
 
         private:

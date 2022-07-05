@@ -30,7 +30,7 @@ namespace Banan{
         VkCommandBuffer getCurrentCommandBuffer() const;
 
         int getFrameIndex() const;
-        VkDescriptorImageInfo* getShadowDescriptorInfo();
+        VkDescriptorImageInfo getShadowDescriptorInfo();
 
         VkCommandBuffer beginFrame();
         void endFrame();

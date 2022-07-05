@@ -219,7 +219,7 @@ namespace Banan {
         bananShadowMapper->update(commandBuffer, faceindex);
     }
 
-    VkDescriptorImageInfo* BananRenderer::getShadowDescriptorInfo() {
+    VkDescriptorImageInfo BananRenderer::getShadowDescriptorInfo() {
         return bananShadowMapper->descriptorInfo();
     }
 }

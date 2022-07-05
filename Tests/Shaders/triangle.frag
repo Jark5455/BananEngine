@@ -32,7 +32,7 @@ layout(binding = 1) uniform sampler2D texSampler[];
 void main() {
 
     int index = int(push.modelMatrix[3][3]);
-    vec4 texture = texture(texSampler[index], 100.0 * fragTexCoord);
+    vec4 texture = texture(texSampler[index], fragTexCoord);
 
     vec3 diffuseLight = texture.rgb;
     vec3 specularLight = vec3(0.0);

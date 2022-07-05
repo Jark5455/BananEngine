@@ -8,9 +8,18 @@
 
 namespace Banan {
 
+    struct ShadowPushConstantData {
+        glm::mat4 modelMatrix{1.f};
+        glm::mat4 viewMatrix{1.f};
+    };
+
     ShadowSystem::ShadowSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout) : bananDevice{device} {
         createPipelineLayout(globalSetLayout);
         createPipeline(renderPass);
+    }
+
+    ShadowSystem::~ShadowSystem() {
+        vkDestroyPipelineLayout(bananDevice.device(), pipelineLayout, nullptr);
     }
 
     void ShadowSystem::render(BananFrameInfo &frameInfo, uint32_t faceindex) {
@@ -41,15 +50,27 @@ namespace Banan {
 
         bananPipeline->bind(frameInfo.commandBuffer);
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
-        vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &viewMatrix);
-        vkCmdDraw(frameInfo.commandBuffer, 6, 1, 0, 0);
+
+        for (auto &kv : frameInfo.gameObjects) {
+            auto &obj = kv.second;
+            if (obj.model == nullptr) continue;
+
+            ShadowPushConstantData push{};
+            push.modelMatrix = obj.transform.mat4();
+            push.viewMatrix = viewMatrix;
+
+            vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ShadowPushConstantData), &push);
+
+            obj.model->bind(frameInfo.commandBuffer);
+            obj.model->draw(frameInfo.commandBuffer);
+        }
     }
 
     void ShadowSystem::createPipelineLayout(VkDescriptorSetLayout globalSetLayout) {
         VkPushConstantRange pushConstantRange{};
         pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         pushConstantRange.offset = 0;
-        pushConstantRange.size = sizeof(glm::mat4);
+        pushConstantRange.size = sizeof(ShadowPushConstantData);
 
         std::vector<VkDescriptorSetLayout> descriptorSetLayouts{globalSetLayout};
 
@@ -70,8 +91,10 @@ namespace Banan {
         // why not use the existing variables HEIGHT or WIDTH? - On high pixel density displays such as apples "retina" display these values are incorrect, but the swap chain corrects these values
         PipelineConfigInfo pipelineConfig{};
         BananPipeline::shadowPipelineConfigInfo(pipelineConfig);
-        pipelineConfig.renderPass = renderPass;
+        pipelineConfig.attributeDescriptions = BananModel::Vertex::getAttributeDescriptions();
+        pipelineConfig.bindingDescriptions = BananModel::Vertex::getBindingDescriptions();
         pipelineConfig.pipelineLayout = pipelineLayout;
+        pipelineConfig.renderPass = renderPass;
 
         bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/shadow.vert.spv", "shaders/shadow.frag.spv", pipelineConfig);
     }
