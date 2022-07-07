@@ -1,5 +1,4 @@
 #version 450
-#extension GL_EXT_nonuniform_qualifier : enable
 
 layout(location = 0) in vec3 position; //used why does glsl optimize this out
 layout(location = 1) in vec3 color; //unused
@@ -23,14 +22,21 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
 } ubo;
 
 layout(push_constant) uniform Push {
-    mat4 modelMatrix;
-    mat4 viewMatrix;
+    mat4 model;
+    mat4 view;
 } push;
+
+out gl_PerVertex
+{
+    vec4 gl_Position;
+};
 
 void main()
 {
-    vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
-    gl_Position = ubo.projection * push.viewMatrix * positionWorld;
+    mat4 actuallModelMatrix = push.model;
+    actuallModelMatrix[3][3] = 1.0;
 
+    vec4 positionWorld = actuallModelMatrix * vec4(position, 1.0);
+    gl_Position = ubo.projection * push.view * positionWorld;
     outPos = vec4(position, 1.0);
 }

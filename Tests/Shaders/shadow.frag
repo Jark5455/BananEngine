@@ -1,5 +1,4 @@
 #version 450
-#extension GL_EXT_nonuniform_qualifier : enable
 
 layout(location = 0) in vec4 inPos;
 
@@ -26,8 +25,6 @@ layout(push_constant) uniform Push {
 
 void main()
 {
-    for (int i = 0; i < ubo.numLights; i++) {
-        vec3 lightVec = inPos.xyz - ubo.pointLights[i].xyz;
-        outColor = 1.0;
-    }
+    vec3 lightVec = inPos.xyz - ubo.pointLights[0].position.xyz;
+    outColor = length(lightVec);
 }

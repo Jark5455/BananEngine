@@ -65,13 +65,13 @@ void main() {
         blinnTerm = clamp(blinnTerm, 0, 1);
         blinnTerm = pow(blinnTerm, 512.0f);
         specularLight += light.color.xyz * attenuation * blinnTerm;
-
-        vec3 lightVec = fragPosWorld - light.position.xyz;
-        float sampledDist = texture(shadowCubeMap, lightVec).r;
-        float dist = length(lightVec);
-
-        shadow = (dist <= sampledDist + EPSILON) ? 1.0 : SHADOW_OPACITY;
     }
+
+    vec3 lightVec = fragPosWorld - ubo.pointLights[0].position.xyz;
+    float sampledDist = texture(shadowCubeMap, lightVec).r;
+    float dist = length(lightVec);
+
+    shadow = (dist <= sampledDist + EPSILON) ? 1.0 : SHADOW_OPACITY;
 
     outColor = vec4(diffuseLight * fragColor + specularLight * fragColor, 1.0) * shadow;
 }
