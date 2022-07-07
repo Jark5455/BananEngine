@@ -1,12 +1,12 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : enable
 
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 color;
-layout(location = 2) in vec3 normal;
-layout(location = 3) in vec2 uv;
+layout(location = 0) in vec3 position; //used why does glsl optimize this out
+layout(location = 1) in vec3 color; //unused
+layout(location = 2) in vec3 normal; //unused
+layout(location = 3) in vec2 uv; //unused
 
-layout (location = 0) out vec4 outPos;
-layout (location = 1) out vec3 outLightPos;
+layout(location = 0) out vec4 outPos;
 
 struct PointLight {
     vec4 position;
@@ -27,15 +27,10 @@ layout(push_constant) uniform Push {
     mat4 viewMatrix;
 } push;
 
-out gl_PerVertex
-{
-    vec4 gl_Position;
-};
-
 void main()
 {
-    gl_Position = ubo.projection * push.viewMatrix * push.modelMatrix * vec4(position, 1.0);
+    vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
+    gl_Position = ubo.projection * push.viewMatrix * positionWorld;
 
     outPos = vec4(position, 1.0);
-    outLightPos = ubo.pointLights[0].position.xyz;
 }

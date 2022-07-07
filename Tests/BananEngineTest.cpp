@@ -102,16 +102,16 @@ namespace Banan{
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
 
-                bananRenderer.beginSwapChainRenderPass(commandBuffer);
-                renderSystem.render(frameInfo);
-                pointLightSystem.render(frameInfo);
-                bananRenderer.endSwapChainRenderPass(commandBuffer);
-
                 for (int i = 0; i < 6; i++) {
                     bananRenderer.beginShadowRenderPass(commandBuffer);
                     shadowSystem.render(frameInfo, i);
                     bananRenderer.endShadowRenderPass(commandBuffer, i);
                 }
+
+                bananRenderer.beginSwapChainRenderPass(commandBuffer);
+                renderSystem.render(frameInfo);
+                pointLightSystem.render(frameInfo);
+                bananRenderer.endSwapChainRenderPass(commandBuffer);
 
                 bananRenderer.endFrame();
             }
@@ -135,7 +135,7 @@ namespace Banan{
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/grey.png");
+        floorBuilder.loadTexture("banan_assets/textures/white.png");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();

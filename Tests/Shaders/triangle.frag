@@ -1,6 +1,9 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
 
+#define EPSILON 0.15
+#define SHADOW_OPACITY 0.5
+
 layout (location = 0) in vec3 fragColor;
 layout (location = 1) in vec3 fragPosWorld;
 layout (location = 2) in vec3 fragNormalWorld;
@@ -28,18 +31,22 @@ layout(push_constant) uniform Push {
 } push;
 
 layout(binding = 1) uniform sampler2D texSampler[];
+layout(binding = 2) uniform samplerCube shadowCubeMap;
+
 
 void main() {
 
     int index = int(push.modelMatrix[3][3]);
-    vec4 texture = texture(texSampler[index], fragTexCoord);
+    vec4 texture_sampler = texture(texSampler[index], fragTexCoord);
 
-    vec3 diffuseLight = texture.rgb;
+    vec3 diffuseLight = texture_sampler.rgb;
     vec3 specularLight = vec3(0.0);
     vec3 surfaceNormal = normalize(fragNormalWorld);
 
     vec3 cameraWorldPos = ubo.inverseView[3].xyz;
     vec3 viewDirection = normalize(cameraWorldPos - fragPosWorld);
+
+    float shadow;
 
     for (int i = 0; i < ubo.numLights; i++) {
         PointLight light = ubo.pointLights[i];
@@ -58,7 +65,13 @@ void main() {
         blinnTerm = clamp(blinnTerm, 0, 1);
         blinnTerm = pow(blinnTerm, 512.0f);
         specularLight += light.color.xyz * attenuation * blinnTerm;
+
+        vec3 lightVec = fragPosWorld - light.position.xyz;
+        float sampledDist = texture(shadowCubeMap, lightVec).r;
+        float dist = length(lightVec);
+
+        shadow = (dist <= sampledDist + EPSILON) ? 1.0 : SHADOW_OPACITY;
     }
 
-    outColor = vec4(diffuseLight * fragColor + specularLight * fragColor, 1.0);
+    outColor = vec4(diffuseLight * fragColor + specularLight * fragColor, 1.0) * shadow;
 }
