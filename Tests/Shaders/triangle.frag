@@ -8,6 +8,7 @@ layout (location = 0) in vec3 fragColor;
 layout (location = 1) in vec3 fragPosWorld;
 layout (location = 2) in vec3 fragNormalWorld;
 layout (location = 3) in vec2 fragTexCoord;
+layout (location = 4) in vec3 fragPos;
 
 layout (location = 0) out vec4 outColor;
 
@@ -37,9 +38,15 @@ layout(binding = 2) uniform samplerCube shadowCubeMap;
 void main() {
 
     int index = int(push.modelMatrix[3][3]);
-    vec4 texture_sampler = texture(texSampler[index], fragTexCoord);
+    vec3 diffuseLight;
 
-    vec3 diffuseLight = texture_sampler.rgb;
+    if (textureQueryLevels(texSampler[index]) == 0) {
+        diffuseLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
+    } else {
+        vec4 texture_sampler = texture(texSampler[index], fragTexCoord);
+        diffuseLight = texture_sampler.rgb;
+    }
+
     vec3 specularLight = vec3(0.0);
     vec3 surfaceNormal = normalize(fragNormalWorld);
 
@@ -67,7 +74,7 @@ void main() {
         specularLight += light.color.xyz * attenuation * blinnTerm;
     }
 
-    vec3 lightVec = fragPosWorld - ubo.pointLights[0].position.xyz;
+    vec3 lightVec = fragPos - ubo.pointLights[0].position.xyz;
     float sampledDist = texture(shadowCubeMap, lightVec).r;
     float dist = length(lightVec);
 

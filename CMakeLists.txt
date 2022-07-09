@@ -28,14 +28,14 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${GLFW_INCLUDE_DIRS})
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 
 execute_process(COMMAND mkdir ${CMAKE_BINARY_DIR}/shaders)
-execute_process(COMMAND /opt/vulkan/1.3.216.0/x86_64/bin/glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.frag -o ${CMAKE_BINARY_DIR}/shaders/triangle.frag.spv)
-execute_process(COMMAND /opt/vulkan/1.3.216.0/x86_64/bin/glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.vert -o ${CMAKE_BINARY_DIR}/shaders/triangle.vert.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.frag -o ${CMAKE_BINARY_DIR}/shaders/triangle.frag.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.vert -o ${CMAKE_BINARY_DIR}/shaders/triangle.vert.spv)
 
-execute_process(COMMAND /opt/vulkan/1.3.216.0/x86_64/bin/glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/point_light.frag -o ${CMAKE_BINARY_DIR}/shaders/point_light.frag.spv)
-execute_process(COMMAND /opt/vulkan/1.3.216.0/x86_64/bin/glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/point_light.vert -o ${CMAKE_BINARY_DIR}/shaders/point_light.vert.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/point_light.frag -o ${CMAKE_BINARY_DIR}/shaders/point_light.frag.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/point_light.vert -o ${CMAKE_BINARY_DIR}/shaders/point_light.vert.spv)
 
-execute_process(COMMAND /opt/vulkan/1.3.216.0/x86_64/bin/glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/shadow.frag -o ${CMAKE_BINARY_DIR}/shaders/shadow.frag.spv)
-execute_process(COMMAND /opt/vulkan/1.3.216.0/x86_64/bin/glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/shadow.vert -o ${CMAKE_BINARY_DIR}/shaders/shadow.vert.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/shadow.frag -o ${CMAKE_BINARY_DIR}/shaders/shadow.frag.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/shadow.vert -o ${CMAKE_BINARY_DIR}/shaders/shadow.vert.spv)
 
 execute_process(COMMAND cp -r ${CMAKE_SOURCE_DIR}/Tests/banan_assets ${CMAKE_BINARY_DIR})
 
