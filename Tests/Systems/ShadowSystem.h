@@ -18,7 +18,6 @@ namespace Banan {
             ~ShadowSystem();
 
             void render(BananFrameInfo &frameInfo, uint32_t faceindex);
-            void update(BananFrameInfo &frameInfo, uint32_t faceindex, VkImage cubeMapImage, VkImage colorImage);
 
         private:
             void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);

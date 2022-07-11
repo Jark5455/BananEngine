@@ -62,24 +62,24 @@ namespace Banan {
         switch (faceindex)
         {
             case 0: // POSITIVE_X
-                viewMatrix = glm::rotate(viewMatrix, glm::pi<float>() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-                viewMatrix = glm::rotate(viewMatrix, glm::pi<float>(), glm::vec3(1.0f, 0.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 break;
             case 1:	// NEGATIVE_X
-                viewMatrix = glm::rotate(viewMatrix, glm::pi<float>() * 3.0f / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-                viewMatrix = glm::rotate(viewMatrix, glm::pi<float>(), glm::vec3(1.0f, 0.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 break;
             case 2:	// POSITIVE_Y
-                viewMatrix = glm::rotate(viewMatrix, glm::pi<float>() * 3.0f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 break;
             case 3:	// NEGATIVE_Y
-                viewMatrix = glm::rotate(viewMatrix, glm::pi<float>() / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 break;
             case 4:	// POSITIVE_Z
-                viewMatrix = glm::rotate(viewMatrix, glm::pi<float>(), glm::vec3(1.0f, 0.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 break;
             case 5:	// NEGATIVE_Z
-                viewMatrix = glm::rotate(viewMatrix, glm::pi<float>(), glm::vec3(0.0f, 0.0f, 1.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
                 break;
         }
 
@@ -92,7 +92,7 @@ namespace Banan {
 
             ShadowPushConstantData push{};
             push.modelMatrix = obj.transform.mat4();
-            push.viewMatrix = viewMatrix;
+            push.viewMatrix = viewMatrix * glm::translate(glm::mat4{1.f}, frameInfo.gameObjects.at(2).transform.translation);
 
             vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ShadowPushConstantData), &push);
 

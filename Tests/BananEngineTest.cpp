@@ -86,17 +86,15 @@ namespace Banan{
             camera.setViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
 
             float aspect = bananRenderer.getAspectRatio();
-            camera.setOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
-            camera.setPerspectiveProjection(glm::radians(90.f), aspect, 0.1f, 10.f);
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
                 BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], gameObjects};
 
                 GlobalUbo ubo{};
-                ubo.projection = camera.getProjection();
-                ubo.view = camera.getView();
-                ubo.inverseView = camera.getInverseView();
+                ubo.projection = glm::perspective((float)(M_PI / 2.0), 1.0f, 0.1f, 1024.0f);
+                ubo.view = glm::mat4{1.0f};
+                ubo.inverseView = glm::mat4{1.0f};
 
                 pointLightSystem.update(frameInfo, ubo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
@@ -107,6 +105,16 @@ namespace Banan{
                     shadowSystem.render(frameInfo, i);
                     bananRenderer.endShadowRenderPass(commandBuffer, i);
                 }
+
+                camera.setOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
+                camera.setPerspectiveProjection(glm::radians(90.f), aspect, 0.1f, 10.f);
+
+                ubo.projection = camera.getProjection();
+                ubo.view = camera.getView();
+                ubo.inverseView = camera.getInverseView();
+
+                uboBuffers[frameIndex]->writeToBuffer(&ubo);
+                uboBuffers[frameIndex]->flush();
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
                 renderSystem.render(frameInfo);

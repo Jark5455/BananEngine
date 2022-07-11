@@ -36,7 +36,6 @@ void main()
     mat4 actuallModelMatrix = push.model;
     actuallModelMatrix[3][3] = 1.0;
 
-    vec4 positionWorld = actuallModelMatrix * vec4(position, 1.0);
-    gl_Position = ubo.projection * push.view * positionWorld;
+    gl_Position = ubo.projection * push.view * actuallModelMatrix * vec4(position, 1.0);
     outPos = vec4(position, 1.0);
 }
