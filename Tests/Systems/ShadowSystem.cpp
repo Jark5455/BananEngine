@@ -83,6 +83,8 @@ namespace Banan {
                 break;
         }
 
+        viewMatrix *= glm::translate(glm::mat4{1.f}, {-frameInfo.gameObjects.at(2).transform.translation.x, -frameInfo.gameObjects.at(2).transform.translation.y, -frameInfo.gameObjects.at(2).transform.translation.z});
+
         bananPipeline->bind(frameInfo.commandBuffer);
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
 
@@ -92,7 +94,7 @@ namespace Banan {
 
             ShadowPushConstantData push{};
             push.modelMatrix = obj.transform.mat4();
-            push.viewMatrix = viewMatrix * glm::translate(glm::mat4{1.f}, frameInfo.gameObjects.at(2).transform.translation);
+            push.viewMatrix = viewMatrix;
 
             vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ShadowPushConstantData), &push);
 
