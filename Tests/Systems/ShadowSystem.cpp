@@ -66,11 +66,11 @@ namespace Banan {
                 viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 break;
             case 1:	// NEGATIVE_X
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
                 viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 break;
             case 2:	// POSITIVE_Y
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                viewMatrix = glm::rotate(viewMatrix, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 break;
             case 3:	// NEGATIVE_Y
                 viewMatrix = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -83,8 +83,6 @@ namespace Banan {
                 break;
         }
 
-        viewMatrix *= glm::translate(glm::mat4{1.f}, {-frameInfo.gameObjects.at(2).transform.translation.x, -frameInfo.gameObjects.at(2).transform.translation.y, -frameInfo.gameObjects.at(2).transform.translation.z});
-
         bananPipeline->bind(frameInfo.commandBuffer);
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
 
@@ -93,8 +91,13 @@ namespace Banan {
             if (obj.model == nullptr) continue;
 
             ShadowPushConstantData push{};
+
+            obj.transform.translation -= frameInfo.gameObjects.at(2).transform.translation;
+
             push.modelMatrix = obj.transform.mat4();
             push.viewMatrix = viewMatrix;
+
+            obj.transform.translation += frameInfo.gameObjects.at(2).transform.translation;
 
             vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ShadowPushConstantData), &push);
 
