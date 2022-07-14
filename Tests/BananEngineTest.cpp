@@ -50,7 +50,12 @@ namespace Banan{
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
         ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+
         BananCamera camera{};
+
+        BananCamera shadowCubeMapCamera{};
+        shadowCubeMapCamera.setOrthographicProjection(-1, 1, -1, 1, -1, 1);
+        shadowCubeMapCamera.setPerspectiveProjection(glm::radians(90.f), 1, 0.1f, 1024.f);
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
@@ -91,13 +96,13 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], gameObjects};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], gameObjects};
 
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();
                 ubo.view = camera.getView();
                 ubo.inverseView = camera.getInverseView();
-                ubo.shadowProjection = glm::perspective((float)(M_PI / 2.0), 1.0f, 0.1f, 1024.f);
+                ubo.shadowProjection = shadowCubeMapCamera.getProjection();
 
                 pointLightSystem.update(frameInfo, ubo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);

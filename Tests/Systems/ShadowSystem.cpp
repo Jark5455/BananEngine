@@ -58,28 +58,26 @@ namespace Banan {
     }
 
     void ShadowSystem::render(BananFrameInfo &frameInfo, uint32_t faceindex) {
-        glm::mat4 viewMatrix = glm::mat4(1.0f);
+
         switch (faceindex)
         {
             case 0: // POSITIVE_X
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {180.0f, 90.0f, 0.0f});
                 break;
             case 1:	// NEGATIVE_X
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {180.0f, 270.0f, 0.0f});
                 break;
             case 2:	// POSITIVE_Y
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {270.0f, 0.0f, 0.0f});
                 break;
             case 3:	// NEGATIVE_Y
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {90.0f, 0.0f, 0.0f});
                 break;
             case 4:	// POSITIVE_Z
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {180.0f, 0.0f, 0.0f});
                 break;
             case 5:	// NEGATIVE_Z
-                viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 180.0f});
                 break;
         }
 
@@ -93,10 +91,8 @@ namespace Banan {
             ShadowPushConstantData push{};
 
             obj.transform.translation -= frameInfo.gameObjects.at(2).transform.translation;
-
             push.modelMatrix = obj.transform.mat4();
-            push.viewMatrix = viewMatrix;
-
+            push.viewMatrix = frameInfo.shadowCubeMapCamera.getView();
             obj.transform.translation += frameInfo.gameObjects.at(2).transform.translation;
 
             vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ShadowPushConstantData), &push);
