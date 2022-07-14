@@ -62,22 +62,22 @@ namespace Banan {
         switch (faceindex)
         {
             case 0: // POSITIVE_X
-                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {180.0f, 90.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {90.0f, 180.0f, 0.0f});
                 break;
             case 1:	// NEGATIVE_X
-                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {180.0f, 270.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {270.0f, 180.0f, 0.0f});
                 break;
             case 2:	// POSITIVE_Y
-                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {270.0f, 0.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 270.0f, 0.0f});
                 break;
             case 3:	// NEGATIVE_Y
-                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {90.0f, 0.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 90.0f, 0.0f});
                 break;
             case 4:	// POSITIVE_Z
-                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {180.0f, 0.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 180.0f, 0.0f});
                 break;
             case 5:	// NEGATIVE_Z
-                frameInfo.shadowCubeMapCamera.setViewDirection({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 180.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 0.0f, 180.0f});
                 break;
         }
 
@@ -90,10 +90,8 @@ namespace Banan {
 
             ShadowPushConstantData push{};
 
-            obj.transform.translation -= frameInfo.gameObjects.at(2).transform.translation;
             push.modelMatrix = obj.transform.mat4();
             push.viewMatrix = frameInfo.shadowCubeMapCamera.getView();
-            obj.transform.translation += frameInfo.gameObjects.at(2).transform.translation;
 
             vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ShadowPushConstantData), &push);
 
