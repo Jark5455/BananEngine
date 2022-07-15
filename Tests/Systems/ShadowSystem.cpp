@@ -62,22 +62,22 @@ namespace Banan {
         switch (faceindex)
         {
             case 0: // POSITIVE_X
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {90.0f, 180.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(180.0f), glm::radians(90.0f), 0.0f});
                 break;
             case 1:	// NEGATIVE_X
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {270.0f, 180.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(180.0f), glm::radians(270.0f), 0.0f});
                 break;
             case 2:	// POSITIVE_Y
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 270.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(270.0f), 0.0f, 0.0f});
                 break;
             case 3:	// NEGATIVE_Y
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 90.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(90.0f), 0.0f, 0.0f});
                 break;
             case 4:	// POSITIVE_Z
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 180.0f, 0.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(180.0f), 0.0f, 0.0f});
                 break;
             case 5:	// NEGATIVE_Z
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 0.0f, 180.0f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 0.0f, glm::radians(180.0f)});
                 break;
         }
 
