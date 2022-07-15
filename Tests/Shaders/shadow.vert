@@ -38,5 +38,5 @@ void main()
     actuallModelMatrix[3][3] = 1.0;
 
     gl_Position = ubo.shadowProjection * push.view * actuallModelMatrix * vec4(position, 1.0);
-    outPos = vec4(position, 1.0);
+    outPos = actuallModelMatrix * vec4(position, 1.0);
 }

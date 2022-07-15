@@ -75,7 +75,7 @@ void main() {
         specularLight += light.color.xyz * attenuation * blinnTerm;
     }
 
-    vec3 lightVec = fragPos - ubo.pointLights[0].position.xyz;
+    vec3 lightVec = fragPosWorld - ubo.pointLights[0].position.xyz;
     float sampledDist = texture(shadowCubeMap, lightVec).r;
     float dist = length(lightVec);
 
