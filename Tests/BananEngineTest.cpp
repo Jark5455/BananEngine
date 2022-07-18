@@ -139,18 +139,6 @@ namespace Banan{
         vase.transform.scale = {3.f, 3.f, 3.f};
         gameObjects.emplace(vase.getId(), std::move(vase));
 
-        BananModel::Builder floorBuilder{};
-        floorBuilder.loadModel("banan_assets/quad.obj");
-
-        std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
-        auto floor = BananGameObject::createGameObject();
-        floor.model = floorModel;
-        floor.transform.translation = {0.f, .5f, 0.f};
-        floor.transform.rotation = {0.f, 0.f, 0.f};
-        floor.transform.scale = {100.f, 1.f, 100.f};
-        floor.transform.id = (int) floor.getId();
-        gameObjects.emplace(floor.getId(), std::move(floor));
-
         /*BananModel::Builder otherfloorBuilder{};
         otherfloorBuilder.loadModel("banan_assets/obamium.blend");
         otherfloorBuilder.loadTexture("banan_assets/textures/base.png");
@@ -163,6 +151,18 @@ namespace Banan{
         otherfloor.transform.scale = {1.f, 1.f, 1.f};
         otherfloor.transform.id = (int) otherfloor.getId();
         gameObjects.emplace(otherfloor.getId(), std::move(otherfloor));*/
+
+        BananModel::Builder floorBuilder{};
+        floorBuilder.loadModel("banan_assets/quad.obj");
+
+        std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
+        auto floor = BananGameObject::createGameObject();
+        floor.model = floorModel;
+        floor.transform.translation = {0.f, .5f, 0.f};
+        floor.transform.rotation = {0.f, 0.f, 0.f};
+        floor.transform.scale = {100.f, 1.f, 100.f};
+        floor.transform.id = (int) floor.getId();
+        gameObjects.emplace(floor.getId(), std::move(floor));
 
         std::vector<glm::vec3> lightColors{
                 {1.f, 1.f, 1.f}
