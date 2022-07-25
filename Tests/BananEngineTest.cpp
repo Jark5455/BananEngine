@@ -54,8 +54,7 @@ namespace Banan{
         BananCamera camera{};
 
         BananCamera shadowCubeMapCamera{};
-        shadowCubeMapCamera.setOrthographicProjection(-1, 1, -1, 1, -1, 1);
-        shadowCubeMapCamera.setPerspectiveProjection(glm::radians(90.f), 1, 0.1f, 1024.f);
+        shadowCubeMapCamera.setOrthographicProjection(-512, 512, -512, 512, 0.1f, 1024.f);
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
@@ -173,6 +172,7 @@ namespace Banan{
             pointLight.color = lightColors[i];
             auto rotateLight = glm::rotate(glm::mat4(1.f), (static_cast<float>(i) * glm::two_pi<float>()) / static_cast<float>(lightColors.size()), {0.f, -1.f, 0.f});
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
+            pointLight.transform.id = 0;
             gameObjects.emplace(pointLight.getId(), std::move(pointLight));
         }
 
