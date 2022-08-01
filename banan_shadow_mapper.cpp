@@ -107,7 +107,6 @@ namespace Banan {
                                         shadowDepthCubemapImageMemory);
         bananDevice.transitionImageLayout(shadowDepthCubemapImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 6);
-        shadowDepthCubemapLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
         VkSamplerCreateInfo samplerCreateInfo{};
         samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -133,8 +132,7 @@ namespace Banan {
         imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
         imageViewCreateInfo.format = format;
         imageViewCreateInfo.components = { VK_COMPONENT_SWIZZLE_R };
-        imageViewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-        imageViewCreateInfo.subresourceRange.layerCount = 6;
+        imageViewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 6 };
         imageViewCreateInfo.image = shadowDepthCubemapImage;
 
         if (vkCreateImageView(bananDevice.device(), &imageViewCreateInfo, nullptr, &shadowDepthCubemapImageView) !=
@@ -240,7 +238,7 @@ namespace Banan {
     }
 
     VkDescriptorImageInfo BananShadowMapper::descriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
-        return VkDescriptorImageInfo{shadowDepthCubemapImageSampler, shadowDepthCubemapImageView, shadowDepthCubemapLayout};
+        return VkDescriptorImageInfo{shadowDepthCubemapImageSampler, shadowDepthCubemapImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     }
 
     VkRenderPass BananShadowMapper::getRenderPass() {
@@ -252,6 +250,7 @@ namespace Banan {
     }
 
     void BananShadowMapper::update(VkCommandBuffer commandBuffer, uint32_t faceindex) {
+
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -292,7 +291,6 @@ namespace Banan {
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
         vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-        shadowDepthCubemapLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
         VkImageCopy copyRegion = {};
 
@@ -339,6 +337,5 @@ namespace Banan {
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
         vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-        shadowDepthCubemapLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 }

@@ -61,23 +61,23 @@ namespace Banan {
 
         switch (faceindex)
         {
-            case 0: // POSITIVE_X - correct
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, glm::radians(90.0f), 0.0f});
+            case 0: // POSITIVE_X
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(180.f), glm::radians(270.f), 0.f});
                 break;
-            case 1:	// NEGATIVE_X - correct
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, glm::radians(270.0f), 0.0f});
+            case 1:	// NEGATIVE_X
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(180.f), glm::radians(90.f), 0.f});
                 break;
-            case 2:	// POSITIVE_Y - correct
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(270.0f), 0.0f, 0.0f});
+            case 2:	// POSITIVE_Y
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(270.f), 0.f, 0.f});
                 break;
-            case 3:	// NEGATIVE_Y - correct
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(90.0f), 0.0f, 0.0f});
+            case 3:	// NEGATIVE_Y
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(90.f), 0.f, 0.f});
                 break;
-            case 4:	// POSITIVE_Z - correct
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.0f, 0.0f, 0.0f});
+            case 5:	// POSITIVE_Z
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.f, 0.f, glm::radians(180.f)});
                 break;
-            case 5:	// NEGATIVE_Z - correct
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(180.0f), 0.0f, glm::radians(180.0f)});
+            case 4:	// NEGATIVE_Z
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(180.f), 0.f, 0.f});
                 break;
         }
 

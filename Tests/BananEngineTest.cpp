@@ -54,7 +54,7 @@ namespace Banan{
         BananCamera camera{};
 
         BananCamera shadowCubeMapCamera{};
-        shadowCubeMapCamera.setOrthographicProjection(-512, 512, -512, 512, 0.1f, 1024.f);
+        shadowCubeMapCamera.setPerspectiveProjection(glm::radians(90.f), 1, 0.1f, 1024.f);
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
@@ -133,7 +133,7 @@ namespace Banan{
         std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
-        vase.transform.translation = {0.0f, 0.5f, 0.0f};
+        vase.transform.translation = {0.f, 0.5f, 0.f};
         vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
         gameObjects.emplace(vase.getId(), std::move(vase));

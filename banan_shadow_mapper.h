@@ -36,7 +36,6 @@ namespace Banan {
         VkDeviceMemory shadowDepthCubemapImageMemory;
         VkImageView shadowDepthCubemapImageView;
         VkSampler shadowDepthCubemapImageSampler;
-        VkImageLayout shadowDepthCubemapLayout;
 
         VkImage shadowDepthImage;
         VkDeviceMemory shadowDepthImageMemory;
