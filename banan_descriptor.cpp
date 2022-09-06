@@ -28,7 +28,7 @@ namespace Banan {
     BananDescriptorSetLayout::BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings) : bananDevice{bananDevice}, bindings{bindings} {
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
         for (auto kv : bindings) {
-            setLayoutBindings.push_back(kv.second);
+            setLayoutBindings.insert(setLayoutBindings.begin(), kv.second);
         }
 
         std::vector<VkDescriptorBindingFlagsEXT> bindless_flags = {0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT};
