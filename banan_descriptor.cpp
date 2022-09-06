@@ -31,12 +31,12 @@ namespace Banan {
             setLayoutBindings.push_back(kv.second);
         }
 
-        VkDescriptorBindingFlags bindless_flags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+        std::vector<VkDescriptorBindingFlagsEXT> bindless_flags = {0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT};
 
         VkDescriptorSetLayoutBindingFlagsCreateInfoEXT descriptorSetLayoutBindingFlagsCreateInfoExt{};
         descriptorSetLayoutBindingFlagsCreateInfoExt.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
         descriptorSetLayoutBindingFlagsCreateInfoExt.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
-        descriptorSetLayoutBindingFlagsCreateInfoExt.pBindingFlags = &bindless_flags;
+        descriptorSetLayoutBindingFlagsCreateInfoExt.pBindingFlags = bindless_flags.data();
         descriptorSetLayoutBindingFlagsCreateInfoExt.pNext = nullptr;
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};

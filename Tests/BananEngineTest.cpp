@@ -133,7 +133,7 @@ namespace Banan{
         std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
-        vase.transform.translation = {0.f, 0.5f, 0.f};
+        vase.transform.translation = {0.f, .5f, 0.f};
         vase.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
         gameObjects.emplace(vase.getId(), std::move(vase));
@@ -153,6 +153,7 @@ namespace Banan{
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
+        floorBuilder.loadTexture("banan_assets/textures/pepe.jpg");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();

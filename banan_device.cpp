@@ -142,6 +142,7 @@ namespace Banan {
         indexingFeatures.runtimeDescriptorArray = VK_TRUE;
         indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
         indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+        indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
 
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
