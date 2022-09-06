@@ -196,9 +196,9 @@ namespace Banan {
 
         VkViewport viewport{};
         viewport.x = 0;
-        viewport.y = 0;
+        viewport.y = 1024;
         viewport.width = 1024;
-        viewport.height = 1024;
+        viewport.height = -1024;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 

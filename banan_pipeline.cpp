@@ -204,7 +204,7 @@ namespace Banan{
 
         configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
-        configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+        configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_FRONT_BIT;
         configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
         configInfo.rasterizationInfo.lineWidth = 1.0f;
