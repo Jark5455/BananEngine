@@ -54,7 +54,7 @@ namespace Banan{
         BananCamera camera{};
 
         BananCamera shadowCubeMapCamera{};
-        shadowCubeMapCamera.setPerspectiveProjection(glm::radians(90.f), 1.f, 0.1f, 1024.f);
+        shadowCubeMapCamera.setPerspectiveProjection(glm::radians(-90.f), 1.f, 0.1f, 1024.f);
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (int i = 0; i < globalDescriptorSets.size(); i++) {

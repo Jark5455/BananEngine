@@ -68,10 +68,10 @@ namespace Banan {
                 frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(180.f), glm::radians(90.f), 0.f});
                 break;
             case 2:	// POSITIVE_Y
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(270.f), 0.f, 0.f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(270.f), 0.f, glm::radians(180.f)});
                 break;
             case 3:	// NEGATIVE_Y
-                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(90.f), 0.f, 0.f});
+                frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {glm::radians(90.f), 0.f, glm::radians(180.f)});
                 break;
             case 4:	// POSITIVE_Z
                 frameInfo.shadowCubeMapCamera.setViewYXZ(frameInfo.gameObjects.at(2).transform.translation, {0.f, 0.f, glm::radians(180.f)});
