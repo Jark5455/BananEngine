@@ -10,36 +10,51 @@
 
 namespace Banan {
     class BananImage {
-    public:
-        BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
-        ~BananImage();
+        public:
+            BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
+            ~BananImage();
 
-        BananImage(const BananImage&) = delete;
-        BananImage& operator=(const BananImage&) = delete;
+            BananImage(const BananImage&) = delete;
+            BananImage& operator=(const BananImage&) = delete;
 
-        VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+            VkDescriptorImageInfo descriptorInfo();
+            VkImage getImageHandle();
 
-        VkImage getImageHandle();
-        VkImageView getImageViewHandle();
-        VkSampler getImageSamplerHandle();
+        private:
 
-    private:
+            void createTextureImageView();
+            void createTextureSampler();
 
-        void createTextureImageView();
-        void createTextureSampler();
+            BananDevice &bananDevice;
+            VkImage image;
+            VkFormat imageFormat;
+            VkImageView imageView;
+            VkSampler imageSampler;
+            VkDeviceMemory memory;
+            uint32_t mipLevels;
+    };
 
-        static VkDeviceSize getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment);
+    class BananCubemap {
+        public:
+            BananCubemap(BananDevice &device, uint32_t sideLength, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
+            ~BananCubemap();
 
-        BananDevice &bananDevice;
-        VkImage image;
-        VkFormat imageFormat;
-        VkImageView imageView;
-        VkSampler imageSampler;
-        VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        VkDeviceMemory memory;
+            BananCubemap(const BananCubemap&) = delete;
+            BananCubemap& operator=(const BananCubemap&) = delete;
 
-        uint32_t width;
-        uint32_t height;
-        uint32_t mipLevels;
+            VkDescriptorImageInfo descriptorInfo();
+            VkImage getImageHandle();
+
+        private:
+            void createTextureImageView();
+            void createTextureSampler();
+
+            BananDevice &bananDevice;
+            VkImage cubemapImage;
+            VkFormat cubemapImageFormat;
+            VkImageView cubemapImageView;
+            VkSampler cubemapImageSampler;
+            VkDeviceMemory memory;
+            uint32_t mipLevels;
     };
 }

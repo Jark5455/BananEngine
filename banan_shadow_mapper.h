@@ -5,6 +5,7 @@
 #pragma once
 
 #include "banan_device.h"
+#include "banan_image.h"
 #include "banan_pipeline.h"
 #include "banan_frame_info.h"
 
@@ -32,18 +33,9 @@ namespace Banan {
         VkFormat frameBufferDepthFormat;
         VkFramebuffer frameBuffer;
 
-        VkImage shadowDepthCubemapImage;
-        VkDeviceMemory shadowDepthCubemapImageMemory;
-        VkImageView shadowDepthCubemapImageView;
-        VkSampler shadowDepthCubemapImageSampler;
-
-        VkImage shadowDepthImage;
-        VkDeviceMemory shadowDepthImageMemory;
-        VkImageView shadowDepthImageView;
-
-        VkImage shadowColorImage;
-        VkDeviceMemory shadowColorImageMemory;
-        VkImageView shadowColorImageView;
+        std::unique_ptr<BananCubemap> bananCubemap;
+        std::unique_ptr<BananImage> bananDepthImage;
+        std::unique_ptr<BananImage> bananColorImage;
 
         BananDevice &bananDevice;
     };

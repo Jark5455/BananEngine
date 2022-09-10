@@ -17,19 +17,6 @@ namespace Banan {
     }
 
     BananShadowMapper::~BananShadowMapper() {
-        vkDestroyImageView(bananDevice.device(), shadowDepthCubemapImageView, nullptr);
-        vkDestroyImage(bananDevice.device(), shadowDepthCubemapImage, nullptr);
-        vkDestroySampler(bananDevice.device(), shadowDepthCubemapImageSampler, nullptr);
-        vkFreeMemory(bananDevice.device(), shadowDepthCubemapImageMemory, nullptr);
-
-        vkDestroyImageView(bananDevice.device(), shadowDepthImageView, nullptr);
-        vkDestroyImage(bananDevice.device(), shadowDepthImage, nullptr);
-        vkFreeMemory(bananDevice.device(), shadowDepthImageMemory, nullptr);
-
-        vkDestroyImageView(bananDevice.device(), shadowColorImageView, nullptr);
-        vkDestroyImage(bananDevice.device(), shadowColorImage, nullptr);
-        vkFreeMemory(bananDevice.device(), shadowColorImageMemory, nullptr);
-
         vkDestroyFramebuffer(bananDevice.device(), frameBuffer, nullptr);
         vkDestroyRenderPass(bananDevice.device(), renderPass, nullptr);
     }
@@ -86,142 +73,21 @@ namespace Banan {
     }
 
     void BananShadowMapper::createShadowDepthResources() {
-        VkFormat format = VK_FORMAT_R32_SFLOAT;
-
-        // Cube map image description
-        VkImageCreateInfo imageCreateInfo{};
-        imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageCreateInfo.format = format;
-        imageCreateInfo.extent = {1024, 1024, 1};
-        imageCreateInfo.mipLevels = 1;
-        imageCreateInfo.arrayLayers = 6;
-        imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-
-        bananDevice.createImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, shadowDepthCubemapImage,
-                                        shadowDepthCubemapImageMemory);
-        bananDevice.transitionImageLayout(shadowDepthCubemapImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
-                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 6);
-
-        VkSamplerCreateInfo samplerCreateInfo{};
-        samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
-        samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
-        samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        samplerCreateInfo.mipLodBias = 0.0f;
-        samplerCreateInfo.maxAnisotropy = 1.0f;
-        samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
-        samplerCreateInfo.minLod = 0.0f;
-        samplerCreateInfo.maxLod = 1.0f;
-        samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-
-        if (vkCreateSampler(bananDevice.device(), &samplerCreateInfo, nullptr, &shadowDepthCubemapImageSampler) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create shadow depth cubemap sampler");
-        }
-
-        VkImageViewCreateInfo imageViewCreateInfo{};
-        imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-        imageViewCreateInfo.format = format;
-        imageViewCreateInfo.components = { VK_COMPONENT_SWIZZLE_R };
-        imageViewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 6 };
-        imageViewCreateInfo.image = shadowDepthCubemapImage;
-
-        if (vkCreateImageView(bananDevice.device(), &imageViewCreateInfo, nullptr, &shadowDepthCubemapImageView) !=
-            VK_SUCCESS) {
-            throw std::runtime_error("failed to create shadow depth cubemap image view");
-        }
+        bananCubemap = std::make_unique<BananCubemap>(bananDevice, 1024, 1, VK_FORMAT_R32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        bananDevice.transitionImageLayout(bananCubemap->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 6);
     }
 
     void BananShadowMapper::createShadowFramebuffers() {
-        VkImageCreateInfo imageCreateInfo{};
-        imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageCreateInfo.format = VK_FORMAT_R32_SFLOAT;
-        imageCreateInfo.extent.width = 1024;
-        imageCreateInfo.extent.height = 1024;
-        imageCreateInfo.extent.depth = 1;
-        imageCreateInfo.mipLevels = 1;
-        imageCreateInfo.arrayLayers = 1;
-        imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        // Image of the framebuffer is blit source
-        imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        bananDevice.createImageWithInfo(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, shadowColorImage,
-                                        shadowColorImageMemory);
-        bananDevice.transitionImageLayout(shadowColorImage, VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED,
-                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
+        bananColorImage = std::make_unique<BananImage>(bananDevice, 1024, 1024, 1, VK_FORMAT_R32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        bananDevice.transitionImageLayout(bananColorImage->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
 
-        VkImageViewCreateInfo colorImageViewCreateInfo{};
-        colorImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        colorImageViewCreateInfo.image = shadowColorImage;
-        colorImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        colorImageViewCreateInfo.format = VK_FORMAT_R32_SFLOAT;
-        colorImageViewCreateInfo.flags = 0;
-        colorImageViewCreateInfo.subresourceRange = {};
-        colorImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-        colorImageViewCreateInfo.subresourceRange.levelCount = 1;
-        colorImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-        colorImageViewCreateInfo.subresourceRange.layerCount = 1;
-
-        if (vkCreateImageView(bananDevice.device(), &colorImageViewCreateInfo, nullptr, &shadowColorImageView) !=
-            VK_SUCCESS) {
-            throw std::runtime_error("failed to create shadow color image view");
-        }
-
-        VkImageCreateInfo depthImageCreateInfo{};
-        depthImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        depthImageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-        depthImageCreateInfo.format = frameBufferDepthFormat;
-        depthImageCreateInfo.extent.width = 1024;
-        depthImageCreateInfo.extent.height = 1024;
-        depthImageCreateInfo.extent.depth = 1;
-        depthImageCreateInfo.mipLevels = 1;
-        depthImageCreateInfo.arrayLayers = 1;
-        depthImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        depthImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        // Image of the framebuffer is blit source
-        depthImageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depthImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        depthImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        bananDevice.createImageWithInfo(depthImageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, shadowDepthImage,
-                                        shadowDepthImageMemory);
-        bananDevice.transitionImageLayout(shadowDepthImage, frameBufferDepthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
-                                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, 1);
-
-        VkImageViewCreateInfo depthStencilView{};
-        depthStencilView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        depthStencilView.format = frameBufferDepthFormat;
-        depthStencilView.flags = 0;
-        depthStencilView.subresourceRange = {};
-        depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        depthStencilView.subresourceRange.baseMipLevel = 0;
-        depthStencilView.subresourceRange.levelCount = 1;
-        depthStencilView.subresourceRange.baseArrayLayer = 0;
-        depthStencilView.subresourceRange.layerCount = 1;
-        depthStencilView.image = shadowDepthImage;
-
-        if (vkCreateImageView(bananDevice.device(), &depthStencilView, nullptr, &shadowDepthImageView) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create shadow depth image view");
-        }
+        bananDepthImage = std::make_unique<BananImage>(bananDevice, 1024, 1024, 1, frameBufferDepthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        bananDevice.transitionImageLayout(bananDepthImage->getImageHandle(), frameBufferDepthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, 1);
 
         VkImageView attachments[2];
-        attachments[0] = shadowColorImageView;
-        attachments[1] = shadowDepthImageView;
+        attachments[0] = bananColorImage->descriptorInfo().imageView;
+        attachments[1] = bananDepthImage->descriptorInfo().imageView;
 
         VkFramebufferCreateInfo fbufCreateInfo{};
         fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -238,7 +104,7 @@ namespace Banan {
     }
 
     VkDescriptorImageInfo BananShadowMapper::descriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
-        return VkDescriptorImageInfo{shadowDepthCubemapImageSampler, shadowDepthCubemapImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        return bananCubemap->descriptorInfo();
     }
 
     VkRenderPass BananShadowMapper::getRenderPass() {
@@ -259,7 +125,7 @@ namespace Banan {
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-        barrier.image = shadowColorImage;
+        barrier.image = bananColorImage->getImageHandle();
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
@@ -272,7 +138,9 @@ namespace Banan {
         barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-        vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        //vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        bananDevice.transitionImageLayout(bananColorImage->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 1, 1);
+
 
         VkImageSubresourceRange cubeFaceSubresourceRange = {};
         cubeFaceSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -284,13 +152,14 @@ namespace Banan {
         barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
-        barrier.image = shadowDepthCubemapImage;
+        barrier.image = bananCubemap->getImageHandle();
         barrier.subresourceRange = cubeFaceSubresourceRange;
 
         barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-        vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        //vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        bananDevice.transitionImageLayout(bananCubemap->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 6);
 
         VkImageCopy copyRegion = {};
 
@@ -310,9 +179,9 @@ namespace Banan {
         copyRegion.extent.height = 1024;
         copyRegion.extent.depth = 1;
 
-        vkCmdCopyImage(commandBuffer, shadowColorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, shadowDepthCubemapImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+        vkCmdCopyImage(commandBuffer, bananColorImage->getImageHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, bananCubemap->getImageHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-        barrier.image = shadowColorImage;
+        barrier.image = bananColorImage->getImageHandle();
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
@@ -327,7 +196,7 @@ namespace Banan {
 
         vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-        barrier.image = shadowDepthCubemapImage;
+        barrier.image = bananCubemap->getImageHandle();
         barrier.subresourceRange.baseArrayLayer = faceindex;
 
         barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
