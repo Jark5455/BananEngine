@@ -8,20 +8,18 @@
 
 namespace Banan {
 
-    BananShadowMapper::BananShadowMapper(BananDevice &device) : bananDevice{device} {
+    BananShadowMapper::BananShadowMapper(BananDevice &device, id_t id) : bananDevice{device}, id{id} {
         frameBufferDepthFormat = device.findSupportedFormat({VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         createShadowDepthResources();
-        createShadowRenderPass();
         createShadowFramebuffers();
     }
 
     BananShadowMapper::~BananShadowMapper() {
         vkDestroyFramebuffer(bananDevice.device(), frameBuffer, nullptr);
-        vkDestroyRenderPass(bananDevice.device(), renderPass, nullptr);
     }
 
-    void BananShadowMapper::createShadowRenderPass() {
+    void BananShadowMapper::createShadowRenderPass(BananDevice &bananDevice) {
         VkAttachmentDescription osAttachments[2] = {};
 
         // Find a suitable depth format
@@ -107,10 +105,6 @@ namespace Banan {
         return bananCubemap->descriptorInfo();
     }
 
-    VkRenderPass BananShadowMapper::getRenderPass() {
-        return renderPass;
-    }
-
     VkFramebuffer BananShadowMapper::getFramebuffer() {
         return frameBuffer;
     }
@@ -141,5 +135,13 @@ namespace Banan {
 
         bananDevice.transitionImageLayout(commandBuffer, bananColorImage->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
         bananDevice.transitionImageLayout(commandBuffer, bananCubemap->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 6);
+    }
+
+    BananShadowMapper::id_t BananShadowMapper::getId() {
+        return id;
+    }
+
+    VkRenderPass BananShadowMapper::getRenderPass() {
+        return renderPass;
     }
 }

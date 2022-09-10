@@ -15,6 +15,7 @@ namespace Banan {
     struct PointLight{
         glm::vec4 positon{};
         glm::vec4 color{};
+        int id;
     };
 
     struct GlobalUbo {

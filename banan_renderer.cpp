@@ -9,13 +9,15 @@
 
 namespace Banan {
     BananRenderer::BananRenderer(BananWindow &window, BananDevice &device) : bananWindow{window}, bananDevice{device} {
-        bananShadowMapper = std::make_unique<BananShadowMapper>(device);
         recreateSwapChain();
         createCommandBuffers();
+
+        BananShadowMapper::createShadowRenderPass(device);
     }
 
     BananRenderer::~BananRenderer() {
         freeCommandBuffers();
+        vkDestroyRenderPass(bananDevice.device(), BananShadowMapper::getRenderPass(), nullptr);
     }
 
     bool BananRenderer::isFrameInProgress() const {
@@ -172,11 +174,7 @@ namespace Banan {
         return bananSwapChain->extentAspectRatio();
     }
 
-    VkRenderPass BananRenderer::getShadowRenderPass() const {
-        return bananShadowMapper->getRenderPass();
-    }
-
-    void BananRenderer::beginShadowRenderPass(VkCommandBuffer commandBuffer) {
+    void BananRenderer::beginShadowRenderPass(VkCommandBuffer commandBuffer, BananShadowMapper &mapper, id_t pointLightId) {
         assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer that is different to the current frame");
         VkClearValue clearValues[2];
         clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -185,8 +183,8 @@ namespace Banan {
         VkRenderPassBeginInfo renderPassBeginInfo{};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         // Reuse render pass from example pass
-        renderPassBeginInfo.renderPass = bananShadowMapper->getRenderPass();
-        renderPassBeginInfo.framebuffer = bananShadowMapper->getFramebuffer();
+        renderPassBeginInfo.renderPass = BananShadowMapper::getRenderPass();
+        renderPassBeginInfo.framebuffer = mapper.getFramebuffer();
         renderPassBeginInfo.renderArea.extent.width = 1024;
         renderPassBeginInfo.renderArea.extent.height = 1024;
         renderPassBeginInfo.clearValueCount = 2;
@@ -212,14 +210,10 @@ namespace Banan {
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
     }
 
-    void BananRenderer::endShadowRenderPass(VkCommandBuffer commandBuffer, uint32_t faceindex) {
+    void BananRenderer::endShadowRenderPass(VkCommandBuffer commandBuffer, BananShadowMapper &mapper, id_t pointLightId, uint32_t faceindex) {
         assert(commandBuffer == getCurrentCommandBuffer() && "Can't end render pass on command buffer that is different to the current frame");
         vkCmdEndRenderPass(commandBuffer);
 
-        bananShadowMapper->update(commandBuffer, faceindex);
-    }
-
-    VkDescriptorImageInfo BananRenderer::getShadowDescriptorInfo() {
-        return bananShadowMapper->descriptorInfo();
+        mapper.update(commandBuffer, faceindex);
     }
 }

@@ -40,6 +40,9 @@ namespace Banan{
         std::unique_ptr<BananDescriptorPool> bindlessPool;
         std::shared_ptr<BananLogger> bananLogger;
         BananGameObject::Map gameObjects;
+        BananShadowMapper::Map shadowMappers;
+
         std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsTextureInfo;
+        std::unordered_map<uint32_t, VkDescriptorImageInfo> shadowMappersInfo;
     };
 }

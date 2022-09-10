@@ -26,7 +26,7 @@ namespace Banan{
                 .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsTextureInfo.size())
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * shadowMappersInfo.size())
                 .build();
     }
 
@@ -43,13 +43,13 @@ namespace Banan{
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsTextureInfo.size())
-                .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, shadowMappersInfo.size())
                 .build();
 
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
-        ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+        ShadowSystem shadowSystem{bananDevice, BananShadowMapper::getRenderPass(), globalSetLayout->getDescriptorSetLayout()};
 
         BananCamera camera{};
 
@@ -66,8 +66,7 @@ namespace Banan{
 
             writer.writeImages(1, gameObjectsTextureInfo);
 
-            auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
-            writer.writeImage(2, &shadowInfo);
+            writer.writeImages(2, shadowMappersInfo);
 
             uint32_t descriptorCounts[] = {1, static_cast<uint32_t>(gameObjectsTextureInfo.size()), 1};
             writer.build(globalDescriptorSets[i], descriptorCounts);
@@ -107,10 +106,12 @@ namespace Banan{
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
 
-                for (int i = 0; i < 6; i++) {
-                    bananRenderer.beginShadowRenderPass(commandBuffer);
-                    shadowSystem.render(frameInfo, i);
-                    bananRenderer.endShadowRenderPass(commandBuffer, i);
+                for (auto &kv : shadowMappers) {
+                    for (int i = 0; i < 6; i++) {
+                        bananRenderer.beginShadowRenderPass(commandBuffer, kv.second, kv.second.getId());
+                        shadowSystem.render(frameInfo, i);
+                        bananRenderer.endShadowRenderPass(commandBuffer, kv.second, kv.second.getId(), i);
+                    }
                 }
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -182,6 +183,12 @@ namespace Banan{
                 if (kv.second.model->isTextureLoaded()) {
                     gameObjectsTextureInfo.emplace(kv.first, kv.second.model->getDescriptorImageInfo());
                 }
+            }
+
+            if (kv.second.pointLight != nullptr) {
+                BananShadowMapper mapper = BananShadowMapper(bananDevice, kv.first);
+                shadowMappersInfo.emplace(mapper.getId(), mapper.descriptorInfo());
+                shadowMappers.emplace(mapper.getId(), std::move(mapper));
             }
         }
     }

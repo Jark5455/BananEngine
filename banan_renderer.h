@@ -24,31 +24,27 @@ namespace Banan{
         ~BananRenderer();
 
         VkRenderPass getSwapChainRenderPass() const;
-        VkRenderPass getShadowRenderPass() const;
         float getAspectRatio() const;
         bool isFrameInProgress() const;
         VkCommandBuffer getCurrentCommandBuffer() const;
 
         int getFrameIndex() const;
-        VkDescriptorImageInfo getShadowDescriptorInfo();
 
         VkCommandBuffer beginFrame();
         void endFrame();
         void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
         void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
-        void beginShadowRenderPass(VkCommandBuffer commandBuffer);
-        void endShadowRenderPass(VkCommandBuffer commandBuffer, uint32_t faceindex);
+        void beginShadowRenderPass(VkCommandBuffer commandBuffer, BananShadowMapper &mapper, id_t pointLightId);
+        void endShadowRenderPass(VkCommandBuffer commandBuffer, BananShadowMapper &mapper, id_t pointLightId, uint32_t faceindex);
 
     private:
         void createCommandBuffers();
-        void createShadowMapper();
         void freeCommandBuffers();
         void recreateSwapChain();
 
         BananWindow &bananWindow;
         BananDevice &bananDevice;
         std::unique_ptr<BananSwapChain> bananSwapChain;
-        std::unique_ptr<BananShadowMapper> bananShadowMapper;
         std::vector<VkCommandBuffer> commandBuffers;
 
         uint32_t currentImageIndex;
