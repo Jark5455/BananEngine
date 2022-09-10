@@ -11,40 +11,32 @@
 
 namespace Banan {
     class BananShadowMapper {
-        public:
-            using id_t = unsigned int;
-            using Map = std::unordered_map<id_t, BananShadowMapper>;
+    public:
+        BananShadowMapper(const BananShadowMapper &) = delete;
+        BananShadowMapper &operator=(const BananShadowMapper &) = delete;
 
-            BananShadowMapper(BananDevice &device, id_t id);
-            ~BananShadowMapper();
+        BananShadowMapper(BananDevice &device);
+        ~BananShadowMapper();
 
-            BananShadowMapper(const BananShadowMapper &) = delete;
-            BananShadowMapper &operator=(const BananShadowMapper &) = delete;
-            BananShadowMapper(BananShadowMapper &&) = default;
-            BananShadowMapper &operator=(BananShadowMapper &&) = default;
+        VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        VkRenderPass getRenderPass();
+        VkFramebuffer getFramebuffer();
 
-            VkDescriptorImageInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-            VkFramebuffer getFramebuffer();
-            BananShadowMapper::id_t getId();
+        void update(VkCommandBuffer commandBuffer, uint32_t faceindex);
 
-            void update(VkCommandBuffer commandBuffer, uint32_t faceindex);
+    private:
+        void createShadowRenderPass();
+        void createShadowDepthResources();
+        void createShadowFramebuffers();
 
-            static void createShadowRenderPass(BananDevice &device);
-            static VkRenderPass getRenderPass();
+        VkRenderPass renderPass;
+        VkFormat frameBufferDepthFormat;
+        VkFramebuffer frameBuffer;
 
-        private:
-            void createShadowDepthResources();
-            void createShadowFramebuffers();
+        std::unique_ptr<BananCubemap> bananCubemap;
+        std::unique_ptr<BananImage> bananDepthImage;
+        std::unique_ptr<BananImage> bananColorImage;
 
-            static VkRenderPass renderPass;
-            static VkFormat frameBufferDepthFormat;
-            VkFramebuffer frameBuffer;
-
-            std::unique_ptr<BananCubemap> bananCubemap;
-            std::unique_ptr<BananImage> bananDepthImage;
-            std::unique_ptr<BananImage> bananColorImage;
-
-            BananDevice &bananDevice;
-            BananShadowMapper::id_t id;
+        BananDevice &bananDevice;
     };
 }

@@ -8,18 +8,20 @@
 
 namespace Banan {
 
-    BananShadowMapper::BananShadowMapper(BananDevice &device, id_t id) : bananDevice{device}, id{id} {
+    BananShadowMapper::BananShadowMapper(BananDevice &device) : bananDevice{device} {
         frameBufferDepthFormat = device.findSupportedFormat({VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         createShadowDepthResources();
+        createShadowRenderPass();
         createShadowFramebuffers();
     }
 
     BananShadowMapper::~BananShadowMapper() {
         vkDestroyFramebuffer(bananDevice.device(), frameBuffer, nullptr);
+        vkDestroyRenderPass(bananDevice.device(), renderPass, nullptr);
     }
 
-    void BananShadowMapper::createShadowRenderPass(BananDevice &bananDevice) {
+    void BananShadowMapper::createShadowRenderPass() {
         VkAttachmentDescription osAttachments[2] = {};
 
         // Find a suitable depth format
@@ -105,55 +107,17 @@ namespace Banan {
         return bananCubemap->descriptorInfo();
     }
 
+    VkRenderPass BananShadowMapper::getRenderPass() {
+        return renderPass;
+    }
+
     VkFramebuffer BananShadowMapper::getFramebuffer() {
         return frameBuffer;
     }
 
     void BananShadowMapper::update(VkCommandBuffer commandBuffer, uint32_t faceindex) {
-
-        VkImageMemoryBarrier barrier{};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-        barrier.image = bananColorImage->getImageHandle();
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-
-        VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-        VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-
-        barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-        //vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-        bananDevice.transitionImageLayout(bananColorImage->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 1, 1);
-
-
-        VkImageSubresourceRange cubeFaceSubresourceRange = {};
-        cubeFaceSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        cubeFaceSubresourceRange.baseMipLevel = 0;
-        cubeFaceSubresourceRange.levelCount = 1;
-        cubeFaceSubresourceRange.baseArrayLayer = faceindex;
-        cubeFaceSubresourceRange.layerCount = 1;
-
-        barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-        barrier.image = bananCubemap->getImageHandle();
-        barrier.subresourceRange = cubeFaceSubresourceRange;
-
-        barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        //vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-        bananDevice.transitionImageLayout(bananCubemap->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 6);
+        bananDevice.transitionImageLayout(commandBuffer, bananColorImage->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 1, 1);
+        bananDevice.transitionImageLayout(commandBuffer, bananCubemap->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 6);
 
         VkImageCopy copyRegion = {};
 
@@ -175,38 +139,7 @@ namespace Banan {
 
         vkCmdCopyImage(commandBuffer, bananColorImage->getImageHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, bananCubemap->getImageHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-        barrier.image = bananColorImage->getImageHandle();
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-        barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-        vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-
-        barrier.image = bananCubemap->getImageHandle();
-        barrier.subresourceRange.baseArrayLayer = faceindex;
-
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    BananShadowMapper::id_t BananShadowMapper::getId() {
-        return id;
-    }
-
-    VkRenderPass BananShadowMapper::getRenderPass() {
-        return renderPass;
+        bananDevice.transitionImageLayout(commandBuffer, bananColorImage->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
+        bananDevice.transitionImageLayout(commandBuffer, bananCubemap->getImageHandle(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 6);
     }
 }

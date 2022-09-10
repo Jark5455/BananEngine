@@ -479,7 +479,11 @@ namespace Banan {
 
     void BananDevice::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        transitionImageLayout(commandBuffer, image, format, oldLayout, newLayout, mipLevels, layerCount);
+        endSingleTimeCommands(commandBuffer);
+    }
 
+        void BananDevice::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount) {
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = oldLayout;
@@ -564,7 +568,6 @@ namespace Banan {
         }
 
         vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-        endSingleTimeCommands(commandBuffer);
     }
 
     void BananDevice::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount) {

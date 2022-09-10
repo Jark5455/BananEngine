@@ -108,7 +108,6 @@ namespace Banan{
 
             ubo.pointLights[lightIndex].positon = glm::vec4(obj.transform.translation, 1.f);
             ubo.pointLights[lightIndex].color = glm::vec4(obj.color, obj.pointLight->lightIntensity);
-            ubo.pointLights[lightIndex].id = static_cast<int>(obj.getId());
             lightIndex += 1;
         }
 
