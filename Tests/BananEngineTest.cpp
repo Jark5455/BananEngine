@@ -109,7 +109,7 @@ namespace Banan{
                 for (auto &kv : shadowMappers) {
                     for (int i = 0; i < 6; i++) {
                         bananRenderer.beginShadowRenderPass(commandBuffer, kv.second, kv.second.getId());
-                        shadowSystem.render(frameInfo, i);
+                        shadowSystem.render(frameInfo, kv.second.getId(), i);
                         bananRenderer.endShadowRenderPass(commandBuffer, kv.second, kv.second.getId(), i);
                     }
                 }
