@@ -54,8 +54,6 @@ void main() {
     vec3 cameraWorldPos = ubo.inverseView[3].xyz;
     vec3 viewDirection = normalize(cameraWorldPos - fragPosWorld);
 
-    float shadow;
-
     for (int i = 0; i < ubo.numLights; i++) {
         PointLight light = ubo.pointLights[i];
         vec3 directionToLight = light.position.xyz - fragPosWorld;
@@ -79,7 +77,7 @@ void main() {
     float sampledDist = texture(shadowCubeMap, lightVec).r;
     float dist = length(lightVec);
 
-    shadow = (dist <= sampledDist + EPSILON) ? 1.0 : SHADOW_OPACITY;
+    float shadow = (dist <= sampledDist + EPSILON) ? 1.0 : SHADOW_OPACITY;
 
     outColor = vec4(diffuseLight * fragColor + specularLight * fragColor, 1.0) * shadow;
 }
