@@ -49,7 +49,7 @@ namespace Banan{
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
-        ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+        //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), globalSetLayout->getDescriptorSetLayout()};
 
         BananCamera camera{};
 
@@ -66,8 +66,8 @@ namespace Banan{
 
             writer.writeImages(1, gameObjectsTextureInfo);
 
-            auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
-            writer.writeImage(2, &shadowInfo);
+            //auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
+            //writer.writeImage(2, &shadowInfo);
 
             uint32_t descriptorCounts[] = {1, static_cast<uint32_t>(gameObjectsTextureInfo.size()), 1};
             writer.build(globalDescriptorSets[i], descriptorCounts);
@@ -107,11 +107,11 @@ namespace Banan{
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
 
-                for (int i = 0; i < 6; i++) {
+                /*for (int i = 0; i < 6; i++) {
                     bananRenderer.beginShadowRenderPass(commandBuffer);
                     shadowSystem.render(frameInfo, i);
                     bananRenderer.endShadowRenderPass(commandBuffer, i);
-                }
+                }*/
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
                 renderSystem.render(frameInfo);
@@ -164,6 +164,11 @@ namespace Banan{
         gameObjects.emplace(floor.getId(), std::move(floor));
 
         std::vector<glm::vec3> lightColors{
+                {1.f, .1f, .1f},
+                {.1f, .1f, 1.f},
+                {.1f, 1.f, .1f},
+                {1.f, 1.f, .1f},
+                {.1f, 1.f, 1.f},
                 {1.f, 1.f, 1.f}
         };
 
