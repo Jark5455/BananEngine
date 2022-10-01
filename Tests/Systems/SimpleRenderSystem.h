@@ -18,13 +18,13 @@ namespace Banan{
             SimpleRenderSystem(const SimpleRenderSystem &) = delete;
             SimpleRenderSystem &operator=(const SimpleRenderSystem &) = delete;
 
-            SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
+            SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
             ~SimpleRenderSystem();
 
             void render(BananFrameInfo &frameInfo);
 
         private:
-            void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
+            void createPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
             void createPipeline(VkRenderPass renderPass);
 
             BananDevice &bananDevice;

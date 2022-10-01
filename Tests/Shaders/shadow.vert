@@ -1,9 +1,10 @@
 #version 450
 
-layout(location = 0) in vec3 position; //used why does glsl optimize this out
-layout(location = 1) in vec3 color; //unused
-layout(location = 2) in vec3 normal; //unused
-layout(location = 3) in vec2 uv; //unused
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 color;
+layout(location = 2) in vec3 normal;
+layout(location = 3) in vec3 tangent;
+layout(location = 4) in vec2 uv;
 
 layout(location = 0) out vec4 outPos;
 

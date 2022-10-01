@@ -16,15 +16,17 @@ namespace Banan {
             class Builder {
                 public:
                     Builder(BananDevice &bananDevice) : bananDevice{bananDevice} {}
+                    Builder &addFlag(VkDescriptorBindingFlagsEXT flag);
                     Builder &addBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count = 1);
                     std::unique_ptr<BananDescriptorSetLayout> build() const;
 
                 private:
                     BananDevice &bananDevice;
                     std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
+                    std::vector<VkDescriptorBindingFlagsEXT> flags{0};
             };
 
-            BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings);
+            BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorBindingFlagsEXT> flags);
             ~BananDescriptorSetLayout();
             BananDescriptorSetLayout(const BananDescriptorSetLayout &) = delete;
             BananDescriptorSetLayout &operator=(const BananDescriptorSetLayout &) = delete;

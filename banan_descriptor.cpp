@@ -7,6 +7,7 @@
 // std
 #include <cassert>
 #include <stdexcept>
+#include <algorithm>
 
 namespace Banan {
 
@@ -22,28 +23,31 @@ namespace Banan {
     }
 
     std::unique_ptr<BananDescriptorSetLayout> BananDescriptorSetLayout::Builder::build() const {
-        return std::make_unique<BananDescriptorSetLayout>(bananDevice, bindings);
+        return std::make_unique<BananDescriptorSetLayout>(bananDevice, bindings, flags);
     }
 
-    BananDescriptorSetLayout::BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings) : bananDevice{bananDevice}, bindings{bindings} {
+    BananDescriptorSetLayout::Builder &BananDescriptorSetLayout::Builder::addFlag(VkDescriptorBindingFlagsEXT flag) {
+        flags.push_back(flag);
+        return *this;
+    }
+
+    BananDescriptorSetLayout::BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorBindingFlagsEXT> flags) : bananDevice{bananDevice}, bindings{bindings} {
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
         for (auto kv : bindings) {
             setLayoutBindings.insert(setLayoutBindings.begin(), kv.second);
         }
 
-        std::vector<VkDescriptorBindingFlagsEXT> bindless_flags = {0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT};
-
         VkDescriptorSetLayoutBindingFlagsCreateInfoEXT descriptorSetLayoutBindingFlagsCreateInfoExt{};
         descriptorSetLayoutBindingFlagsCreateInfoExt.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
         descriptorSetLayoutBindingFlagsCreateInfoExt.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
-        descriptorSetLayoutBindingFlagsCreateInfoExt.pBindingFlags = bindless_flags.data();
+        descriptorSetLayoutBindingFlagsCreateInfoExt.pBindingFlags = flags.data();
         descriptorSetLayoutBindingFlagsCreateInfoExt.pNext = nullptr;
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
         descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
-        descriptorSetLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+        descriptorSetLayoutInfo.flags = std::count(flags.begin(), flags.end(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) <= 0 ? 0 : VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
         descriptorSetLayoutInfo.pNext = &descriptorSetLayoutBindingFlagsCreateInfoExt;
 
         if (vkCreateDescriptorSetLayout(bananDevice.device(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {

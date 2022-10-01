@@ -27,6 +27,10 @@ namespace Banan {
         int numLights;
     };
 
+    struct PerModelUbo {
+        int textureId;
+    };
+
     struct BananFrameInfo {
         int frameIndex;
         float frameTime;
@@ -34,6 +38,7 @@ namespace Banan {
         BananCamera &camera;
         BananCamera &shadowCubeMapCamera;
         VkDescriptorSet globalDescriptorSet;
+        VkDescriptorSet textureDescriptorSet;
         BananGameObject::Map &gameObjects;
     };
 }

@@ -22,11 +22,20 @@ namespace Banan{
         loadGameObjects();
 
         globalPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
-                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .build();
+
+        texturePool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsTextureInfo.size())
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .build();
+
+        perModelPool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .build();
     }
 
@@ -42,12 +51,18 @@ namespace Banan{
 
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsTextureInfo.size())
-                .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
 
-        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+        auto textureSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsTextureInfo.size())
+                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .build();
+
+        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
         //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), globalSetLayout->getDescriptorSetLayout()};
 
@@ -57,20 +72,25 @@ namespace Banan{
         shadowCubeMapCamera.setPerspectiveProjection(glm::radians(-90.f), 1.f, 0.1f, 1024.f);
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        std::vector<VkDescriptorSet> textureDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
 
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
-
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
             writer.writeBuffer(0, &bufferInfo);
 
-            writer.writeImages(1, gameObjectsTextureInfo);
+            BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
+            textureWriter.writeImages(1, gameObjectsTextureInfo);
 
             //auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
-            //writer.writeImage(2, &shadowInfo);
+            //textureWriter.writeImage(2, &shadowInfo);
 
-            uint32_t descriptorCounts[] = {1, static_cast<uint32_t>(gameObjectsTextureInfo.size()), 1};
-            writer.build(globalDescriptorSets[i], descriptorCounts);
+            uint32_t globalDescriptorCounts[] = {1};
+            writer.build(globalDescriptorSets[i], globalDescriptorCounts);
+
+            uint32_t textureDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsTextureInfo.size()), 1};
+            textureWriter.build(textureDescriptorSets[i], textureDescriptorCounts);
         }
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -95,7 +115,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], gameObjects};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], gameObjects};
 
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();

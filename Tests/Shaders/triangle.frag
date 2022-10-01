@@ -32,8 +32,8 @@ layout(push_constant) uniform Push {
     mat4 normalMatrix;
 } push;
 
-layout(binding = 1) uniform sampler2D texSampler[];
-layout(binding = 2) uniform samplerCube shadowCubeMap;
+layout(set = 1, binding = 1) uniform sampler2D texSampler[];
+layout(set = 1, binding = 2) uniform samplerCube shadowCubeMap;
 
 
 void main() {

@@ -37,7 +37,9 @@ namespace Banan{
         BananRenderer bananRenderer{bananWindow, bananDevice};
 
         std::unique_ptr<BananDescriptorPool> globalPool;
-        std::unique_ptr<BananDescriptorPool> bindlessPool;
+        std::unique_ptr<BananDescriptorPool> texturePool;
+        std::unique_ptr<BananDescriptorPool> perModelPool;
+
         std::shared_ptr<BananLogger> bananLogger;
         BananGameObject::Map gameObjects;
         std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsTextureInfo;
