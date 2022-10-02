@@ -81,7 +81,7 @@ namespace Banan{
             writer.writeBuffer(0, &bufferInfo);
 
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
-            textureWriter.writeImages(1, gameObjectsTextureInfo);
+            textureWriter.writeImages(0, gameObjectsTextureInfo);
 
             //auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
             //textureWriter.writeImage(2, &shadowInfo);
