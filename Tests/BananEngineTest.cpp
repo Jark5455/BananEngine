@@ -84,7 +84,7 @@ namespace Banan{
             textureWriter.writeImages(0, gameObjectsTextureInfo);
 
             //auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
-            //textureWriter.writeImage(2, &shadowInfo);
+            //textureWriter.writeImage(1, &shadowInfo);
 
             uint32_t globalDescriptorCounts[] = {1};
             writer.build(globalDescriptorSets[i], globalDescriptorCounts);
