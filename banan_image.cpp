@@ -8,7 +8,7 @@
 #include <algorithm>
 
 namespace Banan {
-    BananImage::BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) : bananDevice{device}, mipLevels{mipLevels}, imageFormat{format} {
+    BananImage::BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) : bananDevice{device}, mipLevels{mipLevels}, imageFormat{format} {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -18,7 +18,7 @@ namespace Banan {
         imageInfo.mipLevels = mipLevels;
         imageInfo.arrayLayers = 1;
         imageInfo.format = imageFormat;
-        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.tiling = tiling;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageInfo.usage = usageFlags;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

@@ -8,8 +8,7 @@
 #include <array>
 
 namespace Banan {
-    BananRenderer::BananRenderer(BananWindow &window, BananDevice &device) : bananWindow{window}, bananDevice{device} {
-        bananShadowMapper = std::make_unique<BananShadowMapper>(device);
+    BananRenderer::BananRenderer(BananWindow &window, BananDevice &device) : bananWindow{window}, bananDevice{device}, bananShadowMapper{std::make_unique<BananShadowMapper>(device)} {
         recreateSwapChain();
         createCommandBuffers();
     }
@@ -72,7 +71,7 @@ namespace Banan {
             assert(bananSwapChain->imageCount() == oldSwapChain->imageCount() && "Swap chain image count has changed!");
         }
 
-        //TODO recreate pipeline at end of this function call
+        //TODO recreate pipelines at end of this function call
     }
 
     VkCommandBuffer BananRenderer::beginFrame() {
