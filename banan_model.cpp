@@ -18,16 +18,26 @@
 namespace Banan {
     BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice{device} {
         createTextureImage(builder.texture);
-        createVertexBuffers(builder.vertices);
+        createVertexBuffers(builder.positions, builder.misc);
         createIndexBuffers(builder.indices);
     }
 
     BananModel::~BananModel() {}
 
-    void BananModel::bind(VkCommandBuffer commandBuffer) {
+    void BananModel::bindPosition(VkCommandBuffer commandBuffer) {
         VkBuffer buffers[] = {vertexBuffer->getBuffer()};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+
+        if (hasIndexBuffer) {
+            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        }
+    }
+
+    void BananModel::bindAll(VkCommandBuffer commandBuffer) {
+        VkBuffer buffers[] = {vertexBuffer->getBuffer(), miscBuffer->getBuffer()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets);
 
         if (hasIndexBuffer) {
             vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
@@ -43,9 +53,10 @@ namespace Banan {
         }
     }
 
-    void BananModel::createVertexBuffers(const std::vector<Vertex> &vertices) {
+    void BananModel::createVertexBuffers(const std::vector<glm::vec3> &vertices, const std::vector<Vertex> &misc) {
         vertexCount = static_cast<uint32_t>(vertices.size());
         assert(vertexCount >= 3 && "Vertex count must be atleast 3");
+        assert(vertexCount == misc.size() && "Vertex count must be same as misc count");
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
         uint32_t vertexSize = sizeof(vertices[0]);
 
@@ -55,6 +66,16 @@ namespace Banan {
 
         vertexBuffer = std::make_unique<BananBuffer>(bananDevice, vertexSize, vertexCount, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         bananDevice.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
+
+        bufferSize = sizeof(misc[0]) * vertexCount;
+        uint32_t miscSize = sizeof(misc[0]);
+
+        BananBuffer miscStagingBuffer{bananDevice, miscSize, vertexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+        miscStagingBuffer.map();
+        miscStagingBuffer.writeToBuffer((void *)misc.data());
+
+        miscBuffer = std::make_unique<BananBuffer>(bananDevice, miscSize, vertexCount, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        bananDevice.copyBuffer(miscStagingBuffer.getBuffer(), miscBuffer->getBuffer(), bufferSize);
     }
 
     void BananModel::createIndexBuffers(const std::vector<uint32_t> &indices) {
@@ -79,7 +100,7 @@ namespace Banan {
     std::unique_ptr<BananModel> BananModel::createModelFromFile(BananDevice &device, const std::string &filepath) {
         Builder builder{};
         builder.loadModel(filepath);
-        std::cout << "Model Vertex Count: " + std::to_string(builder.vertices.size());
+        std::cout << "Model Vertex Count: " + std::to_string(builder.misc.size());
         return std::make_unique<BananModel>(device, builder);
     }
 
@@ -114,22 +135,25 @@ namespace Banan {
     }
 
     std::vector<VkVertexInputBindingDescription> BananModel::Vertex::getBindingDescriptions() {
-        std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
+        std::vector<VkVertexInputBindingDescription> bindingDescriptions(2);
         bindingDescriptions[0].binding = 0;
-        bindingDescriptions[0].stride = sizeof(Vertex);
+        bindingDescriptions[0].stride = sizeof(glm::vec3);
         bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
+        bindingDescriptions[1].binding = 1;
+        bindingDescriptions[1].stride = sizeof(Vertex);
+        bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         return bindingDescriptions;
     }
 
     std::vector<VkVertexInputAttributeDescription> BananModel::Vertex::getAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
-        attributeDescriptions.push_back({0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)});
-        attributeDescriptions.push_back({1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)});
-        attributeDescriptions.push_back({2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal)});
-        attributeDescriptions.push_back({3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, tangent)});
-        attributeDescriptions.push_back({4, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv)});
+        attributeDescriptions.push_back({0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0});
+        attributeDescriptions.push_back({1, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)});
+        attributeDescriptions.push_back({2, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal)});
+        attributeDescriptions.push_back({3, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, tangent)});
+        attributeDescriptions.push_back({4, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv)});
 
         return attributeDescriptions;
     }
@@ -138,7 +162,8 @@ namespace Banan {
         Assimp::Importer importer;
         const aiScene *scene = importer.ReadFile(filepath,aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices |aiProcess_GenUVCoords | aiProcess_CalcTangentSpace);
 
-        vertices.clear();
+        positions.clear();
+        misc.clear();
         indices.clear();
 
         if (scene) {
@@ -146,13 +171,14 @@ namespace Banan {
                 const aiMesh *mesh = scene->mMeshes[i];
                 for (uint32_t j = 0; j < mesh->mNumVertices; j++) {
                     Vertex v{};
-                    v.position = glm::vec3{ mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z};
-                    v.normal = glm::vec3{mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z};
-                    v.tangent = glm::vec3{mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z};
 
                     v.color =  mesh->HasVertexColors(j) ? glm::vec3{mesh->mColors[j]->r, mesh->mColors[j]->g, mesh->mColors[j]->b} : glm::vec3{1.0f, 1.0f, 1.0f};
+                    v.normal = glm::vec3{mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z};
+                    v.tangent = glm::vec3{mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z};
                     v.uv = glm::vec2{mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y};
-                    vertices.push_back(v);
+
+                    misc.push_back(v);
+                    positions.emplace_back( mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z);
                 }
 
                 for (uint32_t k = 0; k < mesh->mNumFaces; k++) {

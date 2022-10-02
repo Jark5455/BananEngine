@@ -27,7 +27,6 @@ namespace Banan {
         };
 
         struct Vertex {
-            glm::vec3 position;
             glm::vec3 color;
             glm::vec3 normal;
             glm::vec3 tangent;
@@ -38,7 +37,9 @@ namespace Banan {
         };
 
         struct Builder {
-            std::vector<Vertex> vertices{};
+            std::vector<glm::vec3> positions{};
+            std::vector<Vertex> misc{};
+
             std::vector<uint32_t> indices{};
             Texture texture{};
 
@@ -54,14 +55,15 @@ namespace Banan {
 
         static std::unique_ptr<BananModel> createModelFromFile(BananDevice &device, const std::string &filepath);
 
-        void bind(VkCommandBuffer commandBuffer);
+        void bindPosition(VkCommandBuffer commandBuffer);
+        void bindAll(VkCommandBuffer commandBuffer);
         void draw(VkCommandBuffer commandBuffer);
 
         bool isTextureLoaded();
         VkDescriptorImageInfo getDescriptorImageInfo();
 
     private:
-        void createVertexBuffers(const std::vector<Vertex> &vertices);
+        void createVertexBuffers(const std::vector<glm::vec3> &vertices, const std::vector<Vertex> &misc);
         void createIndexBuffers(const std::vector<uint32_t> &indices);
         void createTextureImage(const Texture &image);
 
@@ -71,6 +73,7 @@ namespace Banan {
         BananDevice &bananDevice;
 
         std::unique_ptr<BananBuffer> vertexBuffer;
+        std::unique_ptr<BananBuffer> miscBuffer;
         uint32_t vertexCount;
 
         std::unique_ptr<BananBuffer> indexBuffer;
