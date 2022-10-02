@@ -16,16 +16,38 @@ namespace Banan {
         public:
             BananProcrastinatedRenderer(BananWindow &window, BananDevice &device);
             ~BananProcrastinatedRenderer();
+
+            BananProcrastinatedRenderer(const BananProcrastinatedRenderer &) = delete;
+            BananProcrastinatedRenderer &operator=(const BananProcrastinatedRenderer &) = delete;
+
+            VkRenderPass getSwapchainRenderpass();
+            VkRenderPass getOffscreenRenderPass();
+
+            float getAspectRatio();
+            bool isFrameInProgress() const;
+            VkCommandBuffer getCurrentCommandBuffer();
+
+            int getCurrentFrameIndex();
+            VkCommandBuffer beginFrame();
+            void endFrame();
+            void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
+            void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
+            void beginProcrastinatedRenderpass(VkCommandBuffer commandBuffer);
+            void endProcrastinatedRenderpass(VkCommandBuffer commandBuffer);
+
         private:
 
-            void createOffscreenFramebuffers();
-            void createOffscreenRenderpass();
-            void createOffscreenImages();
+            void createProcrastinatedFramebuffers();
+            void createProcrastinatedRenderpass();
+            void createProcrastinatedImages();
+            void createProcrastinatedCommandBuffer();
             void recreateSwapChain();
             void createCommandBuffers();
 
             VkFramebuffer procrastinatedFramebuffer;
-            VkRenderPass renderPass;
+            VkRenderPass procrastinatedRenderPass;
+            VkCommandBuffer procrastinatedCommandBuffer;
+            VkSemaphore procrastinatedSemaphore;
 
             std::unique_ptr<BananImage> positionImage;
             std::unique_ptr<BananImage> colorImage;
@@ -35,8 +57,11 @@ namespace Banan {
             BananDevice &bananDevice;
             BananWindow &bananWindow;
             std::unique_ptr<BananSwapChain> bananSwapChain;
-            std::vector<VkCommandBuffer> commandBuffers;
+            std::vector<VkCommandBuffer> swapchainCommandBuffers;
 
             VkFormat depthFormat;
+            uint32_t currentImageIndex;
+            int currentFrameIndex{0};
+            bool isFrameStarted{false};
     };
 }

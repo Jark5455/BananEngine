@@ -38,7 +38,7 @@ namespace Banan{
 
         std::unique_ptr<BananDescriptorPool> globalPool;
         std::unique_ptr<BananDescriptorPool> texturePool;
-        std::unique_ptr<BananDescriptorPool> perModelPool;
+        std::unique_ptr<BananDescriptorPool> procrastinatedPool;
 
         std::shared_ptr<BananLogger> bananLogger;
         BananGameObject::Map gameObjects;

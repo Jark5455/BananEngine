@@ -15,17 +15,18 @@ namespace Banan {
 
         depthFormat = bananSwapChain->findDepthFormat();
 
-        createOffscreenRenderpass();
-        createOffscreenImages();
-        createOffscreenFramebuffers();
+        createProcrastinatedRenderpass();
+        createProcrastinatedImages();
+        createProcrastinatedFramebuffers();
+        createProcrastinatedCommandBuffer();
     }
 
     BananProcrastinatedRenderer::~BananProcrastinatedRenderer() {
         vkDestroyFramebuffer(bananDevice.device(), procrastinatedFramebuffer, nullptr);
-        vkDestroyRenderPass(bananDevice.device(), renderPass, nullptr);
+        vkDestroyRenderPass(bananDevice.device(), procrastinatedRenderPass, nullptr);
     }
 
-    void BananProcrastinatedRenderer::createOffscreenFramebuffers() {
+    void BananProcrastinatedRenderer::createProcrastinatedFramebuffers() {
         std::vector<VkImageView> attachments{};
         attachments[0] = positionImage->descriptorInfo().imageView;
         attachments[1] = colorImage->descriptorInfo().imageView;
@@ -34,7 +35,7 @@ namespace Banan {
 
         VkFramebufferCreateInfo fbufCreateInfo = {};
         fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        fbufCreateInfo.renderPass = renderPass;
+        fbufCreateInfo.renderPass = procrastinatedRenderPass;
         fbufCreateInfo.pAttachments = attachments.data();
         fbufCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         fbufCreateInfo.width = bananSwapChain->getSwapChainExtent().width;
@@ -46,14 +47,14 @@ namespace Banan {
         }
     }
 
-    void BananProcrastinatedRenderer::createOffscreenImages() {
+    void BananProcrastinatedRenderer::createProcrastinatedImages() {
         positionImage = std::make_unique<BananImage>(bananDevice, bananWindow.getExtent().width, bananWindow.getExtent().height, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         colorImage = std::make_unique<BananImage>(bananDevice, bananWindow.getExtent().width, bananWindow.getExtent().height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         normalImage = std::make_unique<BananImage>(bananDevice, bananWindow.getExtent().width, bananWindow.getExtent().height, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         depthImage = std::make_unique<BananImage>(bananDevice, bananWindow.getExtent().width, bananWindow.getExtent().height, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     }
 
-    void BananProcrastinatedRenderer::createOffscreenRenderpass() {
+    void BananProcrastinatedRenderer::createProcrastinatedRenderpass() {
         std::vector<VkAttachmentDescription> attachments{};
 
         //position
@@ -140,8 +141,27 @@ namespace Banan {
         renderPassInfo.dependencyCount = 2;
         renderPassInfo.pDependencies = dependencies.data();
 
-        if (vkCreateRenderPass(bananDevice.device(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+        if (vkCreateRenderPass(bananDevice.device(), &renderPassInfo, nullptr, &procrastinatedRenderPass) != VK_SUCCESS) {
             throw std::runtime_error("unable to create procrastinated rendering render pass");
+        }
+    }
+
+    void BananProcrastinatedRenderer::createProcrastinatedCommandBuffer() {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = bananDevice.getCommandPool();
+        allocInfo.commandBufferCount = 1;
+
+        if (vkAllocateCommandBuffers(bananDevice.device(), &allocInfo, &procrastinatedCommandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate procrastinated command buffer");
+        }
+
+        VkSemaphoreCreateInfo semaphoreCreateInfo{};
+        semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        if (vkCreateSemaphore(bananDevice.device(), &semaphoreCreateInfo, nullptr, &procrastinatedSemaphore) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create procrastinated semaphore");
         }
     }
 
@@ -168,6 +188,169 @@ namespace Banan {
     }
 
     void BananProcrastinatedRenderer::createCommandBuffers() {
+        swapchainCommandBuffers.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
 
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = bananDevice.getCommandPool();
+        allocInfo.commandBufferCount = static_cast<uint32_t>(swapchainCommandBuffers.size());
+
+        if (vkAllocateCommandBuffers(bananDevice.device(), &allocInfo, swapchainCommandBuffers.data()) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate swap chain command buffers");
+        }
+    }
+
+    VkCommandBuffer BananProcrastinatedRenderer::beginFrame() {
+        assert(!isFrameStarted && "can't begin frame while another frame is already in progress");
+
+        auto result = bananSwapChain->acquireNextImage(&currentImageIndex);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreateSwapChain();
+            return nullptr;
+        }
+
+        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            throw std::runtime_error("failed to acquire swap chain image");
+        }
+
+        isFrameStarted = true;
+
+        auto commandBuffer = getCurrentCommandBuffer();
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("failed to start recording command buffer");
+        }
+
+        return commandBuffer;
+    }
+
+    void BananProcrastinatedRenderer::endFrame() {
+        assert(isFrameStarted && "Cannot end frame if frame has not been started");
+        auto commandBuffer = getCurrentCommandBuffer();
+
+        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("unable to stop command buffer recording");
+        }
+
+        auto result = bananSwapChain->submitCommandBuffers(&commandBuffer, &currentImageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || bananWindow.wasWindowResized()) {
+            bananWindow.resetWindowResizedFlag();
+            recreateSwapChain();
+        } else if (result != VK_SUCCESS) {
+            throw std::runtime_error("failed to present swap chain image!");
+        }
+
+        isFrameStarted = false;
+
+        currentFrameIndex = (currentFrameIndex + 1) % BananSwapChain::MAX_FRAMES_IN_FLIGHT;
+    }
+
+    void BananProcrastinatedRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+        assert(isFrameStarted && "Cant begin render pass if frame is not in progress");
+        assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer that is different to the current frame");
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = bananSwapChain->getRenderPass();
+        renderPassInfo.framebuffer = bananSwapChain->getFrameBuffer(static_cast<int>(currentImageIndex));
+
+        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
+
+        std::vector<VkClearValue> clearValues{};
+        clearValues[0].color = {0.1f, 0.1f, 0.1f, 1.0f};
+        clearValues[1].depthStencil = {1.0f, 0};
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(bananSwapChain->getSwapChainExtent().width);
+        viewport.height = static_cast<float>(bananSwapChain->getSwapChainExtent().height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        VkRect2D scissor{{0, 0}, bananSwapChain->getSwapChainExtent()};
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    }
+
+    void BananProcrastinatedRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+        assert(isFrameStarted && "Cant end render pass if frame is not in progress");
+        assert(commandBuffer == getCurrentCommandBuffer() && "Can't end render pass on command buffer that is different to the current frame");
+
+        vkCmdEndRenderPass(commandBuffer);
+    }
+
+    void BananProcrastinatedRenderer::beginProcrastinatedRenderpass(VkCommandBuffer commandBuffer) {
+
+        std::vector<VkClearValue> clearValues;
+        clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+        clearValues[1].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+        clearValues[2].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+        clearValues[3].depthStencil = { 1.0f, 0 };
+
+        VkRenderPassBeginInfo renderPassBeginInfo{};
+        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassBeginInfo.renderPass =  procrastinatedRenderPass;
+        renderPassBeginInfo.framebuffer = procrastinatedFramebuffer;
+        renderPassBeginInfo.renderArea.extent.width = bananSwapChain->getSwapChainExtent().width;
+        renderPassBeginInfo.renderArea.extent.height = bananSwapChain->getSwapChainExtent().height;
+        renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassBeginInfo.pClearValues = clearValues.data();
+
+        VkCommandBufferBeginInfo bufInfo{};
+        bufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        if (vkBeginCommandBuffer(procrastinatedCommandBuffer, &bufInfo) != VK_SUCCESS) {
+            throw std::runtime_error("unable to begin command buffer");
+        }
+
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(bananSwapChain->getSwapChainExtent().width);
+        viewport.height = static_cast<float>(bananSwapChain->getSwapChainExtent().height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        VkRect2D scissor{{0, 0}, bananSwapChain->getSwapChainExtent()};
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    }
+
+    void BananProcrastinatedRenderer::endProcrastinatedRenderpass(VkCommandBuffer commandBuffer) {
+
+    }
+
+    VkRenderPass BananProcrastinatedRenderer::getSwapchainRenderpass() {
+        return bananSwapChain->getRenderPass();
+    }
+
+    VkRenderPass BananProcrastinatedRenderer::getOffscreenRenderPass() {
+        return procrastinatedRenderPass;
+    }
+
+    float BananProcrastinatedRenderer::getAspectRatio() {
+        return bananSwapChain->extentAspectRatio();
+    }
+
+    bool BananProcrastinatedRenderer::isFrameInProgress() const {
+        return isFrameStarted;
+    }
+
+    VkCommandBuffer BananProcrastinatedRenderer::getCurrentCommandBuffer() {
+        assert(isFrameStarted && "Cannot get Command buffer when frame is not in progress");
+        return swapchainCommandBuffers[currentFrameIndex];
+    }
+
+    int BananProcrastinatedRenderer::getCurrentFrameIndex() {
+        return currentFrameIndex;
     }
 }

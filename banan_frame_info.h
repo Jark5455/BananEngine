@@ -27,8 +27,8 @@ namespace Banan {
         int numLights;
     };
 
-    struct PerModelUbo {
-        int textureId;
+    struct ProcrastinatedUBO {
+
     };
 
     struct BananFrameInfo {
