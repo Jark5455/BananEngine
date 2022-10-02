@@ -36,7 +36,7 @@ namespace Banan {
 
     void BananModel::bindAll(VkCommandBuffer commandBuffer) {
         VkBuffer buffers[] = {vertexBuffer->getBuffer(), miscBuffer->getBuffer()};
-        VkDeviceSize offsets[] = {0};
+        VkDeviceSize offsets[] = {0, 0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets);
 
         if (hasIndexBuffer) {
