@@ -18,14 +18,14 @@ namespace Banan{
             PointLightSystem(const PointLightSystem &) = delete;
             PointLightSystem &operator=(const PointLightSystem &) = delete;
 
-            PointLightSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
+            PointLightSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
             ~PointLightSystem();
 
             void update(BananFrameInfo &frameInfo, GlobalUbo &ubo);
             void render(BananFrameInfo &frameInfo);
 
         private:
-            void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
+            void createPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
             void createPipeline(VkRenderPass renderPass);
 
             BananDevice &bananDevice;

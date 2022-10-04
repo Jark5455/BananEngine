@@ -14,13 +14,13 @@ namespace Banan {
             ShadowSystem(const ShadowSystem &) = delete;
             ShadowSystem &operator=(const ShadowSystem &) = delete;
 
-            ShadowSystem(BananDevice &device, VkRenderPass renderPass, VkDescriptorSetLayout globalSetLayout);
+            ShadowSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
             ~ShadowSystem();
 
             void render(BananFrameInfo &frameInfo, uint32_t faceindex);
 
         private:
-            void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
+            void createPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
             void createPipeline(VkRenderPass renderPass);
 
             BananDevice &bananDevice;

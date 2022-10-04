@@ -10,7 +10,7 @@ set(CMAKE_CXX_FLAGS -gdwarf-4)
 include_directories(/usr/include/stb)
 
 add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp banan_renderer.cpp banan_camera.cpp banan_buffer.cpp banan_descriptor.cpp banan_image.cpp banan_shadow_mapper.cpp banan_procrastinated_renderer.cpp)
-add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp Tests/Systems/SimpleRenderSystem.cpp Tests/Systems/PointLightSystem.cpp Tests/KeyboardMovementController.cpp Tests/Systems/ShadowSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.h)
+add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp Tests/Systems/SimpleRenderSystem.cpp Tests/Systems/PointLightSystem.cpp Tests/KeyboardMovementController.cpp Tests/Systems/ShadowSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.h Tests/Systems/ProcrastinatedOffscreenRenderSystem.cpp Tests/Systems/ProcrastinatedOffscreenRenderSystem.h)
 
 find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
@@ -40,6 +40,9 @@ execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/shadow.vert -o $
 
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/mrt.frag -o ${CMAKE_BINARY_DIR}/shaders/mrt.frag.spv)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/mrt.vert -o ${CMAKE_BINARY_DIR}/shaders/mrt.vert.spv)
+
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/procrastinated.frag -o ${CMAKE_BINARY_DIR}/shaders/procrastinated.frag.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/procrastinated.vert -o ${CMAKE_BINARY_DIR}/shaders/procrastinated.vert.spv)
 
 execute_process(COMMAND cp -r ${CMAKE_SOURCE_DIR}/Tests/banan_assets ${CMAKE_BINARY_DIR})
 

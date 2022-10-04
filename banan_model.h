@@ -34,6 +34,8 @@ namespace Banan {
 
             static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
             static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+            static std::vector<VkVertexInputBindingDescription> getPositionOnlyBindingDescriptions();
+            static std::vector<VkVertexInputAttributeDescription> getPositionOnlyAttributeDescriptions();
         };
 
         struct Builder {

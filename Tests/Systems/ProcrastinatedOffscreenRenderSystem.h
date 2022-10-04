@@ -1,6 +1,7 @@
 //
-// Created by yashr on 10/2/22.
+// Created by yashr on 10/4/22.
 //
+
 #pragma once
 
 #include "../../banan_camera.h"
@@ -13,13 +14,13 @@
 #include <vector>
 
 namespace Banan{
-    class ProcrastinatedRenderSystem {
+    class ProcrastinatedOffscreenRenderSystem {
     public:
-        ProcrastinatedRenderSystem(const ProcrastinatedRenderSystem &) = delete;
-        ProcrastinatedRenderSystem &operator=(const ProcrastinatedRenderSystem &) = delete;
+        ProcrastinatedOffscreenRenderSystem(const ProcrastinatedOffscreenRenderSystem &) = delete;
+        ProcrastinatedOffscreenRenderSystem &operator=(const ProcrastinatedOffscreenRenderSystem &) = delete;
 
-        ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
-        ~ProcrastinatedRenderSystem();
+        ProcrastinatedOffscreenRenderSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
+        ~ProcrastinatedOffscreenRenderSystem();
 
         void render(BananFrameInfo &frameInfo);
 

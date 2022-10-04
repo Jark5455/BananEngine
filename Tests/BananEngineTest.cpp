@@ -71,8 +71,8 @@ namespace Banan{
                 .build();
 
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout()}};
-        PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
-        //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+        PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
+        //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
 
         BananCamera camera{};
 
