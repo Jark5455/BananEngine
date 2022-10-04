@@ -12,6 +12,7 @@ layout(location = 1) out vec3 fragPosWorld;
 layout(location = 2) out vec3 fragNormalWorld;
 layout(location = 3) out vec2 fragTexCoord;
 layout(location = 4) out vec3 fragPos;
+layout(location = 5) out vec3 fragTangent;
 
 struct PointLight {
     vec4 position;
@@ -34,5 +35,15 @@ layout(push_constant) uniform Push {
 } push;
 
 void main() {
+    mat4 actuallModelMatrix = push.modelMatrix;
+    actuallModelMatrix[3][3] = 1.0;
 
+    vec4 positionWorld = actuallModelMatrix * vec4(position, 1.0);
+    gl_Position = ubo.projection * ubo.view * positionWorld;
+    fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
+    fragTangent = normalize(mat3(push.normalMatrix) * tangent);
+    fragPosWorld = positionWorld.xyz;
+    fragTexCoord = uv;
+    fragColor = color;
+    fragPos = position;
 }
