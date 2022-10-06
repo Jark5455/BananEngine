@@ -14,10 +14,12 @@
 #include <assimp/postprocess.h>
 
 #include <stb_image.h>
+#include <tinyexr.h>
 
 namespace Banan {
     BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice{device} {
         createTextureImage(builder.texture);
+        createNormalImage(builder.normals);
         createVertexBuffers(builder.positions, builder.misc);
         createIndexBuffers(builder.indices);
     }
@@ -106,11 +108,11 @@ namespace Banan {
 
     void BananModel::createTextureImage(const Texture &texture) {
         if (texture.width > 0 && texture.height > 0) {
-            pixelCount = texture.width * texture.height;
-            assert(pixelCount >= 0 && "Failed to load image: 0 pixels");
+            texturepixelCount = texture.width * texture.height;
+            assert(texturepixelCount >= 0 && "Failed to load image: 0 pixels");
             uint32_t pixelSize = 4; //for some reason sizeof(uint8_t) returns 1, idk lol im pretty dumb, also it only works on 4 not 8, not sure why, my brain is decaying so I can think straight
 
-            BananBuffer stagingBuffer{bananDevice, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+            BananBuffer stagingBuffer{bananDevice, pixelSize, texturepixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
             stagingBuffer.map();
             stagingBuffer.writeToBuffer((void *)texture.data);
 
@@ -126,12 +128,40 @@ namespace Banan {
 
     }
 
+    void BananModel::createNormalImage(const Normals &image) {
+        if (image.height > 0 && image.width > 0) {
+            normalpixelCount = image.height * image.width;
+            assert(normalpixelCount >= 0 && "Failed to load image: 0 pixels");
+            uint32_t pixelSize = 8; // 16 bit precision so its double of texture images
+
+            BananBuffer stagingBuffer{bananDevice, pixelSize, normalpixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+            stagingBuffer.map();
+            stagingBuffer.writeToBuffer((void *)image.data);
+
+            normalImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            bananDevice.transitionImageLayout(normalImage->getImageHandle(), VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
+            bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), normalImage->getImageHandle(), image.width, image.height, 1);
+
+            hasNormal = true;
+        } else {
+            hasNormal = false;
+        }
+    }
+
     bool BananModel::isTextureLoaded() {
         return hasTexture && textureImage != nullptr;
     }
 
-    VkDescriptorImageInfo BananModel::getDescriptorImageInfo() {
+    bool BananModel::isNormalsLoaded() {
+        return hasNormal && normalImage != nullptr;
+    }
+
+    VkDescriptorImageInfo BananModel::getDescriptorTextureImageInfo() {
         return textureImage->descriptorInfo();
+    }
+
+    VkDescriptorImageInfo BananModel::getDescriptorNormalImageInfo() {
+        return normalImage->descriptorInfo();
     }
 
     std::vector<VkVertexInputBindingDescription> BananModel::Vertex::getBindingDescriptions() {
@@ -236,5 +266,33 @@ namespace Banan {
         texture.width = texWidth;
         texture.height = texHeight;
         texture.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+    }
+
+    void BananModel::Builder::loadNormals(const std::string &filepath) {
+        RgbaInputFile file(filepath.c_str());
+        Box2i dw = file.dataWindow();
+
+        int width = dw.max.x - dw.min.x + 1;
+        int height = dw.max.y - dw.min.y + 1;
+        Array2D <Rgba> pixels(height, width);
+
+        pixels.resizeErase(height, width);
+
+        file.setFrameBuffer(&pixels[0][0] - dw.min.x - dw.min.y * width, 1, width);
+        file.readPixels(dw.min.y, dw.max.y);
+
+        std::vector<uint16_t> data;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                data.push_back(pixels[y][x].r);
+                data.push_back(pixels[y][x].g);
+                data.push_back(pixels[y][x].b);
+                data.push_back(pixels[y][x].a);
+            }
+        }
+
+        normals.data = data.data();
+        normals.width = width;
+        normals.height = height;
     }
 }

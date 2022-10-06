@@ -23,7 +23,7 @@ namespace Banan {
                 private:
                     BananDevice &bananDevice;
                     std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
-                    std::vector<VkDescriptorBindingFlagsEXT> flags{0};
+                    std::vector<VkDescriptorBindingFlagsEXT> flags{};
             };
 
             BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorBindingFlagsEXT> flags);

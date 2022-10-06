@@ -47,8 +47,8 @@ namespace Banan {
         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
         descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
-        descriptorSetLayoutInfo.flags = std::count(flags.begin(), flags.end(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) <= 0 ? 0 : VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-        descriptorSetLayoutInfo.pNext = &descriptorSetLayoutBindingFlagsCreateInfoExt;
+        if (std::count(flags.begin(), flags.end(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) > 0) descriptorSetLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+        descriptorSetLayoutInfo.pNext = flags.empty() ? nullptr : &descriptorSetLayoutBindingFlagsCreateInfoExt;
 
         if (vkCreateDescriptorSetLayout(bananDevice.device(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor set layout!");

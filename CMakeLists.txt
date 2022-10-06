@@ -1,5 +1,8 @@
+include(./.env.cmake OPTIONAL RESULT_VARIABLE LOCAL_ENV)
+message(STATUS "Local .env.cmake: ${LOCAL_ENV}")
+
 cmake_minimum_required(VERSION 3.21)
-project(BananEngine)
+set(NAME BananEngine)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_COMPILER clang)
@@ -7,26 +10,113 @@ set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_FLAGS -gdwarf-4)
 
+message(STATUS "using ${CMAKE_GENERATOR}")
+if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
+    if (NOT MINGW_PATH)
+        message(FATAL_ERROR "MINGW_PATH not set in .env.cmake")
+    endif()
+    set(USE_MINGW "True")
+    set(CMAKE_C_COMPILER ${MINGW_PATH}/bin/clang.exe)
+    set(CMAKE_CXX_COMPILER  ${MINGW_PATH}/bin/clang++.exe)
+endif()
+
+project(${NAME} VERSION 0.1)
+
+# find vulkan
+if (DEFINED VULKAN_SDK_PATH)
+    set(Vulkan_INCLUDE_DIRS "${VULKAN_SDK_PATH}/Include")
+    set(Vulkan_LIBRARIES "${VULKAN_SDK_PATH}/Lib")
+    set(Vulkan_FOUND "True")
+else()
+    find_package(Vulkan REQUIRED)
+    message(STATUS "Found Vulkan: ${Vulkan_VERSION}")
+endif()
+
+if (NOT Vulkan_FOUND)
+    message(FATAL_ERROR "Could not find Vulkan library!")
+else()
+    message(STATUS "Using vulkan lib at: ${Vulkan_LIBRARIES}")
+endif()
+
+# find assimp
+if (DEFINED ASSIMP_PATH)
+    set(ASSIMP_INCLUDE_DIR "${ASSIMP_PATH}/include")
+    set(ASSIMP_LIBRARY_DIR "${ASSIMP_PATH}/lib")
+    set(assimp_FOUND "True")
+else()
+    find_package(assimp REQUIRED)
+    message(STATUS "Found ASSIMP: ${ASSIMP_LIBRARIES}")
+endif()
+
+if (NOT assimp_FOUND)
+    message(FATAL_ERROR "Could not find assimp library!")
+else()
+    message(STATUS "Using assimp lib at: ${assimp_LIBRARY}")
+endif()
+
+# find glfw
+if (DEFINED GLFW_PATH)
+    message(STATUS "Using GLFW path specified in .env")
+    set(GLFW_INCLUDE_DIRS "${GLFW_PATH}/include")
+    if (MSVC)
+        set(GLFW_LIB "${GLFW_PATH}/lib-vc2019")
+    elseif (CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
+        message(STATUS "USING MINGW")
+        set(GLFW_LIB "${GLFW_PATH}/lib-mingw-w64")
+    endif()
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(GLFW REQUIRED glfw3)
+    message(STATUS "Found GLFW: ${GLFW_LIBRARIES}")
+endif()
+
+if (NOT GLFW_FOUND)
+    message(FATAL_ERROR "Could not find glfw library!")
+else()
+    message(STATUS "Using glfw lib at: ${GLFW_LINK_LIBRARIES}")
+endif()
+
+# find zlib (needed for openexr)
+if (DEFINED ZLIB_PATH)
+    set(ZLIB_INCLUDE_DIRS "${ZLIB_PATH}/include")
+    set(ZLIB_LIBRARIES "${ZLIB_PATH}/lib")
+    set(ZLIB_FOUND "True")
+else()
+    find_package(ZLIB REQUIRED)
+    message(STATUS "Found Zlib: ${ZLIB_LIBRARY}")
+endif()
+
+if (NOT ZLIB_FOUND)
+    message(FATAL_ERROR "Could not find Zlib library!")
+else()
+    message(STATUS "Using zlib lib at: ${ZLIB_LIBRARIES}")
+endif()
+
 include_directories(/usr/include/stb)
 
 add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp banan_renderer.cpp banan_camera.cpp banan_buffer.cpp banan_descriptor.cpp banan_image.cpp banan_shadow_mapper.cpp banan_procrastinated_renderer.cpp)
 add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp Tests/Systems/SimpleRenderSystem.cpp Tests/Systems/PointLightSystem.cpp Tests/KeyboardMovementController.cpp Tests/Systems/ShadowSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.h Tests/Systems/ProcrastinatedOffscreenRenderSystem.cpp Tests/Systems/ProcrastinatedOffscreenRenderSystem.h)
-
-find_package(Vulkan REQUIRED)
-target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIR})
-
-find_package(PkgConfig REQUIRED)
-
-find_package(assimp REQUIRED)
-target_link_libraries(${PROJECT_NAME} ${ASSIMP_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${ASSIMP_INCLUDE_DIRS})
-
-pkg_search_module(GLFW REQUIRED glfw3)
-target_link_libraries(${PROJECT_NAME} ${GLFW_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${GLFW_INCLUDE_DIRS})
-
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build")
+
+if (WIN32)
+    message(STATUS "CREATING BUILD FOR WINDOWS")
+
+    if (USE_MINGW)
+        target_include_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/include)
+        target_link_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/lib)
+    endif()
+
+    target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR} ${Vulkan_INCLUDE_DIRS} ${ASSIMP_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} ${GLM_PATH} ${ZLIB_INCLUDE_DIRS})
+    target_link_directories(${PROJECT_NAME} PUBLIC ${Vulkan_LIBRARIES} ${GLFW_LIB})
+    target_link_libraries(${PROJECT_NAME} glfw3 vulkan-1 ${ASSIMP_LIBRARIES} ZLIB::ZLIB)
+
+elseif (UNIX)
+    message(STATUS "CREATING BUILD FOR UNIX")
+    target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
+    target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES} ${ASSIMP_LIBRARIES} ZLIB::ZLIB)
+endif()
 
 execute_process(COMMAND mkdir ${CMAKE_BINARY_DIR}/shaders)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.frag -o ${CMAKE_BINARY_DIR}/shaders/triangle.frag.spv)

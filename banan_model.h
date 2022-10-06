@@ -21,9 +21,15 @@ namespace Banan {
 
         struct Texture {
             uint8_t *data = nullptr;
-            uint32_t width;
-            uint32_t height;
-            uint32_t mipLevels;
+            uint32_t width = 0;
+            uint32_t height = 0;
+            uint32_t mipLevels = 1;
+        };
+
+        struct Normals {
+            uint16_t *data = nullptr;
+            uint32_t width = 0;
+            uint32_t height = 0;
         };
 
         struct Vertex {
@@ -44,9 +50,11 @@ namespace Banan {
 
             std::vector<uint32_t> indices{};
             Texture texture{};
+            Normals normals{};
 
             void loadModel(const std::string &filepath);
             void loadTexture(const std::string &filepath);
+            void loadNormals(const std::string &filepath);
         };
 
         BananModel(BananDevice &device, const Builder &builder);
@@ -62,15 +70,20 @@ namespace Banan {
         void draw(VkCommandBuffer commandBuffer);
 
         bool isTextureLoaded();
-        VkDescriptorImageInfo getDescriptorImageInfo();
+        bool isNormalsLoaded();
+
+        VkDescriptorImageInfo getDescriptorTextureImageInfo();
+        VkDescriptorImageInfo getDescriptorNormalImageInfo();
 
     private:
         void createVertexBuffers(const std::vector<glm::vec3> &vertices, const std::vector<Vertex> &misc);
         void createIndexBuffers(const std::vector<uint32_t> &indices);
         void createTextureImage(const Texture &image);
+        void createNormalImage(const Normals &image);
 
         bool hasIndexBuffer;
         bool hasTexture;
+        bool hasNormal;
 
         BananDevice &bananDevice;
 
@@ -82,6 +95,9 @@ namespace Banan {
         uint32_t indexCount;
 
         std::unique_ptr<BananImage> textureImage;
-        uint32_t pixelCount;
+        uint32_t texturepixelCount;
+
+        std::unique_ptr<BananImage> normalImage;
+        uint32_t normalpixelCount;
     };
 }

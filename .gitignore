@@ -2,3 +2,4 @@
 /cmake-build-debug/
 /.idea/
 /Tests/banan_assets/
+/.env.cmake/

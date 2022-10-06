@@ -36,7 +36,7 @@ layout(set = 0, binding = 1) uniform sampler2D texSampler[];
 
 void main() {
 
-    outPosition = vec4(inWorldPos, 1.0);
+    outPosition = vec4(fragPosWorld, 1.0);
     outNormal = vec4(fragNormalWorld, 1.0);
 
     int index = int(push.modelMatrix[3][3]);
