@@ -14,7 +14,13 @@
 #include <assimp/postprocess.h>
 
 #include <stb_image.h>
-#include <tinyexr.h>
+
+#include <ImathBox.h>
+#include <ImfRgbaFile.h>
+#include <ImfArray.h>
+
+using namespace Imf;
+using namespace Imath;
 
 namespace Banan {
     BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice{device} {
@@ -274,7 +280,7 @@ namespace Banan {
 
         int width = dw.max.x - dw.min.x + 1;
         int height = dw.max.y - dw.min.y + 1;
-        Array2D <Rgba> pixels(height, width);
+        Array2D<Rgba> pixels(height, width);
 
         pixels.resizeErase(height, width);
 
@@ -284,10 +290,10 @@ namespace Banan {
         std::vector<uint16_t> data;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                data.push_back(pixels[y][x].r);
-                data.push_back(pixels[y][x].g);
-                data.push_back(pixels[y][x].b);
-                data.push_back(pixels[y][x].a);
+                data.push_back(pixels[y][x].r.bits());
+                data.push_back(pixels[y][x].g.bits());
+                data.push_back(pixels[y][x].b.bits());
+                data.push_back(pixels[y][x].a.bits());
             }
         }
 

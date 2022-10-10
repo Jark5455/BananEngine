@@ -156,6 +156,7 @@ namespace Banan{
         BananModel::Builder vaseBuilder{};
         vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
         vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
+        vaseBuilder.loadNormals("banan_assets/textures/ceramic_vase_01_nor_gl_4k.exr");
 
         std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
@@ -212,7 +213,7 @@ namespace Banan{
         {
             if (kv.second.model != nullptr) {
                 if (kv.second.model->isTextureLoaded()) {
-                    gameObjectsTextureInfo.emplace(kv.first, kv.second.model->getDescriptorImageInfo());
+                    gameObjectsTextureInfo.emplace(kv.first, kv.second.model->getDescriptorTextureImageInfo());
                 }
             }
         }
