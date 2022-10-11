@@ -15,6 +15,8 @@
 
 #include <stb_image.h>
 
+#include <openexr.h>
+
 #include <ImathBox.h>
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
@@ -142,7 +144,7 @@ namespace Banan {
 
             BananBuffer stagingBuffer{bananDevice, pixelSize, normalpixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
             stagingBuffer.map();
-            stagingBuffer.writeToBuffer((void *)image.data);
+            stagingBuffer.writeToBuffer((void *)image.data.data());
 
             normalImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
             bananDevice.transitionImageLayout(normalImage->getImageHandle(), VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
@@ -275,30 +277,43 @@ namespace Banan {
     }
 
     void BananModel::Builder::loadNormals(const std::string &filepath) {
-        RgbaInputFile file(filepath.c_str());
-        Box2i dw = file.dataWindow();
 
-        int width = dw.max.x - dw.min.x + 1;
-        int height = dw.max.y - dw.min.y + 1;
-        Array2D<Rgba> pixels(height, width);
+        Imf::Array2D<Rgba> pixelBuffer = Imf::Array2D<Rgba>();
+        Imf::Array2D<Rgba> &pixelBufferRef = pixelBuffer;
 
-        pixels.resizeErase(height, width);
+        Imf::RgbaInputFile in(filepath.c_str());
+        Imath::Box2i win = in.dataWindow();
+        Imath::V2i dim(win.max.x - win.min.x + 1, win.max.y - win.min.y + 1);
 
-        file.setFrameBuffer(&pixels[0][0] - dw.min.x - dw.min.y * width, 1, width);
-        file.readPixels(dw.min.y, dw.max.y);
+        int dx = win.min.x;
+        int dy = win.min.y;
 
-        std::vector<uint16_t> data;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                data.push_back(pixels[y][x].r.bits());
-                data.push_back(pixels[y][x].g.bits());
-                data.push_back(pixels[y][x].b.bits());
-                data.push_back(pixels[y][x].a.bits());
+        pixelBufferRef.resizeErase(dim.x, dim.y);
+
+        in.setFrameBuffer(&pixelBufferRef[0][0] - dx - dy * dim.x, 1, dim.x);
+        in.readPixels(win.min.y, win.max.y);
+
+        std::vector<uint16_t> singleChannelData{};
+        for (int y1 = dim.y; y1 >= 0; y1--) {
+            for (int x1 = 0; x1 < dim.x; x1++) {
+                singleChannelData.push_back(pixelBufferRef[x1][y1].r.bits());
+                singleChannelData.push_back(pixelBufferRef[x1][y1].g.bits());
+                singleChannelData.push_back(pixelBufferRef[x1][y1].b.bits());
+                singleChannelData.push_back(pixelBufferRef[x1][y1].a.bits());
             }
         }
 
-        normals.data = data.data();
-        normals.width = width;
-        normals.height = height;
+        normals.data = std::move(singleChannelData);
+        normals.width = dim.x;
+        normals.height = dim.y;
+
+        /*for (int i = 0; i < normals.width * normals.height; i++) {
+            singleChannelData.push_back(pixelBuffer[i].r.bits());
+            singleChannelData.push_back(pixelBuffer[i].g.bits());
+            singleChannelData.push_back(pixelBuffer[i].b.bits());
+            singleChannelData.push_back(pixelBuffer[i].a.bits());
+        }
+
+        normals.data = singleChannelData.data();*/
     }
 }

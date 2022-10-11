@@ -33,7 +33,8 @@ layout(push_constant) uniform Push {
 } push;
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler[];
-layout(set = 1, binding = 1) uniform samplerCube shadowCubeMap;
+layout(set = 1, binding = 1) uniform sampler2D normalSampler[];
+layout(set = 1, binding = 2) uniform samplerCube shadowCubeMap;
 
 
 void main() {

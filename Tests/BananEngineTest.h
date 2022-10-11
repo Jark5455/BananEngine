@@ -42,6 +42,8 @@ namespace Banan{
 
         std::shared_ptr<BananLogger> bananLogger;
         BananGameObject::Map gameObjects;
+
         std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsTextureInfo;
+        std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsNormalInfo;
     };
 }

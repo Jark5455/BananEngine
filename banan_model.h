@@ -27,7 +27,7 @@ namespace Banan {
         };
 
         struct Normals {
-            uint16_t *data = nullptr;
+            std::vector<uint16_t> data{};
             uint32_t width = 0;
             uint32_t height = 0;
         };

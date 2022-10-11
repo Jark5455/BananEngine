@@ -59,7 +59,8 @@ namespace Banan{
                 .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
                 .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsTextureInfo.size())
-                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsNormalInfo.size())
+                .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
         auto procrastinatedSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
@@ -89,14 +90,15 @@ namespace Banan{
 
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
             textureWriter.writeImages(0, gameObjectsTextureInfo);
+            textureWriter.writeImages(1, gameObjectsNormalInfo);
 
             //auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
-            //textureWriter.writeImage(1, &shadowInfo);
+            //textureWriter.writeImage(2, &shadowInfo);
 
             uint32_t globalDescriptorCounts[] = {1};
             writer.build(globalDescriptorSets[i], globalDescriptorCounts);
 
-            uint32_t textureDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsTextureInfo.size()), 1};
+            uint32_t textureDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsTextureInfo.size()), static_cast<uint32_t>(gameObjectsNormalInfo.size()), 1};
             textureWriter.build(textureDescriptorSets[i], textureDescriptorCounts);
         }
 
@@ -214,6 +216,10 @@ namespace Banan{
             if (kv.second.model != nullptr) {
                 if (kv.second.model->isTextureLoaded()) {
                     gameObjectsTextureInfo.emplace(kv.first, kv.second.model->getDescriptorTextureImageInfo());
+                }
+
+                if (kv.second.model->isNormalsLoaded()) {
+                    gameObjectsNormalInfo.emplace(kv.first, kv.second.model->getDescriptorNormalImageInfo());
                 }
             }
         }
