@@ -9,6 +9,7 @@ layout (location = 1) in vec3 fragPosWorld;
 layout (location = 2) in vec3 fragNormalWorld;
 layout (location = 3) in vec2 fragTexCoord;
 layout (location = 4) in vec3 fragPos;
+layout (location = 5) in vec3 fragTangent;
 
 layout (location = 0) out vec4 outColor;
 
@@ -33,15 +34,19 @@ layout(push_constant) uniform Push {
 } push;
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler[];
-layout(set = 1, binding = 1) uniform sampler2D normalSampler[];
-layout(set = 1, binding = 2) uniform samplerCube shadowCubeMap;
-
+layout(set = 1, binding = 1) uniform samplerCube shadowCubeMap;
+layout(set = 2, binding = 0) uniform sampler2D normalSampler[];
 
 void main() {
 
-    int index = int(push.modelMatrix[3][3]);
-    vec3 diffuseLight;
+    vec3 N = normalize(fragNormalWorld);
+    vec3 T = normalize(fragTangent);
+    vec3 B = cross(N, T);
+    mat3 TBN = mat3(T, B, N);
 
+    int index = int(push.modelMatrix[3][3]);
+
+    vec3 diffuseLight;
     if (textureQueryLevels(texSampler[index]) == 0) {
         diffuseLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
     } else {
@@ -49,9 +54,14 @@ void main() {
         diffuseLight = texture_sampler.rgb;
     }
 
-    vec3 specularLight = vec3(0.0);
-    vec3 surfaceNormal = normalize(fragNormalWorld);
+    vec3 surfaceNormal;
+    if (textureQueryLevels(normalSampler[index]) == 0) {
+        surfaceNormal = normalize(fragNormalWorld);
+    } else {
+        surfaceNormal = TBN * normalize(texture(normalSampler[index], fragTexCoord).xyz * 2.0 - vec3(1.0));
+    }
 
+    vec3 specularLight = vec3(0.0);
     vec3 cameraWorldPos = ubo.inverseView[3].xyz;
     vec3 viewDirection = normalize(cameraWorldPos - fragPosWorld);
 

@@ -294,12 +294,12 @@ namespace Banan {
         in.readPixels(win.min.y, win.max.y);
 
         std::vector<uint16_t> singleChannelData{};
-        for (int y1 = dim.y; y1 >= 0; y1--) {
+        for (int y1 = 0; y1 < dim.y; y1++) {
             for (int x1 = 0; x1 < dim.x; x1++) {
-                singleChannelData.push_back(pixelBufferRef[x1][y1].r.bits());
-                singleChannelData.push_back(pixelBufferRef[x1][y1].g.bits());
-                singleChannelData.push_back(pixelBufferRef[x1][y1].b.bits());
-                singleChannelData.push_back(pixelBufferRef[x1][y1].a.bits());
+                singleChannelData.push_back(pixelBufferRef[y1][x1].r.bits());
+                singleChannelData.push_back(pixelBufferRef[y1][x1].g.bits());
+                singleChannelData.push_back(pixelBufferRef[y1][x1].b.bits());
+                singleChannelData.push_back(pixelBufferRef[y1][x1].a.bits());
             }
         }
 

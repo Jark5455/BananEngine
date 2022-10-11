@@ -33,6 +33,12 @@ namespace Banan{
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .build();
 
+        normalPool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsNormalInfo.size())
+                .build();
+
         procrastinatedPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
@@ -59,8 +65,14 @@ namespace Banan{
                 .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
                 .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsTextureInfo.size())
-                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsNormalInfo.size())
-                .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .build();
+
+        auto normalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsNormalInfo.size())
                 .build();
 
         auto procrastinatedSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
@@ -70,7 +82,7 @@ namespace Banan{
                 .addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
-        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout()}};
+        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
 
@@ -81,8 +93,9 @@ namespace Banan{
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> textureDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        std::vector<VkDescriptorSet> normalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
 
-        for (int i = 0; i < globalDescriptorSets.size(); i++) {
+        for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
 
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
@@ -90,16 +103,21 @@ namespace Banan{
 
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
             textureWriter.writeImages(0, gameObjectsTextureInfo);
-            textureWriter.writeImages(1, gameObjectsNormalInfo);
 
             //auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
             //textureWriter.writeImage(2, &shadowInfo);
 
+            BananDescriptorWriter normalWriter = BananDescriptorWriter(*normalSetLayout, *normalPool);
+            normalWriter.writeImages(0, gameObjectsNormalInfo);
+
             uint32_t globalDescriptorCounts[] = {1};
             writer.build(globalDescriptorSets[i], globalDescriptorCounts);
 
-            uint32_t textureDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsTextureInfo.size()), static_cast<uint32_t>(gameObjectsNormalInfo.size()), 1};
+            uint32_t textureDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsTextureInfo.size()), 1};
             textureWriter.build(textureDescriptorSets[i], textureDescriptorCounts);
+
+            uint32_t normalDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsNormalInfo.size())};
+            normalWriter.build(normalDescriptorSets[i], normalDescriptorCounts);
         }
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -124,7 +142,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], gameObjects};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], gameObjects};
 
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();
@@ -183,13 +201,15 @@ namespace Banan{
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
+        floorBuilder.loadTexture("banan_assets/textures/Tiles_046_basecolor.jpg");
+        floorBuilder.loadNormals("banan_assets/textures/Tiles_046_normal.exr");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
         floor.transform.translation = {0.f, .5f, 0.f};
         floor.transform.rotation = {0.f, 0.f, 0.f};
-        floor.transform.scale = {100.f, 1.f, 100.f};
+        floor.transform.scale = {1.f, 1.f, 1.f};
         floor.transform.id = (int) floor.getId();
         gameObjects.emplace(floor.getId(), std::move(floor));
 

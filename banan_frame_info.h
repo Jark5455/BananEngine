@@ -39,6 +39,7 @@ namespace Banan {
         BananCamera &shadowCubeMapCamera;
         VkDescriptorSet globalDescriptorSet;
         VkDescriptorSet textureDescriptorSet;
+        VkDescriptorSet normalDescriptorSet;
         BananGameObject::Map &gameObjects;
     };
 }
