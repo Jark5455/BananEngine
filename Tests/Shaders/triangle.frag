@@ -36,6 +36,7 @@ layout(push_constant) uniform Push {
 layout(set = 1, binding = 0) uniform sampler2D texSampler[];
 layout(set = 1, binding = 1) uniform samplerCube shadowCubeMap;
 layout(set = 2, binding = 0) uniform sampler2D normalSampler[];
+layout(set = 3, binding = 0) uniform sampler2D heightSampler[];
 
 void main() {
 
@@ -55,6 +56,7 @@ void main() {
     }
 
     vec3 surfaceNormal;
+    // TODO implement heightmaps in shaders
     if (textureQueryLevels(normalSampler[index]) == 0) {
         surfaceNormal = normalize(fragNormalWorld);
     } else {

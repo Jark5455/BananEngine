@@ -40,6 +40,7 @@ namespace Banan {
         VkDescriptorSet globalDescriptorSet;
         VkDescriptorSet textureDescriptorSet;
         VkDescriptorSet normalDescriptorSet;
+        VkDescriptorSet heightDescriptorSet;
         BananGameObject::Map &gameObjects;
     };
 }

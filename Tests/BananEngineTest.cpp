@@ -39,10 +39,22 @@ namespace Banan{
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsNormalInfo.size())
                 .build();
 
+        heightPool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsHeightInfo.size())
+                .build();
+
         procrastinatedPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .build();
+
+        transformPool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 2)
                 .build();
     }
 
@@ -51,6 +63,12 @@ namespace Banan{
     void BananEngineTest::run() {
 
         std::vector<std::unique_ptr<BananBuffer>> uboBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        for (auto & uboBuffer : uboBuffers) {
+            uboBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+            uboBuffer->map();
+        }
+
+        std::vector<std::unique_ptr<BananBuffer>> computeUboBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (auto & uboBuffer : uboBuffers) {
             uboBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
             uboBuffer->map();
@@ -75,6 +93,13 @@ namespace Banan{
                 .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsNormalInfo.size())
                 .build();
 
+        auto heightMapSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsHeightInfo.size())
+                .build();
+
         auto procrastinatedSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
@@ -82,7 +107,7 @@ namespace Banan{
                 .addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
-        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout()}};
+        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
 
@@ -94,6 +119,7 @@ namespace Banan{
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> textureDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> normalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        std::vector<VkDescriptorSet> heightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
 
         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
 
@@ -110,6 +136,9 @@ namespace Banan{
             BananDescriptorWriter normalWriter = BananDescriptorWriter(*normalSetLayout, *normalPool);
             normalWriter.writeImages(0, gameObjectsNormalInfo);
 
+            BananDescriptorWriter heightWriter = BananDescriptorWriter(*heightMapSetLayout, *heightPool);
+            heightWriter.writeImages(0, gameObjectsHeightInfo);
+
             uint32_t globalDescriptorCounts[] = {1};
             writer.build(globalDescriptorSets[i], globalDescriptorCounts);
 
@@ -118,6 +147,9 @@ namespace Banan{
 
             uint32_t normalDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsNormalInfo.size())};
             normalWriter.build(normalDescriptorSets[i], normalDescriptorCounts);
+
+            uint32_t heightDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsHeightInfo.size())};
+            heightWriter.build(heightDescriptorSets[i], heightDescriptorCounts);
         }
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -142,7 +174,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], gameObjects};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], gameObjects};
 
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();
@@ -177,6 +209,7 @@ namespace Banan{
         vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
         vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
         vaseBuilder.loadNormals("banan_assets/textures/ceramic_vase_01_nor_gl_4k.exr");
+        vaseBuilder.loadHeightMap("banan_assets/textures/ceramic_vase_01_rough_4k.jpg");
 
         std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
@@ -240,6 +273,10 @@ namespace Banan{
 
                 if (kv.second.model->isNormalsLoaded()) {
                     gameObjectsNormalInfo.emplace(kv.first, kv.second.model->getDescriptorNormalImageInfo());
+                }
+
+                if (kv.second.model->isHeightmapLoaded()) {
+                    gameObjectsHeightInfo.emplace(kv.first, kv.second.model->getDescriptorNormalImageInfo());
                 }
             }
         }

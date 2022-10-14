@@ -19,14 +19,14 @@ namespace Banan {
     class BananModel {
     public:
 
-        struct Texture {
+        struct RGB {
             uint8_t *data = nullptr;
             uint32_t width = 0;
             uint32_t height = 0;
             uint32_t mipLevels = 1;
         };
 
-        struct Normals {
+        struct HDR {
             std::vector<uint16_t> data{};
             uint32_t width = 0;
             uint32_t height = 0;
@@ -49,12 +49,17 @@ namespace Banan {
             std::vector<Vertex> misc{};
 
             std::vector<uint32_t> indices{};
-            Texture texture{};
-            Normals normals{};
+            RGB texture{};
+            HDR normals{};
+            RGB heights{};
 
             void loadModel(const std::string &filepath);
             void loadTexture(const std::string &filepath);
             void loadNormals(const std::string &filepath);
+            void loadHeightMap(const std::string &filepath);
+
+            void loadHDR(const std::string &filepath, HDR &target);
+            void loadRGB(const std::string &filepath, RGB &target);
         };
 
         BananModel(BananDevice &device, const Builder &builder);
@@ -71,19 +76,23 @@ namespace Banan {
 
         bool isTextureLoaded();
         bool isNormalsLoaded();
+        bool isHeightmapLoaded();
 
         VkDescriptorImageInfo getDescriptorTextureImageInfo();
         VkDescriptorImageInfo getDescriptorNormalImageInfo();
+        VkDescriptorImageInfo getDescriptorHeightMapInfo();
 
     private:
         void createVertexBuffers(const std::vector<glm::vec3> &vertices, const std::vector<Vertex> &misc);
         void createIndexBuffers(const std::vector<uint32_t> &indices);
-        void createTextureImage(const Texture &image);
-        void createNormalImage(const Normals &image);
+        void createTextureImage(const RGB &image);
+        void createNormalImage(const HDR &image);
+        void createHeightmap(const RGB &image);
 
         bool hasIndexBuffer;
         bool hasTexture;
         bool hasNormal;
+        bool hasHeightmap;
 
         BananDevice &bananDevice;
 
@@ -99,5 +108,8 @@ namespace Banan {
 
         std::unique_ptr<BananImage> normalImage;
         uint32_t normalpixelCount;
+
+        std::unique_ptr<BananImage> heightMap;
+        uint32_t heightMapPixelCount;
     };
 }

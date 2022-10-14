@@ -39,12 +39,17 @@ namespace Banan{
         std::unique_ptr<BananDescriptorPool> globalPool;
         std::unique_ptr<BananDescriptorPool> texturePool;
         std::unique_ptr<BananDescriptorPool> normalPool;
+        std::unique_ptr<BananDescriptorPool> heightPool;
         std::unique_ptr<BananDescriptorPool> procrastinatedPool;
+        std::unique_ptr<BananDescriptorPool> transformPool;
 
         std::shared_ptr<BananLogger> bananLogger;
         BananGameObject::Map gameObjects;
 
         std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsTextureInfo;
         std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsNormalInfo;
+        std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsHeightInfo;
+
+        std::unordered_map<uint32_t, glm::mat4> gameObjectModelMatrices;
     };
 }

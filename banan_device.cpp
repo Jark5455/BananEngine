@@ -676,7 +676,13 @@ namespace Banan {
     }
 
     VkSampleCountFlagBits BananDevice::getMaxUsableSampleCount() {
-        VkSampleCountFlags counts = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
+
+        // for some reason first time queuing properties doesnt have limits idk why lmao
+        VkPhysicalDeviceProperties2 props{};
+        props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &props);
+
+        VkSampleCountFlags counts = props.properties.limits.framebufferColorSampleCounts & props.properties.limits.framebufferDepthSampleCounts;
         if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
         if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
         if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }

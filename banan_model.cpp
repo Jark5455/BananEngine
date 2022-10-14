@@ -28,6 +28,7 @@ namespace Banan {
     BananModel::BananModel(BananDevice &device, const Builder &builder) : bananDevice{device} {
         createTextureImage(builder.texture);
         createNormalImage(builder.normals);
+        createHeightmap(builder.heights);
         createVertexBuffers(builder.positions, builder.misc);
         createIndexBuffers(builder.indices);
     }
@@ -114,7 +115,7 @@ namespace Banan {
         return std::make_unique<BananModel>(device, builder);
     }
 
-    void BananModel::createTextureImage(const Texture &texture) {
+    void BananModel::createTextureImage(const RGB &texture) {
         if (texture.width > 0 && texture.height > 0) {
             texturepixelCount = texture.width * texture.height;
             assert(texturepixelCount >= 0 && "Failed to load image: 0 pixels");
@@ -136,7 +137,7 @@ namespace Banan {
 
     }
 
-    void BananModel::createNormalImage(const Normals &image) {
+    void BananModel::createNormalImage(const HDR &image) {
         if (image.height > 0 && image.width > 0) {
             normalpixelCount = image.height * image.width;
             assert(normalpixelCount >= 0 && "Failed to load image: 0 pixels");
@@ -156,6 +157,26 @@ namespace Banan {
         }
     }
 
+    void BananModel::createHeightmap(const RGB &image) {
+        if (image.height > 0 && image.width > 0) {
+            heightMapPixelCount = image.height * image.width;
+            assert(heightMapPixelCount >= 0 && "Failed to load image: 0 pixels");
+            uint32_t pixelSize = 8; // 16 bit precision so its double of texture images
+
+            BananBuffer stagingBuffer{bananDevice, pixelSize, heightMapPixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+            stagingBuffer.map();
+            stagingBuffer.writeToBuffer((void *)image.data);
+
+            heightMap = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            bananDevice.transitionImageLayout(heightMap->getImageHandle(), VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
+            bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), heightMap->getImageHandle(), image.width, image.height, 1);
+
+            hasHeightmap = true;
+        } else {
+            hasHeightmap = false;
+        }
+    }
+
     bool BananModel::isTextureLoaded() {
         return hasTexture && textureImage != nullptr;
     }
@@ -164,12 +185,20 @@ namespace Banan {
         return hasNormal && normalImage != nullptr;
     }
 
+    bool BananModel::isHeightmapLoaded() {
+        return hasHeightmap && normalImage != nullptr;
+    }
+
     VkDescriptorImageInfo BananModel::getDescriptorTextureImageInfo() {
         return textureImage->descriptorInfo();
     }
 
     VkDescriptorImageInfo BananModel::getDescriptorNormalImageInfo() {
         return normalImage->descriptorInfo();
+    }
+
+    VkDescriptorImageInfo BananModel::getDescriptorHeightMapInfo() {
+        return heightMap->descriptorInfo();
     }
 
     std::vector<VkVertexInputBindingDescription> BananModel::Vertex::getBindingDescriptions() {
@@ -267,17 +296,18 @@ namespace Banan {
     }
 
     void BananModel::Builder::loadTexture(const std::string &filepath) {
-        int texWidth, texHeight, texChannels;
-        uint8_t *data = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-
-        texture.data = data;
-        texture.width = texWidth;
-        texture.height = texHeight;
-        texture.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+        loadRGB(filepath, texture);
     }
 
     void BananModel::Builder::loadNormals(const std::string &filepath) {
+        loadHDR(filepath, normals);
+    }
 
+    void BananModel::Builder::loadHeightMap(const std::string &filepath) {
+        loadRGB(filepath, heights);
+    }
+
+    void BananModel::Builder::loadHDR(const string &filepath, BananModel::HDR &target) {
         Imf::Array2D<Rgba> pixelBuffer = Imf::Array2D<Rgba>();
         Imf::Array2D<Rgba> &pixelBufferRef = pixelBuffer;
 
@@ -303,17 +333,18 @@ namespace Banan {
             }
         }
 
-        normals.data = std::move(singleChannelData);
-        normals.width = dim.x;
-        normals.height = dim.y;
+        target.data = std::move(singleChannelData);
+        target.width = dim.x;
+        target.height = dim.y;
+    }
 
-        /*for (int i = 0; i < normals.width * normals.height; i++) {
-            singleChannelData.push_back(pixelBuffer[i].r.bits());
-            singleChannelData.push_back(pixelBuffer[i].g.bits());
-            singleChannelData.push_back(pixelBuffer[i].b.bits());
-            singleChannelData.push_back(pixelBuffer[i].a.bits());
-        }
+    void BananModel::Builder::loadRGB(const string &filepath, RGB &target) {
+        int texWidth, texHeight, texChannels;
+        uint8_t *data = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
-        normals.data = singleChannelData.data();*/
+        target.data = data;
+        target.width = texWidth;
+        target.height = texHeight;
+        target.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
     }
 }
