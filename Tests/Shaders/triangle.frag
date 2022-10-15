@@ -34,11 +34,13 @@ layout(push_constant) uniform Push {
 } push;
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler[];
-layout(set = 1, binding = 1) uniform samplerCube shadowCubeMap;
+//layout(set = 1, binding = 1) uniform samplerCube shadowCubeMap;
 layout(set = 2, binding = 0) uniform sampler2D normalSampler[];
 layout(set = 3, binding = 0) uniform sampler2D heightSampler[];
 
 void main() {
+
+    float height_scale = 0.1;
 
     vec3 N = normalize(fragNormalWorld);
     vec3 T = normalize(fragTangent);
@@ -47,25 +49,30 @@ void main() {
 
     int index = int(push.modelMatrix[3][3]);
 
+    vec3 specularLight = vec3(0.0);
+    vec3 cameraWorldPos = ubo.inverseView[3].xyz;
+    vec3 viewDirection = normalize(cameraWorldPos - fragPosWorld);
+
+    vec2 texOffset = vec2(0, 0);
+    if (textureQueryLevels(heightSampler[index]) == 0) {
+        float height =  texture(heightSampler[index], fragTexCoord).r;
+        texOffset = viewDirection.xy / viewDirection.z * (height * height_scale);
+    }
+
     vec3 diffuseLight;
     if (textureQueryLevels(texSampler[index]) == 0) {
         diffuseLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
     } else {
-        vec4 texture_sampler = texture(texSampler[index], fragTexCoord);
+        vec4 texture_sampler = texture(texSampler[index], fragTexCoord - texOffset);
         diffuseLight = texture_sampler.rgb;
     }
 
     vec3 surfaceNormal;
-    // TODO implement heightmaps in shaders
     if (textureQueryLevels(normalSampler[index]) == 0) {
         surfaceNormal = normalize(fragNormalWorld);
     } else {
-        surfaceNormal = TBN * normalize(texture(normalSampler[index], fragTexCoord).xyz * 2.0 - vec3(1.0));
+        surfaceNormal = TBN * normalize(texture(normalSampler[index], fragTexCoord - texOffset).xyz * 2.0 - vec3(1.0));
     }
-
-    vec3 specularLight = vec3(0.0);
-    vec3 cameraWorldPos = ubo.inverseView[3].xyz;
-    vec3 viewDirection = normalize(cameraWorldPos - fragPosWorld);
 
     for (int i = 0; i < ubo.numLights; i++) {
         PointLight light = ubo.pointLights[i];

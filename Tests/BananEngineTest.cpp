@@ -83,7 +83,7 @@ namespace Banan{
                 .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
                 .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjectsTextureInfo.size())
-                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                //.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
         auto normalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
@@ -131,7 +131,7 @@ namespace Banan{
             textureWriter.writeImages(0, gameObjectsTextureInfo);
 
             //auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
-            //textureWriter.writeImage(2, &shadowInfo);
+            //textureWriter.writeImage(1, &shadowInfo);
 
             BananDescriptorWriter normalWriter = BananDescriptorWriter(*normalSetLayout, *normalPool);
             normalWriter.writeImages(0, gameObjectsNormalInfo);
@@ -142,7 +142,7 @@ namespace Banan{
             uint32_t globalDescriptorCounts[] = {1};
             writer.build(globalDescriptorSets[i], globalDescriptorCounts);
 
-            uint32_t textureDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsTextureInfo.size()), 1};
+            uint32_t textureDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsTextureInfo.size())};
             textureWriter.build(textureDescriptorSets[i], textureDescriptorCounts);
 
             uint32_t normalDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsNormalInfo.size())};
@@ -236,6 +236,7 @@ namespace Banan{
         floorBuilder.loadModel("banan_assets/quad.obj");
         floorBuilder.loadTexture("banan_assets/textures/Tiles_046_basecolor.jpg");
         floorBuilder.loadNormals("banan_assets/textures/Tiles_046_normal.exr");
+        floorBuilder.loadHeightMap("banan_assets/textures/Tiles_046_height.png");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
@@ -276,7 +277,7 @@ namespace Banan{
                 }
 
                 if (kv.second.model->isHeightmapLoaded()) {
-                    gameObjectsHeightInfo.emplace(kv.first, kv.second.model->getDescriptorNormalImageInfo());
+                    gameObjectsHeightInfo.emplace(kv.first, kv.second.model->getDescriptorHeightMapInfo());
                 }
             }
         }
