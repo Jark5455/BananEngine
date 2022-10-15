@@ -53,6 +53,7 @@ void main() {
     vec3 cameraWorldPos = ubo.inverseView[3].xyz;
     vec3 viewDirection = normalize(cameraWorldPos - fragPosWorld);
 
+    // TODO cant tell if this works or not
     vec2 texOffset = vec2(0, 0);
     if (textureQueryLevels(heightSampler[index]) == 0) {
         float height =  texture(heightSampler[index], fragTexCoord).r;
