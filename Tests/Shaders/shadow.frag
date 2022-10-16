@@ -17,6 +17,8 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     vec4 ambientLightColor;
     PointLight pointLights[10];
     int numLights;
+    float heightScale;
+    float parallaxBias;
 } ubo;
 
 layout(push_constant) uniform Push {

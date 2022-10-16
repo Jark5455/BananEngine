@@ -25,6 +25,8 @@ namespace Banan {
         glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.25f};
         PointLight pointLights[MAX_LIGHTS];
         int numLights;
+        float heightscale;
+        float parallaxBias;
     };
 
     struct ProcrastinatedUBO {

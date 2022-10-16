@@ -13,6 +13,9 @@ layout(location = 2) out vec3 fragNormalWorld;
 layout(location = 3) out vec2 fragTexCoord;
 layout(location = 4) out vec3 fragPos;
 layout(location = 5) out vec3 fragTangent;
+layout(location = 6) out vec3 fragTangentViewPos;
+layout(location = 7) out vec3 fragTangentFragPos;
+layout(location = 8) out mat3 fragTBN;
 
 struct PointLight {
     vec4 position;
@@ -27,6 +30,8 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     vec4 ambientLightColor;
     PointLight pointLights[10];
     int numLights;
+    float heightScale;
+    float parallaxBias;
 } ubo;
 
 layout(push_constant) uniform Push {
@@ -46,4 +51,12 @@ void main() {
     fragTexCoord = uv;
     fragColor = color;
     fragPos = position;
+
+    vec3 N = normalize(fragNormalWorld);
+    vec3 T = normalize(fragTangent);
+    vec3 B = cross(N, T);
+    fragTBN = mat3(T, B, N);
+
+    fragTangentViewPos  = fragTBN * ubo.inverseView[3].xyz;
+    fragTangentFragPos  = fragTBN * fragPosWorld;
 }

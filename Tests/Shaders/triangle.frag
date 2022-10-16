@@ -10,6 +10,9 @@ layout (location = 2) in vec3 fragNormalWorld;
 layout (location = 3) in vec2 fragTexCoord;
 layout (location = 4) in vec3 fragPos;
 layout (location = 5) in vec3 fragTangent;
+layout (location = 6) in vec3 fragTangentViewPos;
+layout (location = 7) in vec3 fragTangentFragPos;
+layout (location = 8) in mat3 fragTBN;
 
 layout (location = 0) out vec4 outColor;
 
@@ -26,6 +29,8 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     vec4 ambientLightColor;
     PointLight pointLights[10];
     int numLights;
+    float heightScale;
+    float parallaxBias;
 } ubo;
 
 layout(push_constant) uniform Push {
@@ -38,15 +43,14 @@ layout(set = 1, binding = 0) uniform sampler2D texSampler[];
 layout(set = 2, binding = 0) uniform sampler2D normalSampler[];
 layout(set = 3, binding = 0) uniform sampler2D heightSampler[];
 
+vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
+{
+    float height =  texture(heightSampler[index], uv).r;
+    vec2 p = viewDir.xy / viewDir.z * (height * ubo.heightScale);
+    return uv - p;
+}
+
 void main() {
-
-    float height_scale = 0.1;
-
-    vec3 N = normalize(fragNormalWorld);
-    vec3 T = normalize(fragTangent);
-    vec3 B = cross(N, T);
-    mat3 TBN = mat3(T, B, N);
-
     int index = int(push.modelMatrix[3][3]);
 
     vec3 specularLight = vec3(0.0);
@@ -54,25 +58,21 @@ void main() {
     vec3 viewDirection = normalize(cameraWorldPos - fragPosWorld);
 
     // TODO cant tell if this works or not
-    vec2 texOffset = vec2(0, 0);
-    if (textureQueryLevels(heightSampler[index]) == 0) {
-        float height =  texture(heightSampler[index], fragTexCoord).r;
-        texOffset = viewDirection.xy / viewDirection.z * (height * height_scale);
+    vec2 uv = fragTexCoord;
+    if (textureQueryLevels(heightSampler[index]) > 0) {
+        vec3 V = normalize(fragTangentViewPos - fragTangentFragPos);
+        vec2 uv =  parallaxMapping(fragTexCoord, V, index);
     }
 
-    vec3 diffuseLight;
-    if (textureQueryLevels(texSampler[index]) == 0) {
-        diffuseLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
-    } else {
-        vec4 texture_sampler = texture(texSampler[index], fragTexCoord - texOffset);
+    vec3 diffuseLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
+    if (textureQueryLevels(texSampler[index]) > 0) {
+        vec4 texture_sampler = texture(texSampler[index], uv);
         diffuseLight = texture_sampler.rgb;
     }
 
-    vec3 surfaceNormal;
-    if (textureQueryLevels(normalSampler[index]) == 0) {
-        surfaceNormal = normalize(fragNormalWorld);
-    } else {
-        surfaceNormal = TBN * normalize(texture(normalSampler[index], fragTexCoord - texOffset).xyz * 2.0 - vec3(1.0));
+    vec3 surfaceNormal = normalize(fragNormalWorld);
+    if (textureQueryLevels(normalSampler[index]) > 0) {
+        surfaceNormal = fragTBN * normalize(texture(normalSampler[index], uv).xyz * 2.0 - vec3(1.0));
     }
 
     for (int i = 0; i < ubo.numLights; i++) {

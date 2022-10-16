@@ -33,7 +33,8 @@ namespace Banan {
         createIndexBuffers(builder.indices);
     }
 
-    BananModel::~BananModel() {}
+    BananModel::~BananModel() {
+    }
 
     void BananModel::bindPosition(VkCommandBuffer commandBuffer) {
         VkBuffer buffers[] = {vertexBuffer->getBuffer()};
@@ -241,7 +242,7 @@ namespace Banan {
 
     void BananModel::Builder::loadModel(const std::string &filepath) {
         Assimp::Importer importer;
-        const aiScene *scene = importer.ReadFile(filepath,aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices |aiProcess_GenUVCoords | aiProcess_CalcTangentSpace);
+        const aiScene *scene = importer.ReadFile(filepath,aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenUVCoords | aiProcess_CalcTangentSpace | aiProcess_MakeLeftHanded);
 
         positions.clear();
         misc.clear();
@@ -333,7 +334,7 @@ namespace Banan {
             }
         }
 
-        target.data = std::move(singleChannelData);
+        target.data = singleChannelData;
         target.width = dim.x;
         target.height = dim.y;
     }
