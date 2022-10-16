@@ -29,6 +29,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     int numLights;
     float heightScale;
     float parallaxBias;
+    float numLayers;
 } ubo;
 
 layout(push_constant) uniform Push {
