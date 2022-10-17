@@ -208,7 +208,7 @@ namespace Banan{
     }
 
     void BananEngineTest::loadGameObjects() {
-        /*BananModel::Builder vaseBuilder{};
+        BananModel::Builder vaseBuilder{};
         vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
         vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
         vaseBuilder.loadNormals("banan_assets/textures/ceramic_vase_01_nor_gl_4k.exr");
@@ -219,7 +219,7 @@ namespace Banan{
         vase.transform.translation = {0.f, .5f, 1.f};
         vase.transform.rotation = {-glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
-        gameObjects.emplace(vase.getId(), std::move(vase));*/
+        gameObjects.emplace(vase.getId(), std::move(vase));
 
         /*BananModel::Builder otherfloorBuilder{};
         otherfloorBuilder.loadModel("banan_assets/obamium.blend");
@@ -236,9 +236,9 @@ namespace Banan{
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/bricks2.jpg");
-        floorBuilder.loadNormals("banan_assets/textures/bricks2_normal.exr");
-        floorBuilder.loadHeightMap("banan_assets/textures/bricks2_disp.jpg");
+        floorBuilder.loadTexture("banan_assets/textures/Tiles_046_basecolor.jpg");
+        floorBuilder.loadNormals("banan_assets/textures/Tiles_046_normal.exr");
+        floorBuilder.loadHeightMap("banan_assets/textures/Tiles_046_height.png");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();

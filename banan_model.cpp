@@ -136,6 +136,9 @@ namespace Banan {
             hasTexture = false;
         }
 
+        if (texture.data != nullptr) {
+            free(texture.data);
+        }
     }
 
     void BananModel::createNormalImage(const HDR &image) {
@@ -146,7 +149,7 @@ namespace Banan {
 
             BananBuffer stagingBuffer{bananDevice, pixelSize, normalpixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
             stagingBuffer.map();
-            stagingBuffer.writeToBuffer((void *)image.data.data());
+            stagingBuffer.writeToBuffer((void *)image.data);
 
             normalImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
             bananDevice.transitionImageLayout(normalImage->getImageHandle(), VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
@@ -155,6 +158,10 @@ namespace Banan {
             hasNormal = true;
         } else {
             hasNormal = false;
+        }
+
+        if (image.data != nullptr) {
+            free(image.data);
         }
     }
 
@@ -175,6 +182,10 @@ namespace Banan {
             hasHeightmap = true;
         } else {
             hasHeightmap = false;
+        }
+
+        if (image.data != nullptr) {
+            free(image.data);
         }
     }
 
@@ -324,7 +335,11 @@ namespace Banan {
         in.setFrameBuffer(&pixelBufferRef[0][0] - dx - dy * dim.x, 1, dim.x);
         in.readPixels(win.min.y, win.max.y);
 
-        std::vector<uint16_t> singleChannelData{};
+        target.data = (uint16_t *) malloc(dim.y * dim.y * 8);
+        target.width = dim.x;
+        target.height = dim.y;
+
+        std::vector<uint16_t> singleChannelData = {};
         for (int y1 = 0; y1 < dim.y; y1++) {
             for (int x1 = 0; x1 < dim.x; x1++) {
                 singleChannelData.push_back(pixelBufferRef[y1][x1].r.bits());
@@ -334,18 +349,16 @@ namespace Banan {
             }
         }
 
-        target.data = singleChannelData;
-        target.width = dim.x;
-        target.height = dim.y;
+        memcpy(target.data, singleChannelData.data(), dim.x * dim.y * 8);
     }
 
     void BananModel::Builder::loadRGB(const string &filepath, RGB &target) {
-        int texWidth, texHeight, texChannels;
-        uint8_t *data = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        uint8_t *data = stbi_load(filepath.c_str(), (int *) &target.width, (int *) &target.height, nullptr, STBI_rgb_alpha);
 
-        target.data = data;
-        target.width = texWidth;
-        target.height = texHeight;
-        target.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+        target.data = (uint8_t *) malloc(target.width * target.height * 4);
+        target.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(target.width, target.width)))) + 1;
+
+        memcpy(target.data, data, target.width * target.height * 4);
+        stbi_image_free(data);
     }
 }

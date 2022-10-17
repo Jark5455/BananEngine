@@ -46,46 +46,9 @@ layout(set = 2, binding = 0) uniform sampler2D normalSampler[];
 layout(set = 3, binding = 0) uniform sampler2D heightSampler[];
 
 vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index) {
-    float height = 1.0 - textureLod(heightSampler[index], uv, 0.0).a;
-    vec2 p = viewDir.xy * (height * (ubo.heightScale * 0.5) + ubo.parallaxBias) / viewDir.z;
+    float height =  texture(heightSampler[index], uv).r;
+    vec2 p = viewDir.xy / viewDir.z * (height * ubo.heightScale);
     return uv - p;
-}
-
-vec2 steepParallaxMapping(vec2 uv, vec3 viewDir, int index) {
-    float layerDepth = 1.0 / ubo.numLayers;
-    float currLayerDepth = 0.0;
-    vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
-    vec2 currUV = uv;
-    float height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).a;
-    for (int i = 0; i < ubo.numLayers; i++) {
-        currLayerDepth += layerDepth;
-        currUV -= deltaUV;
-        height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).a;
-        if (height < currLayerDepth) {
-            break;
-        }
-    }
-    return currUV;
-}
-
-vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index) {
-    float layerDepth = 1.0 / ubo.numLayers;
-    float currLayerDepth = 0.0;
-    vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
-    vec2 currUV = uv;
-    float height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).a;
-    for (int i = 0; i < ubo.numLayers; i++) {
-        currLayerDepth += layerDepth;
-        currUV -= deltaUV;
-        height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).a;
-        if (height < currLayerDepth) {
-            break;
-        }
-    }
-    vec2 prevUV = currUV + deltaUV;
-    float nextDepth = height - currLayerDepth;
-    float prevDepth = 1.0 - textureLod(heightSampler[index], prevUV, 0.0).a - currLayerDepth + layerDepth;
-    return mix(currUV, prevUV, nextDepth / (nextDepth - prevDepth));
 }
 
 void main() {
@@ -98,8 +61,7 @@ void main() {
     // TODO cant tell if this works or not
     vec2 uv = fragTexCoord;
     if (textureQueryLevels(heightSampler[index]) > 0) {
-        vec3 V = normalize(fragTangentViewPos - fragTangentFragPos);
-        vec2 uv =  steepParallaxMapping(fragTexCoord, V, index);
+        vec2 uv =  parallaxMapping(fragTexCoord, viewDirection, index);
     }
 
     vec3 diffuseLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;

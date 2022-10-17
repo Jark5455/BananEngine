@@ -57,7 +57,4 @@ void main() {
     vec3 T = normalize(fragTangent);
     vec3 B = cross(N, T);
     fragTBN = mat3(T, B, N);
-
-    fragTangentViewPos  = fragTBN * ubo.inverseView[3].xyz;
-    fragTangentFragPos  = fragTBN * fragPosWorld;
 }
