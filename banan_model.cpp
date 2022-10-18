@@ -116,43 +116,49 @@ namespace Banan {
         return std::make_unique<BananModel>(device, builder);
     }
 
-    void BananModel::createTextureImage(const RGB &texture) {
-        if (texture.width > 0 && texture.height > 0) {
-            texturepixelCount = texture.width * texture.height;
+    void BananModel::createTextureImage(const Texture &image) {
+        if (image.width > 0 && image.height > 0) {
+            texturepixelCount = image.width * image.height;
             assert(texturepixelCount >= 0 && "Failed to load image: 0 pixels");
-            uint32_t pixelSize = 4; //for some reason sizeof(uint8_t) returns 1, idk lol im pretty dumb, also it only works on 4 not 8, not sure why, my brain is decaying so I can think straight
+            uint32_t pixelSize = image.stride / 2; // stride is in bits, pixel size should be in bytes
+
+            VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+            if (image.stride == 16) format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
             BananBuffer stagingBuffer{bananDevice, pixelSize, texturepixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
             stagingBuffer.map();
-            stagingBuffer.writeToBuffer((void *)texture.data);
+            stagingBuffer.writeToBuffer((void *)image.data);
 
-            textureImage = std::make_unique<BananImage>(bananDevice, texture.width, texture.height, texture.mipLevels, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            bananDevice.transitionImageLayout(textureImage->getImageHandle(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture.mipLevels, 1);
-            bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), textureImage->getImageHandle(), texture.width, texture.height, 1);
-            bananDevice.generateMipMaps(textureImage->getImageHandle(), texture.width, texture.height, texture.mipLevels);
+            textureImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, image.mipLevels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            bananDevice.transitionImageLayout(textureImage->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image.mipLevels, 1);
+            bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), textureImage->getImageHandle(), image.width, image.height, 1);
+            bananDevice.generateMipMaps(textureImage->getImageHandle(), image.width, image.height, image.mipLevels);
 
             hasTexture = true;
         } else {
             hasTexture = false;
         }
 
-        if (texture.data != nullptr) {
-            free(texture.data);
+        if (image.data != nullptr) {
+            free(image.data);
         }
     }
 
-    void BananModel::createNormalImage(const HDR &image) {
+    void BananModel::createNormalImage(const Texture &image) {
         if (image.height > 0 && image.width > 0) {
             normalpixelCount = image.height * image.width;
             assert(normalpixelCount >= 0 && "Failed to load image: 0 pixels");
-            uint32_t pixelSize = 8; // 16 bit precision so its double of texture images
+            uint32_t pixelSize = image.stride / 2; // stride is in bits, pixel size should be in bytes
+
+            VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+            if (image.stride == 16) format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
             BananBuffer stagingBuffer{bananDevice, pixelSize, normalpixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
             stagingBuffer.map();
             stagingBuffer.writeToBuffer((void *)image.data);
 
-            normalImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            bananDevice.transitionImageLayout(normalImage->getImageHandle(), VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
+            normalImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            bananDevice.transitionImageLayout(normalImage->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
             bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), normalImage->getImageHandle(), image.width, image.height, 1);
 
             hasNormal = true;
@@ -165,18 +171,21 @@ namespace Banan {
         }
     }
 
-    void BananModel::createHeightmap(const RGB &image) {
+    void BananModel::createHeightmap(const Texture &image) {
         if (image.height > 0 && image.width > 0) {
             heightMapPixelCount = image.height * image.width;
             assert(heightMapPixelCount >= 0 && "Failed to load image: 0 pixels");
-            uint32_t pixelSize = 8; // 16 bit precision so its double of texture images
+            uint32_t pixelSize = image.stride / 2; // stride is in bits, pixel size should be in bytes
+
+            VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+            if (image.stride == 16) format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
             BananBuffer stagingBuffer{bananDevice, pixelSize, heightMapPixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
             stagingBuffer.map();
             stagingBuffer.writeToBuffer((void *)image.data);
 
-            heightMap = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            bananDevice.transitionImageLayout(heightMap->getImageHandle(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
+            heightMap = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            bananDevice.transitionImageLayout(heightMap->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
             bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), heightMap->getImageHandle(), image.width, image.height, 1);
 
             hasHeightmap = true;
@@ -300,6 +309,7 @@ namespace Banan {
 
                     texture.width = width;
                     texture.height = height;
+                    texture.stride = 8;
                 }
             }
         } else {
@@ -308,18 +318,75 @@ namespace Banan {
     }
 
     void BananModel::Builder::loadTexture(const std::string &filepath) {
-        loadRGB(filepath, texture);
+        char *fileName = const_cast<char *>(filepath.c_str());
+        size_t len = strlen(fileName);
+        size_t idx = len-1;
+        for(size_t i = 0; *(fileName+i); i++) {
+            if (*(fileName+i) == '.') {
+                idx = i;
+            } else if (*(fileName + i) == '/' || *(fileName + i) == '\\') {
+                idx = len - 1;
+            }
+        }
+
+        std::string extension = std::string(fileName).substr(idx+1);
+
+        if (extension == "exr") {
+            loadHDR(filepath, texture);
+        } else if (extension == "jpg" || extension == "jpeg" || extension == "png") {
+            loadRGB(filepath, texture);
+        } else {
+            throw std::runtime_error("unsupported texture file format");
+        }
     }
 
     void BananModel::Builder::loadNormals(const std::string &filepath) {
-        loadHDR(filepath, normals);
+        char *fileName = const_cast<char *>(filepath.c_str());
+        size_t len = strlen(fileName);
+        size_t idx = len-1;
+        for(size_t i = 0; *(fileName+i); i++) {
+            if (*(fileName+i) == '.') {
+                idx = i;
+            } else if (*(fileName + i) == '/' || *(fileName + i) == '\\') {
+                idx = len - 1;
+            }
+        }
+
+        std::string extension = std::string(fileName).substr(idx+1);
+
+        if (extension == "exr") {
+            loadHDR(filepath, normals);
+        } else if (extension == "jpg" || extension == "jpeg" || extension == "png") {
+            loadRGB(filepath, normals);
+        } else {
+            throw std::runtime_error("unsupported texture file format");
+        }
     }
 
     void BananModel::Builder::loadHeightMap(const std::string &filepath) {
-        loadRGB(filepath, heights);
+        char *fileName = const_cast<char *>(filepath.c_str());
+        size_t len = strlen(fileName);
+        size_t idx = len-1;
+        for(size_t i = 0; *(fileName+i); i++) {
+            if (*(fileName+i) == '.') {
+                idx = i;
+            } else if (*(fileName + i) == '/' || *(fileName + i) == '\\') {
+                idx = len - 1;
+            }
+        }
+
+        std::string extension = std::string(fileName).substr(idx+1);
+
+        if (extension == "exr") {
+            loadHDR(filepath, heights);
+        } else if (extension == "jpg" || extension == "jpeg" || extension == "png") {
+            loadRGB(filepath, heights);
+        } else {
+            throw std::runtime_error("unsupported texture file format");
+        }
     }
 
-    void BananModel::Builder::loadHDR(const string &filepath, BananModel::HDR &target) {
+    void BananModel::Builder::loadHDR(const string &filepath, Texture &target) {
         Imf::Array2D<Rgba> pixelBuffer = Imf::Array2D<Rgba>();
         Imf::Array2D<Rgba> &pixelBufferRef = pixelBuffer;
 
@@ -338,25 +405,30 @@ namespace Banan {
         target.data = (uint16_t *) malloc(dim.y * dim.y * 8);
         target.width = dim.x;
         target.height = dim.y;
+        target.stride = 16;
 
-        std::vector<uint16_t> singleChannelData = {};
+        auto *singleChannelPixelBuffer = (uint16_t *) malloc(dim.y * dim.y * 8);
+        int index = 0;
+
         for (int y1 = 0; y1 < dim.y; y1++) {
             for (int x1 = 0; x1 < dim.x; x1++) {
-                singleChannelData.push_back(pixelBufferRef[y1][x1].r.bits());
-                singleChannelData.push_back(pixelBufferRef[y1][x1].g.bits());
-                singleChannelData.push_back(pixelBufferRef[y1][x1].b.bits());
-                singleChannelData.push_back(pixelBufferRef[y1][x1].a.bits());
+                singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].r.bits();
+                singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].g.bits();
+                singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].b.bits();
+                singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].a.bits();
             }
         }
 
-        memcpy(target.data, singleChannelData.data(), dim.x * dim.y * 8);
+        memcpy(target.data, singleChannelPixelBuffer, dim.x * dim.y * 8);
+        free(singleChannelPixelBuffer);
     }
 
-    void BananModel::Builder::loadRGB(const string &filepath, RGB &target) {
+    void BananModel::Builder::loadRGB(const string &filepath, Texture &target) {
         uint8_t *data = stbi_load(filepath.c_str(), (int *) &target.width, (int *) &target.height, nullptr, STBI_rgb_alpha);
 
         target.data = (uint8_t *) malloc(target.width * target.height * 4);
         target.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(target.width, target.width)))) + 1;
+        target.stride = 8;
 
         memcpy(target.data, data, target.width * target.height * 4);
         stbi_image_free(data);

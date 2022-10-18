@@ -18,18 +18,12 @@
 namespace Banan {
     class BananModel {
     public:
-
-        struct RGB {
-            uint8_t *data = nullptr;
+        struct Texture {
+            void *data = nullptr;
+            size_t stride = 0;
             uint32_t width = 0;
             uint32_t height = 0;
             uint32_t mipLevels = 1;
-        };
-
-        struct HDR {
-            uint16_t *data = nullptr;
-            uint32_t width = 0;
-            uint32_t height = 0;
         };
 
         struct Vertex {
@@ -49,17 +43,17 @@ namespace Banan {
             std::vector<Vertex> misc{};
 
             std::vector<uint32_t> indices{};
-            RGB texture{};
-            HDR normals{};
-            RGB heights{};
+            Texture texture{};
+            Texture normals{};
+            Texture heights{};
 
             void loadModel(const std::string &filepath);
             void loadTexture(const std::string &filepath);
             void loadNormals(const std::string &filepath);
             void loadHeightMap(const std::string &filepath);
 
-            void loadHDR(const std::string &filepath, HDR &target);
-            void loadRGB(const std::string &filepath, RGB &target);
+            void loadHDR(const std::string &filepath, Texture &target);
+            void loadRGB(const std::string &filepath, Texture &target);
         };
 
         BananModel(BananDevice &device, const Builder &builder);
@@ -85,9 +79,9 @@ namespace Banan {
     private:
         void createVertexBuffers(const std::vector<glm::vec3> &vertices, const std::vector<Vertex> &misc);
         void createIndexBuffers(const std::vector<uint32_t> &indices);
-        void createTextureImage(const RGB &image);
-        void createNormalImage(const HDR &image);
-        void createHeightmap(const RGB &image);
+        void createTextureImage(const Texture &image);
+        void createNormalImage(const Texture &image);
+        void createHeightmap(const Texture &image);
 
         bool hasIndexBuffer;
         bool hasTexture;
