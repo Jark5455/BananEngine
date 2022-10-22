@@ -28,6 +28,7 @@ namespace Banan {
         float heightscale;
         float parallaxBias;
         float numLayers;
+        int parallaxmode;
     };
 
     struct ProcrastinatedUBO {

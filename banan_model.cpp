@@ -406,6 +406,7 @@ namespace Banan {
         target.width = dim.x;
         target.height = dim.y;
         target.stride = 16;
+        target.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(target.width, target.width)))) + 1;
 
         auto *singleChannelPixelBuffer = (uint16_t *) malloc(dim.y * dim.y * 8);
         int index = 0;
