@@ -46,15 +46,20 @@ void main() {
 
     vec4 positionWorld = actuallModelMatrix * vec4(position, 1.0);
     gl_Position = ubo.projection * ubo.view * positionWorld;
-    fragTangent = normalize(mat3(push.normalMatrix) * tangent);
-    fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
-    fragPosWorld = positionWorld.xyz;
-    fragTexCoord = uv;
-    fragColor = color;
-    fragPos = position;
 
     vec3 N = normalize(fragNormalWorld);
     vec3 T = normalize(fragTangent);
     vec3 B = cross(N, T);
     fragTBN = mat3(T, B, N);
+
+    fragTangent = normalize(mat3(push.normalMatrix) * tangent);
+    fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
+    fragPosWorld = positionWorld.xyz;
+
+    fragTangentViewPos = fragTBN * ubo.inverseView[3].xyz;
+    fragTangentFragPos = fragTBN * positionWorld.xyz;
+
+    fragTexCoord = uv;
+    fragColor = color;
+    fragPos = position;
 }
