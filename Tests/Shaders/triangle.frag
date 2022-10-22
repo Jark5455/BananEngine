@@ -5,14 +5,12 @@
 #define SHADOW_OPACITY 0.5
 
 layout (location = 0) in vec3 fragColor;
-layout (location = 1) in vec3 fragPosWorld;
-layout (location = 2) in vec3 fragNormalWorld;
-layout (location = 3) in vec2 fragTexCoord;
-layout (location = 4) in vec3 fragPos;
-layout (location = 5) in vec3 fragTangent;
-layout (location = 6) in vec3 fragTangentViewPos;
-layout (location = 7) in vec3 fragTangentFragPos;
-layout (location = 8) in mat3 fragTBN;
+layout (location = 1) in vec2 fragTexCoord;
+layout (location = 2) in vec3 fragPos;
+layout (location = 3) in vec3 fragNormal;
+layout (location = 4) in vec3 fragTangentViewPos;
+layout (location = 5) in vec3 fragTangentFragPos;
+layout (location = 6) in mat3 fragTBN;
 
 layout (location = 0) out vec4 outColor;
 
@@ -45,35 +43,50 @@ layout(set = 1, binding = 0) uniform sampler2D texSampler[];
 layout(set = 2, binding = 0) uniform sampler2D normalSampler[];
 layout(set = 3, binding = 0) uniform sampler2D heightSampler[];
 
-vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index) {
+vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
+{
+    float height = 1.0 - textureLod(heightSampler[index], uv, 0.0).r;
+    vec2 p = viewDir.xy * (height * (ubo.heightScale * 0.5) + ubo.parallaxBias) / viewDir.z;
+    return uv - p;
+}
+
+vec2 steepParallaxMapping(vec2 uv, vec3 viewDir, int index)
+{
     float layerDepth = 1.0 / ubo.numLayers;
-    float currentLayerDepth = 0.0;
-
-    vec2 P = viewDir.xy / viewDir.z * ubo.heightScale;
-    vec2 deltaTexCoords = P / ubo.numLayers;
-
-    vec2  currentTexCoords = uv;
-    float currentDepthMapValue = textureLod(heightSampler[index], currentTexCoords, 0.0).r;
-
-    while(currentLayerDepth < currentDepthMapValue)
-    {
-        // shift texture coordinates along direction of P
-        currentTexCoords -= deltaTexCoords;
-        // get depthmap value at current texture coordinates
-        currentDepthMapValue = textureLod(heightSampler[index], currentTexCoords, 0.0).r;
-        // get depth of next layer
-        currentLayerDepth += layerDepth;
+    float currLayerDepth = 0.0;
+    vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
+    vec2 currUV = uv;
+    float height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).r;
+    for (int i = 0; i < ubo.numLayers; i++) {
+        currLayerDepth += layerDepth;
+        currUV -= deltaUV;
+        height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).r;
+        if (height < currLayerDepth) {
+            break;
+        }
     }
+    return currUV;
+}
 
-    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
-
-    // get depth after and before collision for linear interpolation
-    float afterDepth  = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = textureLod(heightSampler[index], prevTexCoords, 0.0).r - currentLayerDepth + layerDepth;
-
-    // interpolation of texture coordinates
-    float weight = afterDepth / (afterDepth - beforeDepth);
-    return prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
+{
+    float layerDepth = 1.0 / ubo.numLayers;
+    float currLayerDepth = 0.0;
+    vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
+    vec2 currUV = uv;
+    float height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).r;
+    for (int i = 0; i < ubo.numLayers; i++) {
+        currLayerDepth += layerDepth;
+        currUV -= deltaUV;
+        height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).r;
+        if (height < currLayerDepth) {
+            break;
+        }
+    }
+    vec2 prevUV = currUV + deltaUV;
+    float nextDepth = height - currLayerDepth;
+    float prevDepth = 1.0 - textureLod(heightSampler[index], prevUV, 0.0).r - currLayerDepth + layerDepth;
+    return mix(currUV, prevUV, nextDepth / (nextDepth - prevDepth));
 }
 
 void main() {
@@ -86,33 +99,32 @@ void main() {
     // TODO cant tell if this works or not
     vec2 uv = fragTexCoord;
     if (textureQueryLevels(heightSampler[index]) > 0) {
-        vec2 uv =  parallaxMapping(fragTexCoord, viewDirection, index);
-        if(uv.x > 1.0 || uv.y > 1.0 || uv.x < 0.0 || uv.y < 0.0)
-            discard;
+        vec2 uv =  parallaxOcclusionMapping(fragTexCoord, viewDirection, index);
     }
 
-    vec3 color = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
+    vec3 color = fragColor;
     if (textureQueryLevels(texSampler[index]) > 0) {
         color = texture(texSampler[index], uv).rgb;
     }
 
-    vec3 surfaceNormal = fragTBN * normalize(fragNormalWorld);
+    vec3 normalHeightMapLod = fragTBN * normalize(mat3(push.normalMatrix) * fragNormal);
     if (textureQueryLevels(normalSampler[index]) > 0) {
-        surfaceNormal = texture(normalSampler[index], uv).rgb;
-        surfaceNormal = normalize(surfaceNormal * 2.0 - 1.0);
+        normalHeightMapLod = textureLod(normalSampler[index], uv, 0.0).rgb;
     }
 
+    vec3 surfaceNormal = normalize(normalHeightMapLod * 2.0 - 1.0);
     for (int i = 0; i < ubo.numLights; i++) {
         PointLight light = ubo.pointLights[i];
-        vec3 directionToLight = normalize((fragTBN * light.position.xyz) - fragPosWorld);
+        vec3 directionToLight = normalize((fragTBN * light.position.xyz) - fragTangentFragPos);
+        vec3 reflection = reflect(-directionToLight, surfaceNormal);
 
-        float diff = max(dot(directionToLight, surfaceNormal), 0.0);
-        diffuseLight += diff * color;
+        float attenuation = 1.0 / dot(directionToLight, directionToLight);
+        vec3 intensity = light.color.xyz * light.color.w * attenuation;
 
-        vec3 reflectDir = reflect(-directionToLight, surfaceNormal);
-        vec3 halfwayDir = normalize(directionToLight + viewDirection);
-        float spec = pow(max(dot(surfaceNormal, halfwayDir), 0.0), 32.0);
-        specularLight += vec3(0.2) * spec;
+        diffuseLight += max(dot(directionToLight, surfaceNormal), 0.0) * intensity * color;
+
+        vec3 halfAngle = normalize(directionToLight + viewDirection);
+        specularLight += pow(max(dot(surfaceNormal, halfAngle), 0.0), 512.0) * light.color.xyz * attenuation;
 
         /*float attenuation = 1.0 / dot(directionToLight, directionToLight);
         directionToLight = normalize(directionToLight);
@@ -136,5 +148,5 @@ void main() {
 
     float shadow = (dist <= sampledDist + EPSILON) ? 1.0 : SHADOW_OPACITY;*/
 
-    outColor = vec4(diffuseLight + specularLight, 1.0) + (0.2 * ubo.ambientLightColor);
+    outColor = vec4(diffuseLight + specularLight, 1.0);
 }
