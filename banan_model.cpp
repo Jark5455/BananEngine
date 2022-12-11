@@ -247,7 +247,7 @@ namespace Banan {
     }
 
     std::vector<VkVertexInputBindingDescription> BananModel::Vertex::getPositionOnlyBindingDescriptions() {
-        std::vector<VkVertexInputBindingDescription> bindingDescriptions(2);
+        std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
         bindingDescriptions[0].binding = 0;
         bindingDescriptions[0].stride = sizeof(glm::vec3);
         bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -262,7 +262,14 @@ namespace Banan {
 
     void BananModel::Builder::loadModel(const std::string &filepath) {
         Assimp::Importer importer;
-        const aiScene *scene = importer.ReadFile(filepath,aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenUVCoords | aiProcess_CalcTangentSpace | aiProcess_MakeLeftHanded);
+        const aiScene *scene = importer.ReadFile(filepath,
+                                                 aiProcess_Triangulate |
+                                                 aiProcess_GenSmoothNormals |
+                                                 aiProcess_FlipUVs |
+                                                 aiProcess_JoinIdenticalVertices |
+                                                 aiProcess_GenUVCoords |
+                                                 aiProcess_CalcTangentSpace |
+                                                 aiProcess_MakeLeftHanded);
 
         positions.clear();
         misc.clear();

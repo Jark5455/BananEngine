@@ -184,7 +184,7 @@ namespace Banan{
                 ubo.heightscale = 0.1;
                 ubo.parallaxBias = -0.02f;
                 ubo.numLayers = 48.0f;
-                ubo.parallaxmode = 1;
+                ubo.parallaxmode = 4;
 
                 pointLightSystem.update(frameInfo, ubo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
@@ -237,15 +237,15 @@ namespace Banan{
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/bricks2.jpg");
-        floorBuilder.loadNormals("banan_assets/textures/bricks2_normal.exr");
-        floorBuilder.loadHeightMap("banan_assets/textures/bricks2_disp.jpg");
+        floorBuilder.loadTexture("banan_assets/textures/Tiles_046_basecolor.jpg");
+        floorBuilder.loadNormals("banan_assets/textures/Tiles_046_normal.exr");
+        floorBuilder.loadHeightMap("banan_assets/textures/Tiles_046_height.png");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
         floor.transform.translation = {0.f, .5f, 2.f};
-        floor.transform.rotation = {0.f, glm::pi<float>() / 2.0f, glm::pi<float>() / 2.0f};
+        floor.transform.rotation = {0.f, 0.0f, 0.0f};
         floor.transform.scale = {1.f, 1.f, 1.f};
         floor.transform.id = (int) floor.getId();
         gameObjects.emplace(floor.getId(), std::move(floor));

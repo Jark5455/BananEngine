@@ -8,9 +8,8 @@ layout (location = 0) in vec3 fragColor;
 layout (location = 1) in vec2 fragTexCoord;
 layout (location = 2) in vec3 fragPos;
 layout (location = 3) in vec3 fragNormal;
-layout (location = 4) in vec3 fragTangentViewPos;
-layout (location = 5) in vec3 fragTangentFragPos;
-layout (location = 6) in mat3 fragTBN;
+layout (location = 4) in vec4 fragPosWorld;
+layout (location = 5) in mat3 fragTBN;
 
 layout (location = 0) out vec4 outColor;
 
@@ -94,9 +93,13 @@ void main() {
 
     vec3 diffuseLight = vec3(0.0);
     vec3 specularLight = vec3(0.0);
-    vec3 viewDirection = normalize(fragTangentViewPos - fragTangentFragPos);
 
-    // TODO cant tell if this works or not
+    vec3 tangentViewPos = fragTBN * ubo.inverseView[3].xyz;
+    vec3 tangentFragPos = fragTBN * vec3(fragPosWorld);
+
+    vec3 viewDirection = normalize(tangentViewPos - tangentFragPos);
+
+    // TODO it definetly doesnt work
     vec2 uv = fragTexCoord;
     if (textureQueryLevels(heightSampler[index]) > 0) {
         vec2 uv =  parallaxOcclusionMapping(fragTexCoord, viewDirection, index);
@@ -112,26 +115,23 @@ void main() {
         normalHeightMapLod = textureLod(normalSampler[index], uv, 0.0).rgb;
     }
 
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        discard;
+    }
+
     vec3 surfaceNormal = normalize(normalHeightMapLod * 2.0 - 1.0);
     for (int i = 0; i < ubo.numLights; i++) {
         PointLight light = ubo.pointLights[i];
-        vec3 directionToLight = normalize((fragTBN * light.position.xyz) - fragTangentFragPos);
+        vec3 tangentLightPos = fragTBN * light.position.xyz;
+
+        vec3 directionToLight = tangentLightPos - tangentFragPos;
         vec3 reflection = reflect(-directionToLight, surfaceNormal);
 
         float attenuation = 1.0 / dot(directionToLight, directionToLight);
-        vec3 intensity = light.color.xyz * light.color.w * attenuation;
-
-        diffuseLight += max(dot(directionToLight, surfaceNormal), 0.0) * intensity * color;
-
-        vec3 halfAngle = normalize(directionToLight + viewDirection);
-        specularLight += pow(max(dot(surfaceNormal, halfAngle), 0.0), 512.0) * light.color.xyz * attenuation;
-
-        /*float attenuation = 1.0 / dot(directionToLight, directionToLight);
         directionToLight = normalize(directionToLight);
 
         float cosAngIncidence = max(dot(surfaceNormal, normalize(directionToLight)), 0);
         vec3 intensity = light.color.xyz * light.color.w * attenuation;
-
         diffuseLight += intensity * cosAngIncidence;
 
         //cool reflections
@@ -139,13 +139,14 @@ void main() {
         float blinnTerm = dot(surfaceNormal, halfAngle);
         blinnTerm = clamp(blinnTerm, 0, 1);
         blinnTerm = pow(blinnTerm, 512.0f);
-        specularLight += light.color.xyz * attenuation * blinnTerm;*/
+        specularLight += light.color.xyz * attenuation * blinnTerm;
     }
+
+    diffuseLight += color;
 
     /*vec3 lightVec = fragPosWorld - ubo.pointLights[0].position.xyz;
     float sampledDist = texture(shadowCubeMap, lightVec).r;
     float dist = length(lightVec);
-
     float shadow = (dist <= sampledDist + EPSILON) ? 1.0 : SHADOW_OPACITY;*/
 
     outColor = vec4(diffuseLight + specularLight, 1.0);
