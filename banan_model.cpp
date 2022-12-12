@@ -278,6 +278,11 @@ namespace Banan {
         if (scene) {
             for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
                 const aiMesh *mesh = scene->mMeshes[i];
+
+                positions.reserve(positions.size() + mesh->mNumVertices);
+                misc.reserve(positions.size() + mesh->mNumVertices);
+                indices.reserve(positions.size() + mesh->mNumFaces * 3);
+
                 for (uint32_t j = 0; j < mesh->mNumVertices; j++) {
                     Vertex v{};
 
@@ -294,6 +299,43 @@ namespace Banan {
                     indices.push_back(mesh->mFaces[k].mIndices[0]);
                     indices.push_back(mesh->mFaces[k].mIndices[1]);
                     indices.push_back(mesh->mFaces[k].mIndices[2]);
+                }
+            }
+
+            float max_uv = 0.0;
+            float min_uv = 0.0;
+
+            for (Vertex v : misc) {
+                if (v.uv.x > max_uv) {
+                    max_uv = v.uv.x;
+                }
+
+                if (v.uv.y > max_uv) {
+                    max_uv = v.uv.y;
+                }
+
+                if (v.uv.x < min_uv) {
+                    min_uv = v.uv.x;
+                }
+
+                if (v.uv.y < min_uv) {
+                    min_uv = v.uv.y;
+                }
+            }
+
+            if (min_uv < 0.0f || max_uv > 1.0f) {
+                if (min_uv < 0.0f) {
+                    for (Vertex &v : misc) {
+                        v.uv.x += min_uv * -1.0f;
+                        v.uv.y += min_uv * -1.0f;
+                    }
+
+                    max_uv += min_uv * -1.0f;
+                    min_uv = 0.0f;
+                }
+
+                for (Vertex &v : misc) {
+                    v.uv *= 1.0f / max_uv;
                 }
             }
 
