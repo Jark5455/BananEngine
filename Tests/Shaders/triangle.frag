@@ -44,7 +44,7 @@ layout(set = 3, binding = 0) uniform sampler2D heightSampler[];
 
 vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
 {
-    float height = 1.0 - textureLod(heightSampler[index], uv, 0.0).r;
+    float height = textureLod(heightSampler[index], uv, 0.0).r;
     vec2 p = viewDir.xy * (height * (ubo.heightScale * 0.5) + ubo.parallaxBias) / viewDir.z;
     return uv - p;
 }
@@ -55,11 +55,11 @@ vec2 steepParallaxMapping(vec2 uv, vec3 viewDir, int index)
     float currLayerDepth = 0.0;
     vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
     vec2 currUV = uv;
-    float height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).r;
+    float height = textureLod(heightSampler[index], currUV, 0.0).r;
     for (int i = 0; i < ubo.numLayers; i++) {
         currLayerDepth += layerDepth;
         currUV -= deltaUV;
-        height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).r;
+        height = textureLod(heightSampler[index], currUV, 0.0).r;
         if (height < currLayerDepth) {
             break;
         }
@@ -73,18 +73,18 @@ vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
     float currLayerDepth = 0.0;
     vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
     vec2 currUV = uv;
-    float height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).r;
+    float height = textureLod(heightSampler[index], currUV, 0.0).r;
     for (int i = 0; i < ubo.numLayers; i++) {
         currLayerDepth += layerDepth;
         currUV -= deltaUV;
-        height = 1.0 - textureLod(heightSampler[index], currUV, 0.0).r;
+        height = textureLod(heightSampler[index], currUV, 0.0).r;
         if (height < currLayerDepth) {
             break;
         }
     }
     vec2 prevUV = currUV + deltaUV;
     float nextDepth = height - currLayerDepth;
-    float prevDepth = 1.0 - textureLod(heightSampler[index], prevUV, 0.0).r - currLayerDepth + layerDepth;
+    float prevDepth = textureLod(heightSampler[index], prevUV, 0.0).r - currLayerDepth + layerDepth;
     return mix(currUV, prevUV, nextDepth / (nextDepth - prevDepth));
 }
 
@@ -102,7 +102,7 @@ void main() {
     // TODO it definetly doesnt work
     vec2 uv = fragTexCoord;
     if (textureQueryLevels(heightSampler[index]) > 0) {
-        vec2 uv =  parallaxOcclusionMapping(fragTexCoord, viewDirection, index);
+       uv =  parallaxMapping(fragTexCoord, viewDirection, index);
     }
 
     vec3 color = fragColor;

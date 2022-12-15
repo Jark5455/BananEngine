@@ -302,40 +302,51 @@ namespace Banan {
                 }
             }
 
-            float max_uv = 0.0;
-            float min_uv = 0.0;
+            float max_uv_x = 0.0;
+            float min_uv_x = 0.0;
+            float max_uv_y = 0.0;
+            float min_uv_y = 0.0;
 
             for (Vertex v : misc) {
-                if (v.uv.x > max_uv) {
-                    max_uv = v.uv.x;
+                if (v.uv.x > max_uv_x) {
+                    max_uv_x = v.uv.x;
                 }
 
-                if (v.uv.y > max_uv) {
-                    max_uv = v.uv.y;
+                if (v.uv.y > max_uv_y) {
+                    max_uv_y = v.uv.y;
                 }
 
-                if (v.uv.x < min_uv) {
-                    min_uv = v.uv.x;
+                if (v.uv.x < min_uv_x) {
+                    min_uv_x = v.uv.x;
                 }
 
-                if (v.uv.y < min_uv) {
-                    min_uv = v.uv.y;
+                if (v.uv.y < min_uv_y) {
+                    min_uv_y = v.uv.y;
                 }
             }
 
-            if (min_uv < 0.0f || max_uv > 1.0f) {
-                if (min_uv < 0.0f) {
+            if (min_uv_x < 0.0f || min_uv_y < 0.0f || max_uv_x > 1.0f || max_uv_y > 1.0f) {
+                if (min_uv_x < 0.0f) {
                     for (Vertex &v : misc) {
-                        v.uv.x += min_uv * -1.0f;
-                        v.uv.y += min_uv * -1.0f;
+                        v.uv.x += min_uv_x * -1.0f;
                     }
 
-                    max_uv += min_uv * -1.0f;
-                    min_uv = 0.0f;
+                    max_uv_x += min_uv_x * -1.0f;
+                    min_uv_x = 0.0f;
+                }
+
+                if (min_uv_y < 0.0f) {
+                    for (Vertex &v : misc) {
+                        v.uv.y += min_uv_y * -1.0f;
+                    }
+
+                    max_uv_y += min_uv_y * -1.0f;
+                    min_uv_y = 0.0f;
                 }
 
                 for (Vertex &v : misc) {
-                    v.uv *= 1.0f / max_uv;
+                    v.uv.x /= max_uv_x;
+                    v.uv.y /= max_uv_y;
                 }
             }
 
