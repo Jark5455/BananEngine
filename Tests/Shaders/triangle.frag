@@ -102,7 +102,7 @@ void main() {
     // TODO it definetly doesnt work
     vec2 uv = fragTexCoord;
     if (textureQueryLevels(heightSampler[index]) > 0) {
-       uv =  parallaxMapping(fragTexCoord, viewDirection, index);
+       uv =  steepParallaxMapping(fragTexCoord, viewDirection, index);
     }
 
     vec3 color = fragColor;

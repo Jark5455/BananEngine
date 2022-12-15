@@ -17,7 +17,7 @@ namespace Banan {
         return instanceSize;
     }
 
-    BananBuffer::BananBuffer(BananDevice &device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) : lveDevice{device}, instanceSize{instanceSize}, instanceCount{instanceCount}, usageFlags{usageFlags}, memoryPropertyFlags{memoryPropertyFlags} {
+    BananBuffer::BananBuffer(BananDevice &device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) : bananDevice{device}, instanceSize{instanceSize}, instanceCount{instanceCount}, usageFlags{usageFlags}, memoryPropertyFlags{memoryPropertyFlags} {
         alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
         bufferSize = alignmentSize * instanceCount;
         device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, memory);
@@ -25,18 +25,18 @@ namespace Banan {
 
     BananBuffer::~BananBuffer() {
         unmap();
-        vkDestroyBuffer(lveDevice.device(), buffer, nullptr);
-        vkFreeMemory(lveDevice.device(), memory, nullptr);
+        vkDestroyBuffer(bananDevice.device(), buffer, nullptr);
+        vkFreeMemory(bananDevice.device(), memory, nullptr);
     }
 
     VkResult BananBuffer::map(VkDeviceSize size, VkDeviceSize offset) {
         assert(buffer && memory && "Called map on buffer before create");
-        return vkMapMemory(lveDevice.device(), memory, offset, size, 0, &mapped);
+        return vkMapMemory(bananDevice.device(), memory, offset, size, 0, &mapped);
     }
 
     void BananBuffer::unmap() {
         if (mapped) {
-            vkUnmapMemory(lveDevice.device(), memory);
+            vkUnmapMemory(bananDevice.device(), memory);
             mapped = nullptr;
         }
     }
@@ -59,7 +59,7 @@ namespace Banan {
         mappedRange.memory = memory;
         mappedRange.offset = offset;
         mappedRange.size = size;
-        return vkFlushMappedMemoryRanges(lveDevice.device(), 1, &mappedRange);
+        return vkFlushMappedMemoryRanges(bananDevice.device(), 1, &mappedRange);
     }
 
     VkResult BananBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset) {
@@ -68,7 +68,7 @@ namespace Banan {
         mappedRange.memory = memory;
         mappedRange.offset = offset;
         mappedRange.size = size;
-        return vkInvalidateMappedMemoryRanges(lveDevice.device(), 1, &mappedRange);
+        return vkInvalidateMappedMemoryRanges(bananDevice.device(), 1, &mappedRange);
     }
 
     VkDescriptorBufferInfo BananBuffer::descriptorInfo(VkDeviceSize size, VkDeviceSize offset) {
