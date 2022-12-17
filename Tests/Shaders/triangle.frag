@@ -44,6 +44,7 @@ layout(set = 3, binding = 0) uniform sampler2D heightSampler[];
 
 vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
 {
+    viewDir.y = -viewDir.y;
     float height = textureLod(heightSampler[index], uv, 0.0).r;
     vec2 p = viewDir.xy * (height * (ubo.heightScale * 0.5) + ubo.parallaxBias) / viewDir.z;
     return uv - p;
@@ -51,6 +52,7 @@ vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
 
 vec2 steepParallaxMapping(vec2 uv, vec3 viewDir, int index)
 {
+    viewDir.y = -viewDir.y;
     float layerDepth = 1.0 / ubo.numLayers;
     float currLayerDepth = 0.0;
     vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
@@ -69,6 +71,7 @@ vec2 steepParallaxMapping(vec2 uv, vec3 viewDir, int index)
 
 vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
 {
+    viewDir.y = -viewDir.y;
     float layerDepth = 1.0 / ubo.numLayers;
     float currLayerDepth = 0.0;
     vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
@@ -102,7 +105,7 @@ void main() {
     // TODO it definetly doesnt work
     vec2 uv = fragTexCoord;
     if (textureQueryLevels(heightSampler[index]) > 0) {
-       uv =  steepParallaxMapping(fragTexCoord, viewDirection, index);
+       uv =  parallaxOcclusionMapping(fragTexCoord, viewDirection, index);
     }
 
     vec3 color = fragColor;
