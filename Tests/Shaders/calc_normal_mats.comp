@@ -1,21 +1,92 @@
+#version 450
+
 layout (local_size_x = 256) in;
 
-layout(set = 0, binding = 0) uniform Config{
-    int matrixCount;
-} opData;
+struct PointLight {
+    vec4 position;
+    vec4 color;
+};
 
-layout(set = 0, binding = 1) uniform readonly buffer InputBuffer {
-    mat4 modelMatrices[];
-} sourceData;
+layout(set = 0, binding = 0) uniform GlobalUbo {
+    mat4 projection;
+    mat4 shadowProjection;
+    mat4 view;
+    mat4 inverseView;
+    vec4 ambientLightColor;
+    PointLight pointLights[10];
+    int numLights;
+    float heightScale;
+    float parallaxBias;
+    float numLayers;
+    int parallaxMode;
+} ubo;
 
-layout(set = 0, binding = 2) uniform buffer OutputBuffer {
-    mat3 normalMatrices[];
-} outputData;
+layout(set = 0, binding = 1) buffer GameObjectSSBO {
+    vec3 position;
+    vec3 rotation;
+    vec3 scale;
+
+    mat4 modelMatrix;
+    mat4 normalMatrix;
+
+    int hasTexture;
+    int hasNormal;
+
+    int hasHeight;
+    float heightscale;
+    float parallaxBias;
+    float numLayers;
+    int parallaxmode;
+} ssbo;
 
 void main()
 {
-    if(gl_GlobalInvocationID.x < matrixCount)
-    {
-        outputData.normalMatrices[gID] = mat3(transpose(inverse(sourceData.modelMatrices[gID])));
-    }
+    const float c3 = cos(ssbo.rotation.z);
+    const float s3 = sin(ssbo.rotation.z);
+    const float c2 = cos(ssbo.rotation.x);
+    const float s2 = sin(ssbo.rotation.x);
+    const float c1 = cos(ssbo.rotation.y);
+    const float s1 = sin(ssbo.rotation.y);
+
+    const vec3 invScale = 1 / ssbo.scale;
+
+    ssbo.modelMatrix[0][0] = ssbo.scale.x * (c1 * c3 + s1 * s2 * s3);
+    ssbo.modelMatrix[0][1] = ssbo.scale.x * (c2 * s3);
+    ssbo.modelMatrix[0][2] = ssbo.scale.x * (c1 * s2 * s3 - c3 * s1);
+    ssbo.modelMatrix[0][3] = 0;
+
+    ssbo.modelMatrix[1][0] = ssbo.scale.y * (c3 * s1 * s2 - c1 * s3);
+    ssbo.modelMatrix[1][1] = ssbo.scale.y * (c2 * c3);
+    ssbo.modelMatrix[1][2] = ssbo.scale.y * (c1 * c3 * s2 + s1 * s3);
+    ssbo.modelMatrix[1][3] = 0;
+
+    ssbo.modelMatrix[2][0] = ssbo.scale.z * (c2 * s1);
+    ssbo.modelMatrix[2][1] = ssbo.scale.z * (-s2);
+    ssbo.modelMatrix[2][2] = ssbo.scale.z * (c1 * c2);
+    ssbo.modelMatrix[2][3] = 0;
+
+    ssbo.modelMatrix[3][0] = ssbo.position.x;
+    ssbo.modelMatrix[3][1] = ssbo.position.y;
+    ssbo.modelMatrix[3][2] = ssbo.position.z;
+    ssbo.modelMatrix[3][3] = 1;
+
+    ssbo.normalMatrix[0][0] = invScale.x * (c1 * c3 + s1 * s2 * s3);
+    ssbo.normalMatrix[0][1] = invScale.x * (c2 * s3);
+    ssbo.normalMatrix[0][2] = invScale.x * (c1 * s2 * s3 - c3 * s1);
+    ssbo.normalMatrix[0][3] = 0;
+
+    ssbo.normalMatrix[1][0] = invScale.y * (c3 * s1 * s2 - c1 * s3);
+    ssbo.normalMatrix[1][1] = invScale.y * (c2 * c3);
+    ssbo.normalMatrix[1][2] = invScale.y * (c1 * c3 * s2 + s1 * s3);
+    ssbo.normalMatrix[1][3] = 0;
+
+    ssbo.normalMatrix[2][0] = invScale.z * (c2 * s1);
+    ssbo.normalMatrix[2][1] = invScale.z * (-s2);
+    ssbo.normalMatrix[2][2] = invScale.z * (c1 * c2);
+    ssbo.normalMatrix[2][3] = 0;
+
+    ssbo.normalMatrix[3][0] = 0;
+    ssbo.normalMatrix[3][1] = 0;
+    ssbo.normalMatrix[3][2] = 0;
+    ssbo.normalMatrix[3][3] = 0;
 }

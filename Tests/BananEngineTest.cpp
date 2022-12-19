@@ -70,9 +70,14 @@ namespace Banan{
         }
 
         std::vector<std::unique_ptr<BananBuffer>> storageBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        for (auto & storageBuffer : storageBuffers) {
+            storageBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+            storageBuffer->map();
+        }
 
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .build();
 
         auto textureSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
@@ -124,6 +129,9 @@ namespace Banan{
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
             writer.writeBuffer(0, &bufferInfo);
 
+            auto storageInfo = storageBuffers[i]->descriptorInfo(sizeof(GameObjectData));
+            writer.writeBuffer(1, &storageInfo);
+
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
             textureWriter.writeImages(0, gameObjectsTextureInfo);
 
@@ -171,7 +179,32 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], gameObjects};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], gameObjects, static_cast<uint32_t>(storageBuffers[frameIndex]->getAlignmentSize())};
+
+                std::vector<GameObjectData> data{};
+                for (auto &kv : gameObjects) {
+
+                    if (kv.second.pointLight != nullptr)
+                        continue;
+
+                    data.push_back(GameObjectData{kv.second.transform.translation, kv.second.transform.rotation, kv.second.transform.scale});
+                    data[kv.first].hasTexture = kv.second.model->isTextureLoaded() ? (int) kv.first : -1;
+                    data[kv.first].hasNormal = kv.second.model->isNormalsLoaded() ? (int) kv.first : -1;
+
+                    if (kv.second.model->isHeightmapLoaded()) {
+                        data[kv.first].hasHeight = (int) kv.first;
+                        data[kv.first].heightscale = 0.1;
+                        data[kv.first].parallaxBias = -0.02f;
+                        data[kv.first].numLayers = 48.0f;
+                        data[kv.first].parallaxmode = 4;
+                    } else {
+                        data[kv.first].hasHeight = -1;
+                        data[kv.first].heightscale = -1;
+                        data[kv.first].parallaxBias = -1;
+                        data[kv.first].numLayers = -1;
+                        data[kv.first].parallaxmode = -1;
+                    }
+                }
 
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();
@@ -186,6 +219,9 @@ namespace Banan{
                 pointLightSystem.update(frameInfo, ubo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
+
+                storageBuffers[frameIndex]->writeToBuffer(data.data());
+                storageBuffers[frameIndex]->flush();
 
                 /*for (int i = 0; i < 6; i++) {
                     bananRenderer.beginShadowRenderPass(commandBuffer);
@@ -234,16 +270,16 @@ namespace Banan{
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/bricks2.jpg");
-        floorBuilder.loadNormals("banan_assets/textures/bricks2_normal.exr");
-        floorBuilder.loadHeightMap("banan_assets/textures/bricks2_disp.jpg");
+        floorBuilder.loadTexture("banan_assets/textures/Tiles_046_basecolor.jpg");
+        floorBuilder.loadNormals("banan_assets/textures/Tiles_046_normal.exr");
+        floorBuilder.loadHeightMap("banan_assets/textures/Tiles_046_height.png");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
         floor.transform.translation = {0.f, .5f, 2.f};
-        floor.transform.rotation = {0.f, glm::pi<float>() / 2.0f, glm::pi<float>() / 2.0f};
-        floor.transform.scale = {1.f, 1.f, 1.f};
+        floor.transform.rotation = {0.f, 0.f, 0.f};
+        floor.transform.scale = {3.f, 3.f, 3.f};
         floor.transform.id = (int) floor.getId();
         gameObjects.emplace(floor.getId(), std::move(floor));
 

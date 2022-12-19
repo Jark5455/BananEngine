@@ -165,5 +165,7 @@ execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/mrt.vert -o ${CM
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/procrastinated.frag -o ${CMAKE_BINARY_DIR}/shaders/procrastinated.frag.spv)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/procrastinated.vert -o ${CMAKE_BINARY_DIR}/shaders/procrastinated.vert.spv)
 
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/calc_normal_mats.comp -o ${CMAKE_BINARY_DIR}/shaders/calc_normal_mats.comp.spv)
+
 execute_process(COMMAND cp -r ${CMAKE_SOURCE_DIR}/Tests/banan_assets ${CMAKE_BINARY_DIR})
 

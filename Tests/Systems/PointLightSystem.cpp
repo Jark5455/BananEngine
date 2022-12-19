@@ -76,10 +76,12 @@ namespace Banan{
         }
 
         bananPipeline->bind(frameInfo.commandBuffer);
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
 
         for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
             auto &obj = frameInfo.gameObjects.at(it->second);
+
+            uint32_t offset = obj.getId() * frameInfo.storageAlignmentSize;
+            vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,1,&offset);
 
             PointLightPushConstants push{};
             push.position = glm::vec4(obj.transform.translation, 1.f);

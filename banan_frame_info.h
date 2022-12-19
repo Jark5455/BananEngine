@@ -31,8 +31,22 @@ namespace Banan {
         int parallaxmode;
     };
 
-    struct ProcrastinatedUBO {
+    struct GameObjectData {
+        glm::vec3 position{};
+        glm::vec3 rotation{};
+        glm::vec3 scale{};
 
+        glm::mat4 modelMatrix{};
+        glm::mat4 normalMatrix{};
+
+        int hasTexture;
+        int hasNormal;
+
+        int hasHeight;
+        float heightscale;
+        float parallaxBias;
+        float numLayers;
+        int parallaxmode;
     };
 
     struct BananFrameInfo {
@@ -46,5 +60,6 @@ namespace Banan {
         VkDescriptorSet normalDescriptorSet;
         VkDescriptorSet heightDescriptorSet;
         BananGameObject::Map &gameObjects;
+        uint32_t storageAlignmentSize;
     };
 }

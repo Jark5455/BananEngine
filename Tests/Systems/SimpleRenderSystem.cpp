@@ -60,11 +60,13 @@ namespace Banan{
     void SimpleRenderSystem::render(BananFrameInfo &frameInfo) {
         bananPipeline->bind(frameInfo.commandBuffer);
         std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.textureDescriptorSet, frameInfo.normalDescriptorSet, frameInfo.heightDescriptorSet};
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,sets.size(),sets.data(),0,nullptr);
 
         for (auto &kv : frameInfo.gameObjects) {
             auto &obj = kv.second;
             if (obj.model == nullptr) continue;
+
+            uint32_t offset = kv.first * frameInfo.storageAlignmentSize;
+            vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,sets.size(),sets.data(),1,&offset);
 
             SimplePushConstantData push{};
             push.modelMatrix = obj.transform.mat4();
