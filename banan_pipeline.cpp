@@ -13,9 +13,19 @@ namespace Banan{
         createGraphicsPipeline(vertFilepath, fragFilePath, configInfo);
     }
 
+    BananPipeline::BananPipeline(BananDevice &device, const std::string &computeFilepath, const PipelineConfigInfo &configInfo) : device{device} {
+        createComputePipeline(computeFilepath, configInfo);
+    }
+
     BananPipeline::~BananPipeline() {
-        vkDestroyShaderModule(device.device(), vertShaderModule, nullptr);
-        vkDestroyShaderModule(device.device(), fragShaderModule, nullptr);
+
+        if (computeShaderModule == VK_NULL_HANDLE) {
+            vkDestroyShaderModule(device.device(), vertShaderModule, nullptr);
+            vkDestroyShaderModule(device.device(), fragShaderModule, nullptr);
+        } else {
+            vkDestroyShaderModule(device.device(), computeShaderModule, nullptr);
+        }
+
         vkDestroyPipeline(device.device(), pipeline, nullptr);
     }
 
@@ -34,6 +44,33 @@ namespace Banan{
 
         file.close();
         return buffer;
+    }
+
+    void BananPipeline::createComputePipeline(const std::string &computeFilepath, const PipelineConfigInfo &info) {
+        assert(info.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline: no pipelineLayout provided in configInfo");
+        assert(info.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline: no renderPass provided in configInfo");
+
+        auto computeCode = readFile(computeFilepath);
+        createShaderModule(computeCode, &computeShaderModule);
+
+        VkPipelineShaderStageCreateInfo shaderStage;
+        shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        shaderStage.module = computeShaderModule;
+        shaderStage.pName = "main";
+        shaderStage.flags = 0;
+        shaderStage.pNext = nullptr;
+        shaderStage.pSpecializationInfo = nullptr;
+
+        VkComputePipelineCreateInfo pipelineInfo{};
+        pipelineInfo.sType =VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        pipelineInfo.stage = shaderStage;
+        pipelineInfo.layout = info.pipelineLayout;
+        pipelineInfo.flags = 0;
+
+        if (vkCreateComputePipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create graphics pipeline");
+        }
     }
 
     void BananPipeline::createGraphicsPipeline(const std::string &vertFilePath, const std::string &fragFilePath, const PipelineConfigInfo &info) {
@@ -278,6 +315,10 @@ namespace Banan{
     }
 
     void BananPipeline::bind(VkCommandBuffer buffer) {
-        vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        if (computeShaderModule == VK_NULL_HANDLE) {
+            vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        } else {
+            vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+        }
     }
 }

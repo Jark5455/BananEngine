@@ -3,9 +3,12 @@
 //
 
 #include "BananEngineTest.h"
+
 #include "Systems/PointLightSystem.h"
 #include "Systems/SimpleRenderSystem.h"
 #include "Systems/ShadowSystem.h"
+#include "Systems/ComputeSystem.h"
+
 #include "KeyboardMovementController.h"
 
 #define GLM_FORCE_RADIANS
@@ -13,7 +16,7 @@
 #include <glm/glm.hpp>
 #include <chrono>
 
-#include "../banan_logger.h"
+#include <banan_logger.h>
 
 namespace Banan{
 
@@ -30,32 +33,26 @@ namespace Banan{
         texturePool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsTextureInfo.size())
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .build();
 
         normalPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsNormalInfo.size())
                 .build();
 
         heightPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjectsHeightInfo.size())
                 .build();
 
         procrastinatedPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .build();
-
-        transformPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 2)
                 .build();
     }
 
@@ -76,8 +73,8 @@ namespace Banan{
         }
 
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, 1)
                 .build();
 
         auto textureSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
@@ -112,6 +109,7 @@ namespace Banan{
         SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
+        ComputeSystem computeSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
 
         BananCamera camera{};
 
@@ -129,7 +127,7 @@ namespace Banan{
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
             writer.writeBuffer(0, &bufferInfo);
 
-            auto storageInfo = storageBuffers[i]->descriptorInfo(sizeof(GameObjectData));
+            auto storageInfo = storageBuffers[i]->descriptorInfo();
             writer.writeBuffer(1, &storageInfo);
 
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
@@ -144,7 +142,7 @@ namespace Banan{
             BananDescriptorWriter heightWriter = BananDescriptorWriter(*heightMapSetLayout, *heightPool);
             heightWriter.writeImages(0, gameObjectsHeightInfo);
 
-            uint32_t globalDescriptorCounts[] = {1};
+            uint32_t globalDescriptorCounts[] = {1, 1};
             writer.build(globalDescriptorSets[i], globalDescriptorCounts);
 
             uint32_t textureDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsTextureInfo.size())};
@@ -179,30 +177,35 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], gameObjects, static_cast<uint32_t>(storageBuffers[frameIndex]->getAlignmentSize())};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], gameObjects};
 
                 std::vector<GameObjectData> data{};
                 for (auto &kv : gameObjects) {
+                    if (kv.second.model != nullptr) {
+                        GameObjectData objectData{glm::vec4(kv.second.transform.translation, 0), glm::vec4(kv.second.transform.rotation, 0), glm::vec4(kv.second.transform.scale, 0)};
+                        objectData.hasTexture = kv.second.model->isTextureLoaded() ? (int) kv.first : -1;
+                        objectData.hasNormal = kv.second.model->isNormalsLoaded() ? (int) kv.first : -1;
 
-                    if (kv.second.pointLight != nullptr)
-                        continue;
+                        if (kv.second.model->isHeightmapLoaded()) {
+                            objectData.hasHeight = (int) kv.first;
+                            objectData.heightscale = 0.1;
+                            objectData.parallaxBias = -0.02f;
+                            objectData.numLayers = 48.0f;
+                            objectData.parallaxmode = 4;
+                        } else {
+                            objectData.hasHeight = -1;
+                            objectData.heightscale = -1;
+                            objectData.parallaxBias = -1;
+                            objectData.numLayers = -1;
+                            objectData.parallaxmode = -1;
+                        }
 
-                    data.push_back(GameObjectData{kv.second.transform.translation, kv.second.transform.rotation, kv.second.transform.scale});
-                    data[kv.first].hasTexture = kv.second.model->isTextureLoaded() ? (int) kv.first : -1;
-                    data[kv.first].hasNormal = kv.second.model->isNormalsLoaded() ? (int) kv.first : -1;
-
-                    if (kv.second.model->isHeightmapLoaded()) {
-                        data[kv.first].hasHeight = (int) kv.first;
-                        data[kv.first].heightscale = 0.1;
-                        data[kv.first].parallaxBias = -0.02f;
-                        data[kv.first].numLayers = 48.0f;
-                        data[kv.first].parallaxmode = 4;
+                        data.push_back(objectData);
                     } else {
-                        data[kv.first].hasHeight = -1;
-                        data[kv.first].heightscale = -1;
-                        data[kv.first].parallaxBias = -1;
-                        data[kv.first].numLayers = -1;
-                        data[kv.first].parallaxmode = -1;
+                        GameObjectData pointLightData{};
+                        pointLightData.position = glm::vec4(kv.second.transform.translation, 0);
+                        pointLightData.rotation = glm::vec4(kv.second.color, kv.second.pointLight->lightIntensity);
+                        pointLightData.scale = glm::vec4(kv.second.transform.scale.x, -1, -1, -1);
                     }
                 }
 
@@ -215,6 +218,7 @@ namespace Banan{
                 ubo.parallaxBias = -0.02f;
                 ubo.numLayers = 48.0f;
                 ubo.parallaxmode = 4;
+                ubo.numGameObjects = gameObjects.size();
 
                 pointLightSystem.update(frameInfo, ubo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
@@ -222,6 +226,8 @@ namespace Banan{
 
                 storageBuffers[frameIndex]->writeToBuffer(data.data());
                 storageBuffers[frameIndex]->flush();
+
+                computeSystem.compute(frameInfo);
 
                 /*for (int i = 0; i < 6; i++) {
                     bananRenderer.beginShadowRenderPass(commandBuffer);

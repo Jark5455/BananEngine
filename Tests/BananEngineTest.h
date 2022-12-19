@@ -3,13 +3,13 @@
 //
 #pragma once
 
-#include "../banan_descriptor.h"
-#include "../banan_window.h"
-#include "../banan_device.h"
-#include "../banan_model.h"
-#include "../banan_game_object.h"
-#include "../banan_renderer.h"
-#include "../banan_logger.h"
+#include <banan_descriptor.h>
+#include <banan_window.h>
+#include <banan_device.h>
+#include <banan_model.h>
+#include <banan_game_object.h>
+#include <banan_renderer.h>
+#include <banan_logger.h>
 
 #include <memory>
 #include <vector>
@@ -41,7 +41,6 @@ namespace Banan{
         std::unique_ptr<BananDescriptorPool> normalPool;
         std::unique_ptr<BananDescriptorPool> heightPool;
         std::unique_ptr<BananDescriptorPool> procrastinatedPool;
-        std::unique_ptr<BananDescriptorPool> transformPool;
 
         std::shared_ptr<BananLogger> bananLogger;
         BananGameObject::Map gameObjects;

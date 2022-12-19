@@ -29,12 +29,13 @@ namespace Banan {
         float parallaxBias;
         float numLayers;
         int parallaxmode;
+        int numGameObjects;
     };
 
     struct GameObjectData {
-        glm::vec3 position{};
-        glm::vec3 rotation{};
-        glm::vec3 scale{};
+        glm::vec4 position{};
+        glm::vec4 rotation{};
+        glm::vec4 scale{};
 
         glm::mat4 modelMatrix{};
         glm::mat4 normalMatrix{};
@@ -47,6 +48,8 @@ namespace Banan {
         float parallaxBias;
         float numLayers;
         int parallaxmode;
+
+        int isPointLight;
     };
 
     struct BananFrameInfo {
@@ -60,6 +63,5 @@ namespace Banan {
         VkDescriptorSet normalDescriptorSet;
         VkDescriptorSet heightDescriptorSet;
         BananGameObject::Map &gameObjects;
-        uint32_t storageAlignmentSize;
     };
 }

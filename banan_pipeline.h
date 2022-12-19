@@ -35,6 +35,7 @@ namespace Banan {
     class BananPipeline {
         public:
             BananPipeline(BananDevice &device, const std::string &vertFilepath, const std::string &fragFilePath, const PipelineConfigInfo &configInfo);
+            BananPipeline(BananDevice &device, const std::string &computeFilepath, const PipelineConfigInfo &configInfo);
 
             ~BananPipeline();
 
@@ -46,15 +47,18 @@ namespace Banan {
             static void alphaBlendingPipelineConfigInfo(PipelineConfigInfo &configInfo);
             static void shadowPipelineConfigInfo(PipelineConfigInfo &configInfo);
             static void procrastinatedPipelineConfigInfo(PipelineConfigInfo &configInfo);
+            static void computePipelineConfigInfo(PipelineConfigInfo &configInfo);
 
         private:
             static std::vector<char> readFile(const std::string &filepath);
+            void createComputePipeline(const std::string &computeFilepath, const PipelineConfigInfo &info);
             void createGraphicsPipeline(const std::string &vertFilePath, const std::string &fragFilePath, const PipelineConfigInfo &info);
             void createShaderModule(const std::vector<char>& code, VkShaderModule *shaderModule);
 
             BananDevice &device;
-            VkPipeline pipeline;
-            VkShaderModule vertShaderModule;
-            VkShaderModule fragShaderModule;
+            VkPipeline pipeline = VK_NULL_HANDLE;
+            VkShaderModule vertShaderModule = VK_NULL_HANDLE;
+            VkShaderModule fragShaderModule = VK_NULL_HANDLE;
+            VkShaderModule computeShaderModule = VK_NULL_HANDLE;
     };
 }

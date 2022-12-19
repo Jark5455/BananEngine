@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "../../banan_device.h"
-#include "../../banan_pipeline.h"
-#include "../../banan_frame_info.h"
+#include <banan_device.h>
+#include <banan_pipeline.h>
+#include <banan_frame_info.h>
 
 namespace Banan {
     class ShadowSystem {

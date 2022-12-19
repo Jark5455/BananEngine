@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "../banan_game_object.h"
-#include "../banan_window.h"
+#include <banan_game_object.h>
+#include <banan_window.h>
 
 namespace Banan {
     class KeyboardMovementController {
