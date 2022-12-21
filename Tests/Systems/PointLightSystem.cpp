@@ -81,12 +81,7 @@ namespace Banan{
         for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
             auto &obj = frameInfo.gameObjects.at(it->second);
 
-            PointLightPushConstants push{};
-            push.position = glm::vec4(obj.transform.translation, 1.f);
-            push.color = glm::vec4(obj.color, obj.pointLight->lightIntensity);
-            push.radius = obj.transform.scale.x;
-
-            vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PointLightPushConstants), &push);
+            vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(id_t), &it->second);
             vkCmdDraw(frameInfo.commandBuffer, 6, 1, 0, 0);
         }
 

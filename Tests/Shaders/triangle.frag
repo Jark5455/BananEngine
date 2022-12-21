@@ -18,6 +18,26 @@ struct PointLight {
     vec4 color;
 };
 
+struct GameObject {
+    vec4 position;
+    vec4 rotation; // color for point lights
+    vec4 scale; // radius for point lights
+
+    mat4 modelMatrix;
+    mat4 normalMatrix;
+
+    int hasTexture;
+    int hasNormal;
+
+    int hasHeight;
+    float heightscale;
+    float parallaxBias;
+    float numLayers;
+    int parallaxmode;
+
+    int isPointLight;
+};
+
 layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 projection;
     mat4 shadowProjection;
@@ -32,9 +52,12 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     int parallaxMode;
 } ubo;
 
+layout(set = 0, binding = 1) readonly buffer GameObjects {
+    GameObject objects[];
+} ssbo;
+
 layout(push_constant) uniform Push {
-    mat4 modelMatrix;
-    mat4 normalMatrix;
+    int objectId;
 } push;
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler[];
@@ -92,8 +115,6 @@ vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
 }
 
 void main() {
-    int index = int(push.modelMatrix[3][3]);
-
     vec3 diffuseLight = vec3(0.0);
     vec3 specularLight = vec3(0.0);
 
@@ -104,18 +125,18 @@ void main() {
 
     // TODO it definetly doesnt work
     vec2 uv = fragTexCoord;
-    if (textureQueryLevels(heightSampler[index]) > 0) {
-       uv =  parallaxOcclusionMapping(fragTexCoord, viewDirection, index);
+    if (textureQueryLevels(heightSampler[push.objectId]) > 0) {
+       uv =  parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId);
     }
 
     vec3 color = fragColor;
-    if (textureQueryLevels(texSampler[index]) > 0) {
-        color = texture(texSampler[index], uv).rgb;
+    if (textureQueryLevels(texSampler[push.objectId]) > 0) {
+        color = texture(texSampler[push.objectId], uv).rgb;
     }
 
-    vec3 normalHeightMapLod = fragTBN * normalize(mat3(push.normalMatrix) * fragNormal);
-    if (textureQueryLevels(normalSampler[index]) > 0) {
-        normalHeightMapLod = textureLod(normalSampler[index], uv, 0.0).rgb;
+    vec3 normalHeightMapLod = fragTBN * normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
+    if (textureQueryLevels(normalSampler[push.objectId]) > 0) {
+        normalHeightMapLod = textureLod(normalSampler[push.objectId], uv, 0.0).rgb;
     }
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {

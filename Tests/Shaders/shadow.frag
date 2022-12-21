@@ -9,6 +9,26 @@ struct PointLight {
     vec4 color;
 };
 
+struct GameObject {
+    vec4 position;
+    vec4 rotation; // color for point lights
+    vec4 scale; // radius for point lights
+
+    mat4 modelMatrix;
+    mat4 normalMatrix;
+
+    int hasTexture;
+    int hasNormal;
+
+    int hasHeight;
+    float heightscale;
+    float parallaxBias;
+    float numLayers;
+    int parallaxmode;
+
+    int isPointLight;
+};
+
 layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 projection;
     mat4 shadowProjection;
@@ -22,10 +42,14 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     float numLayers;
 } ubo;
 
+layout(set = 0, binding = 1) readonly buffer GameObjects {
+    GameObject objects[];
+} ssbo;
+
 layout(push_constant) uniform Push {
     mat4 modelMatrix;
     mat4 viewMatrix;
-} push; 
+} push;
 
 void main()
 {
