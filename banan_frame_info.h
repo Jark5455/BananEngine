@@ -33,12 +33,12 @@ namespace Banan {
     };
 
     struct GameObjectData {
-        glm::vec4 position{};
-        glm::vec4 rotation{};
-        glm::vec4 scale{};
+        glm::vec4 position{1.f};
+        glm::vec4 rotation{1.f};
+        glm::vec4 scale{1.f};
 
-        glm::mat4 modelMatrix{};
-        glm::mat4 normalMatrix{};
+        alignas(16) glm::mat4 modelMatrix{1.f};
+        alignas(16) glm::mat4 normalMatrix{1.f};
 
         int hasTexture;
         int hasNormal;

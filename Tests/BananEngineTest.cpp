@@ -14,6 +14,8 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
+
+#include <algorithm>
 #include <chrono>
 
 #include <banan_logger.h>
@@ -62,13 +64,13 @@ namespace Banan{
 
         std::vector<std::unique_ptr<BananBuffer>> uboBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (auto & uboBuffer : uboBuffers) {
-            uboBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+            uboBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
             uboBuffer->map();
         }
 
         std::vector<std::unique_ptr<BananBuffer>> storageBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (auto & storageBuffer : storageBuffers) {
-            storageBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+            storageBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minStorageBufferOffsetAlignment);
             storageBuffer->map();
         }
 
@@ -180,11 +182,13 @@ namespace Banan{
                 BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], gameObjects};
 
                 std::vector<GameObjectData> data{};
+                data.reserve(gameObjects.size());
                 for (auto &kv : gameObjects) {
                     if (kv.second.model != nullptr) {
                         GameObjectData objectData{glm::vec4(kv.second.transform.translation, 0), glm::vec4(kv.second.transform.rotation, 0), glm::vec4(kv.second.transform.scale, 0)};
                         objectData.hasTexture = kv.second.model->isTextureLoaded() ? (int) kv.first : -1;
                         objectData.hasNormal = kv.second.model->isNormalsLoaded() ? (int) kv.first : -1;
+                        objectData.isPointLight = 0;
 
                         if (kv.second.model->isHeightmapLoaded()) {
                             objectData.hasHeight = (int) kv.first;
@@ -202,12 +206,21 @@ namespace Banan{
 
                         data.push_back(objectData);
                     } else {
-                        GameObjectData pointLightData{};
-                        pointLightData.position = glm::vec4(kv.second.transform.translation, 0);
-                        pointLightData.rotation = glm::vec4(kv.second.color, kv.second.pointLight->lightIntensity);
-                        pointLightData.scale = glm::vec4(kv.second.transform.scale.x, -1, -1, -1);
+                        GameObjectData pointLightData{glm::vec4(kv.second.transform.translation, 0), glm::vec4(kv.second.color, kv.second.pointLight->lightIntensity), glm::vec4(kv.second.transform.scale.x, -1, -1, -1)};
+                        pointLightData.hasTexture = -1;
+                        pointLightData.hasNormal = -1;
+                        pointLightData.isPointLight = 1;
+                        pointLightData.hasHeight = -1;
+                        pointLightData.heightscale = -1;
+                        pointLightData.parallaxBias = -1;
+                        pointLightData.numLayers = -1;
+                        pointLightData.parallaxmode = -1;
+
+                        data.push_back(pointLightData);
                     }
                 }
+
+                std::reverse(data.begin(), data.end());
 
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();
@@ -259,6 +272,7 @@ namespace Banan{
         vase.transform.translation = {0.f, .5f, 1.f};
         vase.transform.rotation = {-glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
+        vase.transform.id = (int) vase.getId();
         gameObjects.emplace(vase.getId(), std::move(vase));
 
         /*BananModel::Builder otherfloorBuilder{};
