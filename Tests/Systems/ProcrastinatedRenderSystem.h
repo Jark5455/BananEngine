@@ -10,6 +10,7 @@
 #include <banan_device.h>
 #include <banan_game_object.h>
 #include <banan_frame_info.h>
+#include <banan_renderpass.h>
 
 #include <memory>
 #include <vector>
@@ -20,7 +21,7 @@ namespace Banan{
         ProcrastinatedRenderSystem(const ProcrastinatedRenderSystem &) = delete;
         ProcrastinatedRenderSystem &operator=(const ProcrastinatedRenderSystem &) = delete;
 
-        ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts);
+        ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts);
         ~ProcrastinatedRenderSystem();
 
         void calculateGBuffer(BananFrameInfo &frameInfo);
@@ -33,8 +34,11 @@ namespace Banan{
         void createGBufferPipeline(std::vector<VkDescriptorSetLayout> layouts);
         void createGBufferPipelineLayout(VkRenderPass renderPass);
 
+        void createGBufferRenderPass();
+
         BananDevice &bananDevice;
 
+        std::unique_ptr<BananRenderPass> GBufferRenderPass;
         std::unique_ptr<BananPipeline> GBufferPipeline;
         VkPipelineLayout GBufferPipelineLayout;
 

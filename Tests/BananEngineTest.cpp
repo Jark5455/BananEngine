@@ -8,6 +8,7 @@
 #include "Systems/SimpleRenderSystem.h"
 #include "Systems/ShadowSystem.h"
 #include "Systems/ComputeSystem.h"
+#include "Systems/ProcrastinatedRenderSystem.h"
 
 #include "KeyboardMovementController.h"
 
@@ -102,7 +103,6 @@ namespace Banan{
                 .build();
 
         auto procrastinatedSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
@@ -112,6 +112,7 @@ namespace Banan{
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         ComputeSystem computeSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
+        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGBufferRenderPass(), bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
 
         BananCamera camera{};
 
@@ -122,6 +123,7 @@ namespace Banan{
         std::vector<VkDescriptorSet> textureDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> normalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> heightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        std::vector<VkDescriptorSet> procrastinatedDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
 
         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
 
@@ -143,6 +145,11 @@ namespace Banan{
 
             BananDescriptorWriter heightWriter = BananDescriptorWriter(*heightMapSetLayout, *heightPool);
             heightWriter.writeImages(0, gameObjectsHeightInfo);
+
+            BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
+            procrastinatedWriter.writeImage(0, &bananRenderer.getGBufferDescriptorInfo()[0]);
+            procrastinatedWriter.writeImage(1, &bananRenderer.getGBufferDescriptorInfo()[1]);
+            procrastinatedWriter.writeImage(2, &bananRenderer.getGBufferDescriptorInfo()[2]);
 
             uint32_t globalDescriptorCounts[] = {1, 1};
             writer.build(globalDescriptorSets[i], globalDescriptorCounts);

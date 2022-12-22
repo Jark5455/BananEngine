@@ -10,6 +10,7 @@
 namespace Banan {
     BananRenderer::BananRenderer(BananWindow &window, BananDevice &device) : bananWindow{window}, bananDevice{device}, bananShadowMapper{std::make_unique<BananShadowMapper>(device)} {
         recreateSwapChain();
+        recreateGBufferRenderPass();
         createCommandBuffers();
     }
 
@@ -114,6 +115,7 @@ namespace Banan {
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || bananWindow.wasWindowResized()) {
             bananWindow.resetWindowResizedFlag();
             recreateSwapChain();
+            recreateGBufferRenderPass();
         } else if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to present swap chain image!");
         }
@@ -136,7 +138,7 @@ namespace Banan {
         renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
 
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.1f, 0.1f, 0.1f, 1.0f};
+        clearValues[0].color = {0.f, 0.f, 0.f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -218,7 +220,47 @@ namespace Banan {
         bananShadowMapper->update(commandBuffer, faceindex);
     }
 
-    VkDescriptorImageInfo BananRenderer::getShadowDescriptorInfo() {
-        return bananShadowMapper->descriptorInfo();
+    std::vector<VkDescriptorImageInfo> BananRenderer::getShadowDescriptorInfo() {
+        return {bananShadowMapper->descriptorInfo()};
+    }
+
+    void BananRenderer::recreateGBufferRenderPass() {
+        auto extent = bananWindow.getExtent();
+        while (extent.width == 0 || extent.height == 0) {
+            extent = bananWindow.getExtent();
+            glfwWaitEvents();
+        }
+
+        vkDeviceWaitIdle(bananDevice.device());
+
+        // position can be derived from depth
+        // pass in normals
+        // tangents will only be used for parallax mapping anyway, so do it on g pass and apply offset to uv when passing in albedo
+        // color will be passed in the form of texture / color / parallax mapping
+        std::vector<VkFormat> attachmentFormats{VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8_UNORM};
+
+        GBufferRenderPass = std::make_unique<BananRenderPass>(bananDevice, attachmentFormats, bananWindow.getExtent(), true);
+    }
+
+    void BananRenderer::beginGBufferRenderPass(VkCommandBuffer commandBuffer) {
+        assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer that is different to the current frame");
+        GBufferRenderPass->beginRenderPass(commandBuffer);
+    }
+
+    void BananRenderer::endGBufferRenderPass(VkCommandBuffer commandBuffer) {
+        assert(commandBuffer == getCurrentCommandBuffer() && "Can't end render pass on command buffer that is different to the current frame");
+        GBufferRenderPass->endRenderPass(commandBuffer);
+    }
+
+    VkRenderPass BananRenderer::getGBufferRenderPass() const {
+        return GBufferRenderPass->getRenderPass();
+    }
+
+    std::vector<VkDescriptorImageInfo> BananRenderer::getGBufferDescriptorInfo() {
+        std::vector<VkDescriptorImageInfo> info{3};
+        info.push_back(*GBufferRenderPass->getFramebufferAttachments()[0]->descriptorInfo());
+        info.push_back(*GBufferRenderPass->getFramebufferAttachments()[1]->descriptorInfo());
+        info.push_back(*GBufferRenderPass->getFramebufferAttachments()[2]->descriptorInfo());
+        return info;
     }
 }

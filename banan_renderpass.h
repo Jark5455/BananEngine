@@ -13,12 +13,18 @@ namespace Banan {
     class BananRenderPass {
         public:
             BananRenderPass(BananDevice &device, std::vector<VkFormat> attachmentFormats, VkExtent2D extent, bool depthImage = true);
+            ~BananRenderPass();
+
+            void beginRenderPass(VkCommandBuffer commandBuffer, bool flippedViewport = false);
+            void endRenderPass(VkCommandBuffer commandBuffer);
 
             VkRenderPass getRenderPass();
-            VkFramebuffer getFrameBuffer();
+
+            std::vector<std::shared_ptr<BananImage>> getFramebufferAttachments();
         private:
 
-            void createFramebuffer(bool depthImage);
+            void createFramebuffer();
+            void createRenderpass();
 
             VkRenderPass renderPass;
             VkFramebuffer frameBuffer;

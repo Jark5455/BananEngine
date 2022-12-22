@@ -5,11 +5,18 @@
 #include "ProcrastinatedRenderSystem.h"
 
 namespace Banan {
-    ProcrastinatedRenderSystem::ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device} {
-        createGBufferPipelineLayout(GBufferRenderPass);
-        createMainRenderTargetPipelineLayout(GBufferRenderPass);
+    ProcrastinatedRenderSystem::ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts) : bananDevice{device} {
+    }
 
-        createGBufferPipeline(layouts);
-        createMainRenderTargetPipeline(layouts);
+    ProcrastinatedRenderSystem::~ProcrastinatedRenderSystem() {
+
+    }
+
+    void ProcrastinatedRenderSystem::calculateGBuffer(BananFrameInfo &frameInfo) {
+
+    }
+
+    void ProcrastinatedRenderSystem::render(BananFrameInfo &frameInfo) {
+
     }
 }

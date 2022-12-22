@@ -165,7 +165,7 @@ namespace Banan {
         }
     }
 
-    VkDescriptorImageInfo BananCubemap::descriptorInfo() {
+    VkDescriptorImageInfo * BananCubemap::descriptorInfo() {
         VkDescriptorImageInfo info{};
         info.imageView = cubemapImageView;
         info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
