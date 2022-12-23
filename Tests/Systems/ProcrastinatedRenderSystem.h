@@ -34,8 +34,6 @@ namespace Banan{
         void createGBufferPipeline(std::vector<VkDescriptorSetLayout> layouts);
         void createGBufferPipelineLayout(VkRenderPass renderPass);
 
-        void createGBufferRenderPass();
-
         BananDevice &bananDevice;
 
         std::unique_ptr<BananRenderPass> GBufferRenderPass;
@@ -44,5 +42,7 @@ namespace Banan{
 
         std::unique_ptr<BananPipeline> mainRenderTargetPipeline;
         VkPipelineLayout mainRenderTargetPipelineLayout;
+
+        std::vector<VkDescriptorSetLayout> layouts;
     };
 }

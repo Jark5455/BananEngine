@@ -138,7 +138,7 @@ namespace Banan {
         renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
 
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.f, 0.f, 0.f, 1.0f};
+        clearValues[0].color = {0.1f, 0.1f, 0.1f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -237,7 +237,7 @@ namespace Banan {
         // pass in normals
         // tangents will only be used for parallax mapping anyway, so do it on g pass and apply offset to uv when passing in albedo
         // color will be passed in the form of texture / color / parallax mapping
-        std::vector<VkFormat> attachmentFormats{VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8_UNORM};
+        std::vector<VkFormat> attachmentFormats{VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM};
 
         GBufferRenderPass = std::make_unique<BananRenderPass>(bananDevice, attachmentFormats, bananWindow.getExtent(), true);
     }
@@ -258,9 +258,9 @@ namespace Banan {
 
     std::vector<VkDescriptorImageInfo> BananRenderer::getGBufferDescriptorInfo() {
         std::vector<VkDescriptorImageInfo> info{3};
-        info.push_back(*GBufferRenderPass->getFramebufferAttachments()[0]->descriptorInfo());
-        info.push_back(*GBufferRenderPass->getFramebufferAttachments()[1]->descriptorInfo());
-        info.push_back(*GBufferRenderPass->getFramebufferAttachments()[2]->descriptorInfo());
+        info.push_back(GBufferRenderPass->getFramebufferAttachments()[0]->descriptorInfo());
+        info.push_back(GBufferRenderPass->getFramebufferAttachments()[1]->descriptorInfo());
+        info.push_back(GBufferRenderPass->getFramebufferAttachments()[2]->descriptorInfo());
         return info;
     }
 }

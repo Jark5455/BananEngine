@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstring>
 #include <iterator>
+#include <thread>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -447,6 +448,7 @@ namespace Banan {
     }
 
     void BananModel::Builder::loadHDR(const string &filepath, Texture &target) {
+        Imf::setGlobalThreadCount((int) std::thread::hardware_concurrency());
         Imf::Array2D<Rgba> pixelBuffer = Imf::Array2D<Rgba>();
         Imf::Array2D<Rgba> &pixelBufferRef = pixelBuffer;
 

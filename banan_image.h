@@ -17,7 +17,7 @@ namespace Banan {
             BananImage(const BananImage&) = delete;
             BananImage& operator=(const BananImage&) = delete;
 
-            VkDescriptorImageInfo *descriptorInfo();
+            VkDescriptorImageInfo descriptorInfo();
             VkImage getImageHandle();
 
         private:
@@ -42,7 +42,7 @@ namespace Banan {
             BananCubemap(const BananCubemap&) = delete;
             BananCubemap& operator=(const BananCubemap&) = delete;
 
-            VkDescriptorImageInfo *descriptorInfo();
+            VkDescriptorImageInfo descriptorInfo();
             VkImage getImageHandle();
 
         private:

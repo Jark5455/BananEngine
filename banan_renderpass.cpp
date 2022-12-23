@@ -24,8 +24,16 @@ namespace Banan {
     }
 
     void BananRenderPass::createFramebuffer() {
-        for (VkFormat &format : frameBufferFormats) {
-            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+
+        VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
+        for (int i = 0 ; i < frameBufferFormats.size() - 1; i++) {
+            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[i], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+        }
+
+        if (std::find(std::begin(depthFormats), std::end(depthFormats), frameBufferFormats.back()) != std::end(depthFormats)) {
+            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[frameBufferFormats.size() - 1], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+        } else {
+            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[frameBufferFormats.size() - 1], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
         }
 
         VkImageView attachments[frameBufferAttachments.size()];
@@ -57,25 +65,27 @@ namespace Banan {
             osAttachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
             osAttachments[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             osAttachments[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            osAttachments[i].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            osAttachments[i].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            osAttachments[i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            osAttachments[i].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            osAttachments[i].flags = 0;
         }
 
         VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
 
-        osAttachments[frameBufferFormats.size()].format = frameBufferFormats.back();
-        osAttachments[frameBufferFormats.size()].samples = VK_SAMPLE_COUNT_1_BIT;
-        osAttachments[frameBufferFormats.size()].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        osAttachments[frameBufferFormats.size()].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        osAttachments[frameBufferFormats.size()].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        osAttachments[frameBufferFormats.size()].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        osAttachments[frameBufferFormats.size() - 1].format = frameBufferFormats.back();
+        osAttachments[frameBufferFormats.size() - 1].samples = VK_SAMPLE_COUNT_1_BIT;
+        osAttachments[frameBufferFormats.size() - 1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        osAttachments[frameBufferFormats.size() - 1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        osAttachments[frameBufferFormats.size() - 1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        osAttachments[frameBufferFormats.size() - 1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        osAttachments[frameBufferFormats.size() - 1].flags = 0;
 
         if (std::find(std::begin(depthFormats), std::end(depthFormats), frameBufferFormats.back()) != std::end(depthFormats)) {
-            osAttachments[frameBufferFormats.size()].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            osAttachments[frameBufferFormats.size()].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            osAttachments[frameBufferFormats.size() - 1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            osAttachments[frameBufferFormats.size() - 1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         } else {
-            osAttachments[frameBufferFormats.size()].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            osAttachments[frameBufferFormats.size()].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            osAttachments[frameBufferFormats.size() - 1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            osAttachments[frameBufferFormats.size() - 1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
 
         std::vector<VkAttachmentReference> colorReferences{};
