@@ -40,6 +40,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     float heightScale;
     float parallaxBias;
     float numLayers;
+    int numGameObjects;
 } ubo;
 
 layout(set = 0, binding = 1) readonly buffer GameObjects {

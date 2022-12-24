@@ -28,11 +28,11 @@ namespace Banan{
         void render(BananFrameInfo &frameInfo);
 
     private:
-        void createMainRenderTargetPipeline(std::vector<VkDescriptorSetLayout> layouts);
-        void createMainRenderTargetPipelineLayout(VkRenderPass renderPass);
+        void createMainRenderTargetPipeline(VkRenderPass renderPass);
+        void createMainRenderTargetPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
 
-        void createGBufferPipeline(std::vector<VkDescriptorSetLayout> layouts);
-        void createGBufferPipelineLayout(VkRenderPass renderPass);
+        void createGBufferPipeline(VkRenderPass renderPass);
+        void createGBufferPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
 
         BananDevice &bananDevice;
 
@@ -42,7 +42,5 @@ namespace Banan{
 
         std::unique_ptr<BananPipeline> mainRenderTargetPipeline;
         VkPipelineLayout mainRenderTargetPipelineLayout;
-
-        std::vector<VkDescriptorSetLayout> layouts;
     };
 }

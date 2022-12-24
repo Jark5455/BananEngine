@@ -13,11 +13,6 @@ layout (location = 5) in mat3 fragTBN;
 
 layout (location = 0) out vec4 outColor;
 
-struct PointLight {
-    vec4 position;
-    vec4 color;
-};
-
 struct GameObject {
     vec4 position;
     vec4 rotation; // color for point lights
@@ -44,12 +39,11 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 view;
     mat4 inverseView;
     vec4 ambientLightColor;
-    PointLight pointLights[10];
-    int numLights;
     float heightScale;
     float parallaxBias;
     float numLayers;
     int parallaxMode;
+    int numGameObjects;
 } ubo;
 
 layout(set = 0, binding = 1) readonly buffer GameObjects {
@@ -144,26 +138,29 @@ void main() {
     }
 
     vec3 surfaceNormal = normalize(normalHeightMapLod * 2.0 - 1.0);
-    for (int i = 0; i < ubo.numLights; i++) {
-        PointLight light = ubo.pointLights[i];
-        vec3 tangentLightPos = fragTBN * light.position.xyz;
 
-        vec3 directionToLight = tangentLightPos - tangentFragPos;
-        vec3 reflection = reflect(-directionToLight, surfaceNormal);
+    for (int i = 0; i < ubo.numGameObjects; i++) {
+        GameObject object = ssbo.objects[i];
+        if (object.isPointLight == 1) {
+            vec3 tangentLightPos = fragTBN * object.position.xyz;
 
-        float attenuation = 1.0 / dot(directionToLight, directionToLight);
-        directionToLight = normalize(directionToLight);
+            vec3 directionToLight = tangentLightPos - tangentFragPos;
+            vec3 reflection = reflect(-directionToLight, surfaceNormal);
 
-        float cosAngIncidence = max(dot(surfaceNormal, normalize(directionToLight)), 0);
-        vec3 intensity = light.color.xyz * light.color.w * attenuation;
-        diffuseLight += intensity * cosAngIncidence;
+            float attenuation = 1.0 / dot(directionToLight, directionToLight);
+            directionToLight = normalize(directionToLight);
 
-        //cool reflections
-        vec3 halfAngle = normalize(directionToLight + viewDirection);
-        float blinnTerm = dot(surfaceNormal, halfAngle);
-        blinnTerm = clamp(blinnTerm, 0, 1);
-        blinnTerm = pow(blinnTerm, 512.0f);
-        specularLight += light.color.xyz * attenuation * blinnTerm;
+            float cosAngIncidence = max(dot(surfaceNormal, normalize(directionToLight)), 0);
+            vec3 intensity = object.rotation.xyz * object.rotation.w * attenuation;
+            diffuseLight += intensity * cosAngIncidence;
+
+            //cool reflections
+            vec3 halfAngle = normalize(directionToLight + viewDirection);
+            float blinnTerm = dot(surfaceNormal, halfAngle);
+            blinnTerm = clamp(blinnTerm, 0, 1);
+            blinnTerm = pow(blinnTerm, 512.0f);
+            specularLight += object.rotation.xyz * attenuation * blinnTerm;
+        }
     }
 
     diffuseLight += color;

@@ -27,13 +27,16 @@ namespace Banan {
 
         VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
         for (int i = 0 ; i < frameBufferFormats.size() - 1; i++) {
-            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[i], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[i], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+            bananDevice.transitionImageLayout(frameBufferAttachments.back()->getImageHandle(), frameBufferFormats[i], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
         }
 
         if (std::find(std::begin(depthFormats), std::end(depthFormats), frameBufferFormats.back()) != std::end(depthFormats)) {
-            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[frameBufferFormats.size() - 1], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[frameBufferFormats.size() - 1], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+            bananDevice.transitionImageLayout(frameBufferAttachments.back()->getImageHandle(), frameBufferFormats.back(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, 1);
         } else {
-            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[frameBufferFormats.size() - 1], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+            frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[frameBufferFormats.size() - 1], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+            bananDevice.transitionImageLayout(frameBufferAttachments.back()->getImageHandle(), frameBufferFormats.back(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
         }
 
         VkImageView attachments[frameBufferAttachments.size()];
@@ -58,7 +61,7 @@ namespace Banan {
     void BananRenderPass::createRenderpass() {
         VkAttachmentDescription osAttachments[frameBufferFormats.size()];
 
-        for (int i = 0; i < frameBufferFormats.size() - 1; i++) {
+        for (int i = 0; i < frameBufferFormats.size(); i++) {
             osAttachments[i].format = frameBufferFormats[i];
             osAttachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
             osAttachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -68,24 +71,6 @@ namespace Banan {
             osAttachments[i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             osAttachments[i].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             osAttachments[i].flags = 0;
-        }
-
-        VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
-
-        osAttachments[frameBufferFormats.size() - 1].format = frameBufferFormats.back();
-        osAttachments[frameBufferFormats.size() - 1].samples = VK_SAMPLE_COUNT_1_BIT;
-        osAttachments[frameBufferFormats.size() - 1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        osAttachments[frameBufferFormats.size() - 1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        osAttachments[frameBufferFormats.size() - 1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        osAttachments[frameBufferFormats.size() - 1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        osAttachments[frameBufferFormats.size() - 1].flags = 0;
-
-        if (std::find(std::begin(depthFormats), std::end(depthFormats), frameBufferFormats.back()) != std::end(depthFormats)) {
-            osAttachments[frameBufferFormats.size() - 1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            osAttachments[frameBufferFormats.size() - 1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        } else {
-            osAttachments[frameBufferFormats.size() - 1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            osAttachments[frameBufferFormats.size() - 1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
 
         std::vector<VkAttachmentReference> colorReferences{};
@@ -99,6 +84,24 @@ namespace Banan {
             }
         }
 
+        std::vector<VkSubpassDependency> subpassDepends{2};
+
+        subpassDepends[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        subpassDepends[0].dstSubpass = 0;
+        subpassDepends[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        subpassDepends[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpassDepends[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        subpassDepends[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        subpassDepends[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+        subpassDepends[1].srcSubpass = 0;
+        subpassDepends[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        subpassDepends[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpassDepends[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        subpassDepends[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        subpassDepends[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        subpassDepends[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = colorReferences.size();
@@ -111,6 +114,8 @@ namespace Banan {
         renderPassCreateInfo.pAttachments = osAttachments;
         renderPassCreateInfo.subpassCount = 1;
         renderPassCreateInfo.pSubpasses = &subpass;
+        renderPassCreateInfo.dependencyCount = 2;
+        renderPassCreateInfo.pDependencies = subpassDepends.data();
 
         if (vkCreateRenderPass(bananDevice.device(), &renderPassCreateInfo, nullptr, &renderPass) != VK_SUCCESS) {
             throw std::runtime_error("unable to create shadow render pass");
@@ -126,7 +131,7 @@ namespace Banan {
 
         VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
         if (std::find(std::begin(depthFormats), std::end(depthFormats), frameBufferFormats.back()) != std::end(depthFormats)) {
-            clearValues[frameBufferAttachments.size()].depthStencil = { 1.0f, 0 };
+            clearValues[frameBufferAttachments.size() - 1].depthStencil = { 1.0f, 0 };
         }
 
         VkRenderPassBeginInfo renderPassBeginInfo{};

@@ -255,6 +255,9 @@ namespace Banan{
                     bananRenderer.endShadowRenderPass(commandBuffer, i);
                 }*/
 
+                bananRenderer.beginGBufferRenderPass(commandBuffer);
+                bananRenderer.endGBufferRenderPass(commandBuffer);
+
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
                 renderSystem.render(frameInfo);
                 pointLightSystem.render(frameInfo);

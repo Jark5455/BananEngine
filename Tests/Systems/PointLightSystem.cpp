@@ -94,17 +94,9 @@ namespace Banan{
             auto &obj = kv.second;
             if (obj.pointLight == nullptr) continue;
 
-            assert(lightIndex < MAX_LIGHTS && "Point Lights exceed maximum specified");
-
             auto rotateLight = glm::rotate(glm::mat4(1.f), frameInfo.frameTime, {0.f, -1.f, 0.f});
             obj.transform.translation = glm::vec3(rotateLight * glm::vec4(obj.transform.translation, 1.f));
-
-            ubo.pointLights[lightIndex].positon = glm::vec4(obj.transform.translation, 1.f);
-            ubo.pointLights[lightIndex].color = glm::vec4(obj.color, obj.pointLight->lightIntensity);
-            lightIndex += 1;
         }
-
-        ubo.numLights = lightIndex;
     }
 }
 

@@ -8,11 +8,6 @@ layout(location = 4) in vec2 uv;
 
 layout(location = 0) out vec4 outPos;
 
-struct PointLight {
-    vec4 position;
-    vec4 color;
-};
-
 struct GameObject {
     vec4 position;
     vec4 rotation; // color for point lights
@@ -39,11 +34,10 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 view;
     mat4 inverseView;
     vec4 ambientLightColor;
-    PointLight pointLights[10];
-    int numLights;
     float heightScale;
     float parallaxBias;
     float numLayers;
+    int numGameObjects;
 } ubo;
 
 layout(set = 0, binding = 1) readonly buffer GameObjects {
