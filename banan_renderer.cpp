@@ -257,7 +257,7 @@ namespace Banan {
     }
 
     std::vector<VkDescriptorImageInfo> BananRenderer::getGBufferDescriptorInfo() {
-        std::vector<VkDescriptorImageInfo> info{3};
+        std::vector<VkDescriptorImageInfo> info{};
         info.push_back(GBufferRenderPass->getFramebufferAttachments()[0]->descriptorInfo());
         info.push_back(GBufferRenderPass->getFramebufferAttachments()[1]->descriptorInfo());
         info.push_back(GBufferRenderPass->getFramebufferAttachments()[2]->descriptorInfo());

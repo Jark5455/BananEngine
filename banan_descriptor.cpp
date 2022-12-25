@@ -96,11 +96,11 @@ namespace Banan {
         vkDestroyDescriptorPool(bananDevice.device(), descriptorPool, nullptr);
     }
 
-    bool BananDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, uint32_t *descriptor_count) const {
+    bool BananDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<uint32_t> descriptorCount) const {
         VkDescriptorSetVariableDescriptorCountAllocateInfoEXT descriptorSetVariableDescriptorCountAllocateInfoExt{};
         descriptorSetVariableDescriptorCountAllocateInfoExt.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
-        descriptorSetVariableDescriptorCountAllocateInfoExt.descriptorSetCount = 1;
-        descriptorSetVariableDescriptorCountAllocateInfoExt.pDescriptorCounts = descriptor_count;
+        descriptorSetVariableDescriptorCountAllocateInfoExt.descriptorSetCount = descriptorCount.size();
+        descriptorSetVariableDescriptorCountAllocateInfoExt.pDescriptorCounts = descriptorCount.data();
 
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -174,8 +174,8 @@ namespace Banan {
         return *this;
     }
 
-    bool BananDescriptorWriter::build(VkDescriptorSet &set, uint32_t *descriptor_count) {
-        bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set, descriptor_count);
+    bool BananDescriptorWriter::build(VkDescriptorSet &set, std::vector<uint32_t> descriptorCount) {
+        bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set, descriptorCount);
         if (!success) {
             return false;
         }

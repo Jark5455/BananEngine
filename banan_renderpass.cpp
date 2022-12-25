@@ -59,6 +59,7 @@ namespace Banan {
     }
 
     void BananRenderPass::createRenderpass() {
+        VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
         VkAttachmentDescription osAttachments[frameBufferFormats.size()];
 
         for (int i = 0; i < frameBufferFormats.size(); i++) {
@@ -76,12 +77,23 @@ namespace Banan {
         std::vector<VkAttachmentReference> colorReferences{};
         std::vector<VkAttachmentReference> depthReferences{};
 
-        for (int i = 0; i < frameBufferFormats.size(); i++) {
-            if (osAttachments[i].finalLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-                colorReferences.push_back({(uint32_t) i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-            } else if (osAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-                depthReferences.push_back({(uint32_t) i, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-            }
+        for (int i = 0; i < frameBufferFormats.size() - 1; i++) {
+            VkAttachmentReference colorReference{};
+            colorReference.attachment = i;
+            colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            colorReferences.push_back(colorReference);
+        }
+
+        if (std::find(std::begin(depthFormats), std::end(depthFormats), frameBufferFormats.back()) != std::end(depthFormats)) {
+            VkAttachmentReference depthReference{};
+            depthReference.attachment = frameBufferFormats.size() - 1;
+            depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            depthReferences.push_back(depthReference);
+        } else {
+            VkAttachmentReference colorReference{};
+            colorReference.attachment = frameBufferFormats.size() - 1;
+            colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            colorReferences.push_back(colorReference);
         }
 
         std::vector<VkSubpassDependency> subpassDepends{2};

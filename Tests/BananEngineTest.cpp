@@ -55,7 +55,6 @@ namespace Banan{
         procrastinatedPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .build();
     }
 
@@ -134,37 +133,29 @@ namespace Banan{
             auto storageInfo = storageBuffers[i]->descriptorInfo();
             writer.writeBuffer(1, &storageInfo);
 
+            writer.build(globalDescriptorSets[i], std::vector<uint32_t> {});
+
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
             textureWriter.writeImages(0, gameObjectsTextureInfo);
 
-            //auto shadowInfo = bananRenderer.getShadowDescriptorInfo();
-            //textureWriter.writeImage(1, &shadowInfo);
+            textureWriter.build(textureDescriptorSets[i], std::vector<uint32_t> {static_cast<uint32_t>(gameObjectsTextureInfo.size())});
 
             BananDescriptorWriter normalWriter = BananDescriptorWriter(*normalSetLayout, *normalPool);
             normalWriter.writeImages(0, gameObjectsNormalInfo);
 
+            normalWriter.build(normalDescriptorSets[i], std::vector<uint32_t> {static_cast<uint32_t>(gameObjectsNormalInfo.size())});
+
             BananDescriptorWriter heightWriter = BananDescriptorWriter(*heightMapSetLayout, *heightPool);
             heightWriter.writeImages(0, gameObjectsHeightInfo);
+
+            heightWriter.build(heightDescriptorSets[i], std::vector<uint32_t> {static_cast<uint32_t>(gameObjectsHeightInfo.size())});
 
             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
             procrastinatedWriter.writeImage(0, &bananRenderer.getGBufferDescriptorInfo()[0]);
             procrastinatedWriter.writeImage(1, &bananRenderer.getGBufferDescriptorInfo()[1]);
             procrastinatedWriter.writeImage(2, &bananRenderer.getGBufferDescriptorInfo()[2]);
 
-            uint32_t globalDescriptorCounts[] = {1, 1};
-            writer.build(globalDescriptorSets[i], globalDescriptorCounts);
-
-            uint32_t textureDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsTextureInfo.size())};
-            textureWriter.build(textureDescriptorSets[i], textureDescriptorCounts);
-
-            uint32_t normalDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsNormalInfo.size())};
-            normalWriter.build(normalDescriptorSets[i], normalDescriptorCounts);
-
-            uint32_t heightDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsHeightInfo.size())};
-            heightWriter.build(heightDescriptorSets[i], heightDescriptorCounts);
-
-            uint32_t procrastinatedDescriptorCounts[] = {1, 1, 1};
-            procrastinatedWriter.build(procrastinatedDescriptorSets[i], procrastinatedDescriptorCounts);
+            procrastinatedWriter.build(procrastinatedDescriptorSets[i], std::vector<uint32_t> {});
         }
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -261,6 +252,8 @@ namespace Banan{
                 bananRenderer.beginGBufferRenderPass(commandBuffer);
                 procrastinatedRenderSystem.calculateGBuffer(frameInfo);
                 bananRenderer.endGBufferRenderPass(commandBuffer);
+
+                std::cout << "uhh" << std::endl;
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
                 procrastinatedRenderSystem.render(frameInfo);

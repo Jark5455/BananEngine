@@ -54,6 +54,10 @@ namespace Banan {
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = mainRenderTargetPipelineLayout;
         pipelineConfig.multisampleInfo.rasterizationSamples = bananDevice.getMaxUsableSampleCount();
+
+        pipelineConfig.attributeDescriptions.clear();
+        pipelineConfig.bindingDescriptions.clear();
+
         mainRenderTargetPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/mrt.vert.spv", "shaders/mrt.frag.spv", pipelineConfig);
     }
 
@@ -80,9 +84,9 @@ namespace Banan {
         // why not use the existing variables HEIGHT or WIDTH? - On high pixel density displays such as apples "retina" display these values are incorrect, but the swap chain corrects these values
         PipelineConfigInfo pipelineConfig{};
         BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
+        BananPipeline::gbufferPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = GBufferPipelineLayout;
-        pipelineConfig.multisampleInfo.rasterizationSamples = bananDevice.getMaxUsableSampleCount();
         GBufferPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv", pipelineConfig);
 
     }

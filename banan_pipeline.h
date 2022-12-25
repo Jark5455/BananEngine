@@ -46,8 +46,7 @@ namespace Banan {
             static void defaultPipelineConfigInfo(PipelineConfigInfo &configInfo);
             static void alphaBlendingPipelineConfigInfo(PipelineConfigInfo &configInfo);
             static void shadowPipelineConfigInfo(PipelineConfigInfo &configInfo);
-            static void procrastinatedPipelineConfigInfo(PipelineConfigInfo &configInfo);
-            static void computePipelineConfigInfo(PipelineConfigInfo &configInfo);
+            static void gbufferPipelineConfigInfo(PipelineConfigInfo &configInfo);
 
         private:
             static std::vector<char> readFile(const std::string &filepath);
