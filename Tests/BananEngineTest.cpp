@@ -162,6 +162,9 @@ namespace Banan{
 
             uint32_t heightDescriptorCounts[] = {static_cast<uint32_t>(gameObjectsHeightInfo.size())};
             heightWriter.build(heightDescriptorSets[i], heightDescriptorCounts);
+
+            uint32_t procrastinatedDescriptorCounts[] = {1, 1, 1};
+            procrastinatedWriter.build(procrastinatedDescriptorSets[i], procrastinatedDescriptorCounts);
         }
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -186,7 +189,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], gameObjects};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], gameObjects};
 
                 std::vector<GameObjectData> data{};
                 data.reserve(gameObjects.size());
@@ -256,10 +259,11 @@ namespace Banan{
                 }*/
 
                 bananRenderer.beginGBufferRenderPass(commandBuffer);
+                procrastinatedRenderSystem.calculateGBuffer(frameInfo);
                 bananRenderer.endGBufferRenderPass(commandBuffer);
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
-                renderSystem.render(frameInfo);
+                procrastinatedRenderSystem.render(frameInfo);
                 pointLightSystem.render(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
 

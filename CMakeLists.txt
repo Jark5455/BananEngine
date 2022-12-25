@@ -128,6 +128,12 @@ execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/point_light.vert
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/shadow.frag -o ${CMAKE_BINARY_DIR}/shaders/shadow.frag.spv)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/shadow.vert -o ${CMAKE_BINARY_DIR}/shaders/shadow.vert.spv)
 
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/mrt.frag -o ${CMAKE_BINARY_DIR}/shaders/mrt.frag.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/mrt.vert -o ${CMAKE_BINARY_DIR}/shaders/mrt.vert.spv)
+
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/gbuffer.frag -o ${CMAKE_BINARY_DIR}/shaders/gbuffer.frag.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/gbuffer.vert -o ${CMAKE_BINARY_DIR}/shaders/gbuffer.vert.spv)
+
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/calc_normal_mats.comp -o ${CMAKE_BINARY_DIR}/shaders/calc_normal_mats.comp.spv)
 
 execute_process(COMMAND cp -r ${CMAKE_SOURCE_DIR}/Tests/banan_assets ${CMAKE_BINARY_DIR})

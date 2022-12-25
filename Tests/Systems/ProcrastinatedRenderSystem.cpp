@@ -8,18 +8,41 @@
 
 namespace Banan {
     ProcrastinatedRenderSystem::ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts) : bananDevice{device} {
+        createGBufferPipelineLayout(layouts);
+        createGBufferPipeline(GBufferRenderPass);
+
+        createMainRenderTargetPipelineLayout(procrastinatedLayouts);
+        createMainRenderTargetPipeline(mainRenderPass);
     }
 
     ProcrastinatedRenderSystem::~ProcrastinatedRenderSystem() {
-
+        vkDestroyPipelineLayout(bananDevice.device(), GBufferPipelineLayout, nullptr);
+        vkDestroyPipelineLayout(bananDevice.device(), mainRenderTargetPipelineLayout, nullptr);
     }
 
     void ProcrastinatedRenderSystem::calculateGBuffer(BananFrameInfo &frameInfo) {
+        GBufferPipeline->bind(frameInfo.commandBuffer);
+        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.textureDescriptorSet, frameInfo.normalDescriptorSet, frameInfo.heightDescriptorSet};
 
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,GBufferPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+
+        for (auto &kv : frameInfo.gameObjects) {
+            auto &obj = kv.second;
+            if (obj.model == nullptr) continue;
+
+            vkCmdPushConstants(frameInfo.commandBuffer, GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(id_t), &kv.first);
+
+            obj.model->bindAll(frameInfo.commandBuffer);
+            obj.model->draw(frameInfo.commandBuffer);
+        }
     }
 
     void ProcrastinatedRenderSystem::render(BananFrameInfo &frameInfo) {
+        mainRenderTargetPipeline->bind(frameInfo.commandBuffer);
+        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.procrastinatedDescriptorSet};
 
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,mainRenderTargetPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+        vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
     }
 
     void ProcrastinatedRenderSystem::createMainRenderTargetPipeline(VkRenderPass renderPass) {
