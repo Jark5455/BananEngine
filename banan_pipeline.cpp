@@ -272,7 +272,7 @@ namespace Banan{
 
         configInfo.colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         configInfo.colorBlendInfo.attachmentCount = 2;
-        configInfo.colorBlendInfo.pAttachments = new VkPipelineColorBlendAttachmentState[]{configInfo.colorBlendAttachment, configInfo.colorBlendAttachment};
+        configInfo.colorBlendInfo.pAttachments = new VkPipelineColorBlendAttachmentState[2] {configInfo.colorBlendAttachment, configInfo.colorBlendAttachment};
 
         configInfo.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         configInfo.depthStencilInfo.depthTestEnable = VK_TRUE;

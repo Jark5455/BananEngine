@@ -56,7 +56,8 @@ namespace Banan{
         std::unique_ptr<BananSwapChain> bananSwapChain;
         std::unique_ptr<BananShadowMapper> bananShadowMapper;
         std::unique_ptr<BananRenderPass> GBufferRenderPass;
-        std::vector<VkCommandBuffer> commandBuffers;
+        std::vector<VkCommandBuffer> commandBuffers{};
+        std::vector<VkDescriptorImageInfo> GBufferInfo{};
 
         uint32_t currentImageIndex;
         int currentFrameIndex{0};

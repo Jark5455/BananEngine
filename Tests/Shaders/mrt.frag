@@ -60,7 +60,7 @@ vec3 positionFromDepth(vec2 uv) {
 
 void main() {
     vec3 position = positionFromDepth(inUV);
-    vec4 normal = texture(normals, inUV);
+    vec3 normal = normalize(vec3(texture(normals, inUV)) * 2.0 - 1.0);
     vec4 diffuse = texture(albedo, inUV);
 
     vec3 diffuseLight = vec3(diffuse);
@@ -75,18 +75,18 @@ void main() {
             vec3 lightPos = object.position.xyz;
 
             vec3 directionToLight = lightPos - position;
-            vec3 reflection = reflect(-directionToLight, vec3(normal));
+            vec3 reflection = reflect(-directionToLight, normal);
 
             float attenuation = 1.0 / dot(directionToLight, directionToLight);
             directionToLight = normalize(directionToLight);
 
-            float cosAngIncidence = max(dot(vec3(normal), normalize(directionToLight)), 0);
+            float cosAngIncidence = max(dot(normal, normalize(directionToLight)), 0);
             vec3 intensity = object.rotation.xyz * object.rotation.w * attenuation;
             diffuseLight += intensity * cosAngIncidence;
 
             //cool reflections
             vec3 halfAngle = normalize(directionToLight + viewDirection);
-            float blinnTerm = dot(vec3(normal), halfAngle);
+            float blinnTerm = dot(normal, halfAngle);
             blinnTerm = clamp(blinnTerm, 0, 1);
             blinnTerm = pow(blinnTerm, 512.0f);
             specularLight += object.rotation.xyz * attenuation * blinnTerm;

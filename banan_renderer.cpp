@@ -240,6 +240,11 @@ namespace Banan {
         std::vector<VkFormat> attachmentFormats{VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM};
 
         GBufferRenderPass = std::make_unique<BananRenderPass>(bananDevice, attachmentFormats, bananWindow.getExtent(), true);
+
+        GBufferInfo.clear();
+        GBufferInfo.push_back(GBufferRenderPass->getFramebufferAttachments()[0]->descriptorInfo());
+        GBufferInfo.push_back(GBufferRenderPass->getFramebufferAttachments()[1]->descriptorInfo());
+        GBufferInfo.push_back(GBufferRenderPass->getFramebufferAttachments()[2]->descriptorInfo());
     }
 
     void BananRenderer::beginGBufferRenderPass(VkCommandBuffer commandBuffer) {
@@ -257,10 +262,6 @@ namespace Banan {
     }
 
     std::vector<VkDescriptorImageInfo> BananRenderer::getGBufferDescriptorInfo() {
-        std::vector<VkDescriptorImageInfo> info{};
-        info.push_back(GBufferRenderPass->getFramebufferAttachments()[0]->descriptorInfo());
-        info.push_back(GBufferRenderPass->getFramebufferAttachments()[1]->descriptorInfo());
-        info.push_back(GBufferRenderPass->getFramebufferAttachments()[2]->descriptorInfo());
-        return info;
+        return GBufferInfo;
     }
 }

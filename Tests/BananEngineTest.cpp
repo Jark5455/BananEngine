@@ -21,6 +21,8 @@
 
 #include <banan_logger.h>
 
+#include <sys/resource.h>
+
 namespace Banan{
 
     BananEngineTest::BananEngineTest() {
@@ -151,9 +153,14 @@ namespace Banan{
             heightWriter.build(heightDescriptorSets[i], std::vector<uint32_t> {static_cast<uint32_t>(gameObjectsHeightInfo.size())});
 
             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
-            procrastinatedWriter.writeImage(0, &bananRenderer.getGBufferDescriptorInfo()[0]);
-            procrastinatedWriter.writeImage(1, &bananRenderer.getGBufferDescriptorInfo()[1]);
-            procrastinatedWriter.writeImage(2, &bananRenderer.getGBufferDescriptorInfo()[2]);
+
+            VkDescriptorImageInfo normalInfo = bananRenderer.getGBufferDescriptorInfo()[0];
+            VkDescriptorImageInfo albedoInfo = bananRenderer.getGBufferDescriptorInfo()[1];
+            VkDescriptorImageInfo depthInfo = bananRenderer.getGBufferDescriptorInfo()[2];
+
+            procrastinatedWriter.writeImage(0, &normalInfo);
+            procrastinatedWriter.writeImage(1, &albedoInfo);
+            procrastinatedWriter.writeImage(2, &depthInfo);
 
             procrastinatedWriter.build(procrastinatedDescriptorSets[i], std::vector<uint32_t> {});
         }
@@ -252,8 +259,6 @@ namespace Banan{
                 bananRenderer.beginGBufferRenderPass(commandBuffer);
                 procrastinatedRenderSystem.calculateGBuffer(frameInfo);
                 bananRenderer.endGBufferRenderPass(commandBuffer);
-
-                std::cout << "uhh" << std::endl;
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
                 procrastinatedRenderSystem.render(frameInfo);

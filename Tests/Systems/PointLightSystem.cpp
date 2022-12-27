@@ -15,13 +15,6 @@
 #include <stdexcept>
 
 namespace Banan{
-
-    struct PointLightPushConstants {
-        glm::vec4 position{};
-        glm::vec4 color{};
-        float radius;
-    };
-
     PointLightSystem::PointLightSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device} {
         createPipelineLayout(layouts);
         createPipeline(renderPass);
@@ -36,7 +29,7 @@ namespace Banan{
         VkPushConstantRange pushConstantRange{};
         pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         pushConstantRange.offset = 0;
-        pushConstantRange.size = sizeof(PointLightPushConstants);
+        pushConstantRange.size = sizeof(id_t);
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

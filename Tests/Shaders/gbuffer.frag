@@ -136,5 +136,5 @@ void main() {
     }
 
     outAlbedo = vec4(color, 1.0);
-    outNormal = vec4(normalize(normalHeightMapLod * 2.0 - 1.0), 1.0);
+    outNormal = vec4(normalHeightMapLod, 1.0);
 }

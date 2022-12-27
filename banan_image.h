@@ -50,8 +50,8 @@ namespace Banan {
             void createTextureSampler();
 
             BananDevice &bananDevice;
-            VkImage cubemapImage;
             VkFormat cubemapImageFormat;
+            VkImage cubemapImage;
             VkImageView cubemapImageView;
             VkSampler cubemapImageSampler;
             VkDeviceMemory memory;

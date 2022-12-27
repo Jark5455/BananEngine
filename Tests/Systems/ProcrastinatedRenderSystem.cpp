@@ -89,6 +89,7 @@ namespace Banan {
         pipelineConfig.pipelineLayout = GBufferPipelineLayout;
         GBufferPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv", pipelineConfig);
 
+        delete[] pipelineConfig.colorBlendInfo.pAttachments;
     }
 
     void ProcrastinatedRenderSystem::createGBufferPipelineLayout(std::vector<VkDescriptorSetLayout> layouts) {
