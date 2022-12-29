@@ -45,25 +45,23 @@ layout(set = 1, binding = 2) uniform sampler2D depth;
 
 layout(location = 0) out vec4 outColor;
 
-vec3 positionFromDepth(vec2 uv) {
-    // Get the depth value for this pixel
-    float z = texture(depth, uv).r;
-    // Get x/w and y/w from the viewport position
-    float x = uv.x * 2 - 1;
-    float y = (1 - uv.y) * 2 - 1;
-    vec4 projectedPosition = vec4(x, y, z, 1.0);
-    // Transform by the inverse projection matrix
-    vec4 positionVS = projectedPosition * inverse(ubo.projection);
-    // Divide by w to get the view-space position
-    return positionVS.xyz / positionVS.w;
+const float PI = 3.1415926535897932384626433832795;
+
+vec3 calculate_view_position(vec2 texture_coordinate, float depth_from_depth_buffer)
+{
+    mat4 inverse_projection_matrix = inverse(ubo.projection);
+    vec3 clip_space_position = vec3(texture_coordinate, depth_from_depth_buffer) * 2.0 - vec3(1.0);
+    vec4 view_position = vec4(vec2(inverse_projection_matrix[0][0], inverse_projection_matrix[1][1]) * clip_space_position.xy, inverse_projection_matrix[2][3] * clip_space_position.z + inverse_projection_matrix[3][3]);
+    return(view_position.xyz / view_position.w);
 }
 
 void main() {
-    vec3 position = positionFromDepth(inUV);
-    vec3 normal = normalize(vec3(texture(normals, inUV)) * 2.0 - 1.0);
-    vec4 diffuse = texture(albedo, inUV);
 
-    vec3 diffuseLight = vec3(diffuse);
+    vec3 position = calculate_view_position(inUV, texture(depth, inUV).r) * ubo.inverseView;
+    vec3 normal = normalize(vec3(texture(normals, inUV)) * 2.0 - 1.0);
+    vec3 diffuse = vec3(texture(albedo, inUV));
+
+    vec3 diffuseLight = diffuse;
     vec3 specularLight = vec3(0.0);
 
     vec3 viewPos = ubo.inverseView[3].xyz;
@@ -84,7 +82,6 @@ void main() {
             vec3 intensity = object.rotation.xyz * object.rotation.w * attenuation;
             diffuseLight += intensity * cosAngIncidence;
 
-            //cool reflections
             vec3 halfAngle = normalize(directionToLight + viewDirection);
             float blinnTerm = dot(normal, halfAngle);
             blinnTerm = clamp(blinnTerm, 0, 1);
@@ -92,4 +89,6 @@ void main() {
             specularLight += object.rotation.xyz * attenuation * blinnTerm;
         }
     }
+
+    outColor = vec4(diffuseLight + specularLight, 1.0);
 }

@@ -113,11 +113,10 @@ void main() {
     vec3 specularLight = vec3(0.0);
 
     vec3 tangentViewPos = fragTBN * ubo.inverseView[3].xyz;
-    vec3 tangentFragPos = fragTBN * vec3(fragPosWorld);
+    vec3 tangentFragPos = fragTBN * fragPosWorld.xyz;
 
     vec3 viewDirection = normalize(tangentViewPos - tangentFragPos);
 
-    // TODO it definetly doesnt work
     vec2 uv = fragTexCoord;
     if (textureQueryLevels(heightSampler[push.objectId]) > 0) {
        uv =  parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId);
@@ -128,7 +127,7 @@ void main() {
         color = texture(texSampler[push.objectId], uv).rgb;
     }
 
-    vec3 normalHeightMapLod = fragTBN * normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
+    vec3 normalHeightMapLod = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
     if (textureQueryLevels(normalSampler[push.objectId]) > 0) {
         normalHeightMapLod = textureLod(normalSampler[push.objectId], uv, 0.0).rgb;
     }
@@ -137,16 +136,13 @@ void main() {
         discard;
     }
 
+    viewDirection = normalize(ubo.inverseView[3].xyz - fragPosWorld.xyz);
     vec3 surfaceNormal = normalize(normalHeightMapLod * 2.0 - 1.0);
 
     for (int i = 0; i < ubo.numGameObjects; i++) {
         GameObject object = ssbo.objects[i];
         if (object.isPointLight == 1) {
-            vec3 tangentLightPos = fragTBN * object.position.xyz;
-
-            vec3 directionToLight = tangentLightPos - tangentFragPos;
-            vec3 reflection = reflect(-directionToLight, surfaceNormal);
-
+            vec3 directionToLight = object.position.xyz - fragPosWorld.xyz;
             float attenuation = 1.0 / dot(directionToLight, directionToLight);
             directionToLight = normalize(directionToLight);
 

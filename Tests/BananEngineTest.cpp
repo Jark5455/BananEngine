@@ -183,7 +183,7 @@ namespace Banan{
 
             float aspect = bananRenderer.getAspectRatio();
             camera.setOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
-            camera.setPerspectiveProjection(glm::radians(90.f), aspect, 0.1f, 10.f);
+            camera.setPerspectiveProjection(glm::radians(90.f), aspect, 0.1f, 100.f);
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
@@ -256,12 +256,8 @@ namespace Banan{
                     bananRenderer.endShadowRenderPass(commandBuffer, i);
                 }*/
 
-                bananRenderer.beginGBufferRenderPass(commandBuffer);
-                procrastinatedRenderSystem.calculateGBuffer(frameInfo);
-                bananRenderer.endGBufferRenderPass(commandBuffer);
-
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
-                procrastinatedRenderSystem.render(frameInfo);
+                renderSystem.render(frameInfo);
                 pointLightSystem.render(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
 

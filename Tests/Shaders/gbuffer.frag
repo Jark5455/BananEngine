@@ -115,10 +115,9 @@ void main() {
 
     vec3 viewDirection = normalize(tangentViewPos - tangentFragPos);
 
-    // TODO it definetly doesnt work
     vec2 uv = fragTexCoord;
     if (textureQueryLevels(heightSampler[push.objectId]) > 0) {
-        uv =  parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId);
+        uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId);
     }
 
     vec3 color = fragColor;
@@ -126,7 +125,7 @@ void main() {
         color = texture(texSampler[push.objectId], uv).rgb;
     }
 
-    vec3 normalHeightMapLod = fragTBN * normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
+    vec3 normalHeightMapLod = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
     if (textureQueryLevels(normalSampler[push.objectId]) > 0) {
         normalHeightMapLod = textureLod(normalSampler[push.objectId], uv, 0.0).rgb;
     }
