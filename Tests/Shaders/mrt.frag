@@ -47,19 +47,23 @@ layout(location = 0) out vec4 outColor;
 
 const float PI = 3.1415926535897932384626433832795;
 
-vec3 calculate_view_position(vec2 texture_coordinate, float depth_from_depth_buffer)
-{
-    mat4 inverse_projection_matrix = inverse(ubo.projection);
-    vec3 clip_space_position = vec3(texture_coordinate, depth_from_depth_buffer) * 2.0 - vec3(1.0);
-    vec4 view_position = vec4(vec2(inverse_projection_matrix[0][0], inverse_projection_matrix[1][1]) * clip_space_position.xy, inverse_projection_matrix[2][3] * clip_space_position.z + inverse_projection_matrix[3][3]);
-    return(view_position.xyz / view_position.w);
+vec3 reconstruct_world_position() {
+    float z = textureLod(depth, inUV, 0.0).r;
+    if (z == 1.0)
+        discard;
+
+    float x = inUV.x * 2.0f - 1.0f;
+    float y = inUV.y * 2.0f - 1.0f;
+    vec4 position_s = vec4(x, y, z, 1.0f);
+    vec4 position_v =  ubo.inverseView * inverse(ubo.projection) * position_s;
+    vec3 worldPos = position_v.xyz / position_v.w;
+    return worldPos;
 }
 
 void main() {
-
-    vec3 position = calculate_view_position(inUV, texture(depth, inUV).r) * ubo.inverseView;
-    vec3 normal = normalize(vec3(texture(normals, inUV)) * 2.0 - 1.0);
-    vec3 diffuse = vec3(texture(albedo, inUV));
+    vec3 position = reconstruct_world_position();
+    vec3 surfaceNormal = textureLod(normals, inUV, 0.0).rgb;
+    vec3 diffuse = textureLod(albedo, inUV, 0.0).rgb;
 
     vec3 diffuseLight = diffuse;
     vec3 specularLight = vec3(0.0);
@@ -73,17 +77,17 @@ void main() {
             vec3 lightPos = object.position.xyz;
 
             vec3 directionToLight = lightPos - position;
-            vec3 reflection = reflect(-directionToLight, normal);
+            vec3 reflection = reflect(-directionToLight, surfaceNormal);
 
             float attenuation = 1.0 / dot(directionToLight, directionToLight);
             directionToLight = normalize(directionToLight);
 
-            float cosAngIncidence = max(dot(normal, normalize(directionToLight)), 0);
+            float cosAngIncidence = max(dot(surfaceNormal, normalize(directionToLight)), 0);
             vec3 intensity = object.rotation.xyz * object.rotation.w * attenuation;
             diffuseLight += intensity * cosAngIncidence;
 
             vec3 halfAngle = normalize(directionToLight + viewDirection);
-            float blinnTerm = dot(normal, halfAngle);
+            float blinnTerm = dot(surfaceNormal, halfAngle);
             blinnTerm = clamp(blinnTerm, 0, 1);
             blinnTerm = pow(blinnTerm, 512.0f);
             specularLight += object.rotation.xyz * attenuation * blinnTerm;

@@ -134,6 +134,20 @@ void main() {
         discard;
     }
 
+    // Compute the surface gradients at each vertex
+    vec3 dpdu = vec3(dFdxFine(fragPos));
+    vec3 dpdv = vec3(dFdyFine(fragPos));
+
+    // Interpolate the gradients across the surface of the triangle
+    vec3 dpduInterp = mix(dpdu, dpdu, uv.y);
+    vec3 dpdvInterp = mix(dpdv, dpdv, uv.x);
+
+    // Use the gradients to perturb the surface normal
+    vec3 perturbedNormal = normalHeightMapLod + dpduInterp + dpdvInterp;
+
+    // Transform the perturbed normal into view space
+    vec3 viewSpaceNormal = mat3(ssbo.objects[push.objectId].normalMatrix) * perturbedNormal;
+
     outAlbedo = vec4(color, 1.0);
-    outNormal = vec4(normalHeightMapLod, 1.0);
+    outNormal = vec4(normalize(viewSpaceNormal), 1.0);
 }

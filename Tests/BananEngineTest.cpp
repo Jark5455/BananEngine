@@ -256,9 +256,12 @@ namespace Banan{
                     bananRenderer.endShadowRenderPass(commandBuffer, i);
                 }*/
 
+                bananRenderer.beginGBufferRenderPass(commandBuffer);
+                procrastinatedRenderSystem.calculateGBuffer(frameInfo);
+                bananRenderer.endGBufferRenderPass(commandBuffer);
+
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
-                renderSystem.render(frameInfo);
-                pointLightSystem.render(frameInfo);
+                procrastinatedRenderSystem.render(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
 
                 bananRenderer.endFrame();

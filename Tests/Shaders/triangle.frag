@@ -109,7 +109,10 @@ vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
 }
 
 void main() {
-    vec3 diffuseLight = vec3(0.0);
+
+    outColor = fragPosWorld;
+
+    /*vec3 diffuseLight = vec3(0.0);
     vec3 specularLight = vec3(0.0);
 
     vec3 tangentViewPos = fragTBN * ubo.inverseView[3].xyz;
@@ -161,10 +164,10 @@ void main() {
 
     diffuseLight += color;
 
-    /*vec3 lightVec = fragPosWorld - ubo.pointLights[0].position.xyz;
+    *//*vec3 lightVec = fragPosWorld - ubo.pointLights[0].position.xyz;
     float sampledDist = texture(shadowCubeMap, lightVec).r;
     float dist = length(lightVec);
-    float shadow = (dist <= sampledDist + EPSILON) ? 1.0 : SHADOW_OPACITY;*/
+    float shadow = (dist <= sampledDist + EPSILON) ? 1.0 : SHADOW_OPACITY;*//*
 
-    outColor = vec4(diffuseLight + specularLight, 1.0);
+    outColor = vec4(diffuseLight + specularLight, 1.0);*/
 }
