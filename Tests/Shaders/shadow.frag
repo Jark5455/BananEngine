@@ -35,11 +35,6 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 view;
     mat4 inverseView;
     vec4 ambientLightColor;
-    PointLight pointLights[10];
-    int numLights;
-    float heightScale;
-    float parallaxBias;
-    float numLayers;
     int numGameObjects;
 } ubo;
 
@@ -54,6 +49,6 @@ layout(push_constant) uniform Push {
 
 void main()
 {
-    vec3 lightVec = inPos.xyz - ubo.pointLights[0].position.xyz;
+    vec3 lightVec = inPos.xyz - ssbo.objects[0].position.xyz;
     outColor = length(lightVec);
 }

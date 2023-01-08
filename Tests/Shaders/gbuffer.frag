@@ -40,10 +40,6 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 view;
     mat4 inverseView;
     vec4 ambientLightColor;
-    float heightScale;
-    float parallaxBias;
-    float numLayers;
-    int parallaxMode;
     int numGameObjects;
 } ubo;
 
@@ -64,19 +60,19 @@ vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
 {
     viewDir.y = -viewDir.y;
     float height = textureLod(heightSampler[index], uv, 0.0).r;
-    vec2 p = viewDir.xy * (height * (ubo.heightScale * 0.5) + ubo.parallaxBias) / viewDir.z;
+    vec2 p = viewDir.xy * (height * (ssbo.objects[push.objectId].heightscale * 0.5) + ssbo.objects[push.objectId].parallaxBias) / viewDir.z;
     return uv - p;
 }
 
 vec2 steepParallaxMapping(vec2 uv, vec3 viewDir, int index)
 {
     viewDir.y = -viewDir.y;
-    float layerDepth = 1.0 / ubo.numLayers;
+    float layerDepth = 1.0 / ssbo.objects[push.objectId].numLayers;
     float currLayerDepth = 0.0;
-    vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
+    vec2 deltaUV = viewDir.xy * ssbo.objects[push.objectId].heightscale / (viewDir.z * ssbo.objects[push.objectId].numLayers);
     vec2 currUV = uv;
     float height = textureLod(heightSampler[index], currUV, 0.0).r;
-    for (int i = 0; i < ubo.numLayers; i++) {
+    for (int i = 0; i < ssbo.objects[push.objectId].numLayers; i++) {
         currLayerDepth += layerDepth;
         currUV -= deltaUV;
         height = textureLod(heightSampler[index], currUV, 0.0).r;
@@ -90,12 +86,12 @@ vec2 steepParallaxMapping(vec2 uv, vec3 viewDir, int index)
 vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
 {
     viewDir.y = -viewDir.y;
-    float layerDepth = 1.0 / ubo.numLayers;
+    float layerDepth = 1.0 / ssbo.objects[push.objectId].numLayers;
     float currLayerDepth = 0.0;
-    vec2 deltaUV = viewDir.xy * ubo.heightScale / (viewDir.z * ubo.numLayers);
+    vec2 deltaUV = viewDir.xy * ssbo.objects[push.objectId].heightscale / (viewDir.z * ssbo.objects[push.objectId].numLayers);
     vec2 currUV = uv;
     float height = textureLod(heightSampler[index], currUV, 0.0).r;
-    for (int i = 0; i < ubo.numLayers; i++) {
+    for (int i = 0; i < ssbo.objects[push.objectId].numLayers; i++) {
         currLayerDepth += layerDepth;
         currUV -= deltaUV;
         height = textureLod(heightSampler[index], currUV, 0.0).r;

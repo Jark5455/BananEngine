@@ -28,9 +28,6 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 shadowProjection;
     mat4 view;
     vec4 ambientLightColor;
-    float heightScale;
-    float parallaxBias;
-    float numLayers;
     int numGameObjects;
 } ubo;
 

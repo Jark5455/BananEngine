@@ -16,10 +16,6 @@ namespace Banan {
         glm::mat4 view{1.f};
         glm::mat4 inverseView{1.f};
         glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.25f};
-        float heightscale;
-        float parallaxBias;
-        float numLayers;
-        int parallaxmode;
         int numGameObjects;
     };
 

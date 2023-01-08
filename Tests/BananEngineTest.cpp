@@ -228,10 +228,6 @@ namespace Banan{
                 ubo.view = camera.getView();
                 ubo.inverseView = camera.getInverseView();
                 ubo.shadowProjection = shadowCubeMapCamera.getProjection();
-                ubo.heightscale = 0.1;
-                ubo.parallaxBias = -0.02f;
-                ubo.numLayers = 48.0f;
-                ubo.parallaxmode = 4;
                 ubo.numGameObjects = gameObjects.size();
 
                 pointLightSystem.update(frameInfo, ubo);

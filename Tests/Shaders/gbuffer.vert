@@ -45,10 +45,6 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 view;
     mat4 inverseView;
     vec4 ambientLightColor;
-    PointLight pointLights[10];
-    int numLights;
-    float heightScale;
-    float parallaxBias;
     float numLayers;
 } ubo;
 
