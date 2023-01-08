@@ -10,7 +10,6 @@ layout (location = 2) in vec3 fragPos;
 layout (location = 3) in vec3 fragNormal;
 layout (location = 4) in vec4 fragPosWorld;
 layout (location = 5) in vec3 fragTangent;
-layout (location = 6) in mat3 fragTBN;
 
 layout (location = 0) out vec4 outNormal;
 layout (location = 1) out vec4 outAlbedo;
@@ -180,14 +179,27 @@ vec3 getFinalNormal(vec2 inUV)
 }
 
 void main() {
+
+    vec3 N = normalize(mat3(ssbo.objects[push.objectId].modelMatrix) * fragNormal);
+    vec3 T = normalize(mat3(ssbo.objects[push.objectId].modelMatrix) * fragTangent);
+    T = normalize(T - dot(T, N) * N);
+    vec3 B = normalize(cross(N, T));
+    mat3 fragTBN = transpose(mat3(T, B, N));
+
     vec3 tangentViewPos = fragTBN * ubo.inverseView[3].xyz;
     vec3 tangentFragPos = fragTBN * vec3(fragPosWorld);
 
     vec3 viewDirection = normalize(tangentViewPos - tangentFragPos);
 
     vec2 uv = fragTexCoord;
-    if (textureQueryLevels(heightSampler[push.objectId]) > 0) {
-        uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId);
+    if (ssbo.objects[push.objectId].parallaxmode != 0) {
+        if (ssbo.objects[push.objectId].parallaxmode == 1) {
+            uv = parallaxMapping(fragTexCoord, viewDirection, push.objectId);
+        }  else if (ssbo.objects[push.objectId].parallaxmode == 2) {
+            uv = steepParallaxMapping(fragTexCoord, viewDirection, push.objectId);
+        } else if (ssbo.objects[push.objectId].parallaxmode == 3) {
+            uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId);
+        }
     }
 
     vec3 color = fragColor;

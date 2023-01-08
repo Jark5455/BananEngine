@@ -9,8 +9,7 @@ layout (location = 1) in vec2 fragTexCoord;
 layout (location = 2) in vec3 fragPos;
 layout (location = 3) in vec3 fragNormal;
 layout (location = 4) in vec4 fragPosWorld;
-layout (location = 5) in mat3 fragTBN;
-layout (location = 10) in vec3 fragTangent;
+layout (location = 5) in vec3 fragTangent;
 
 layout (location = 0) out vec4 outColor;
 
@@ -179,6 +178,13 @@ vec3 getFinalNormal(vec2 inUV)
 }
 
 void main() {
+
+    vec3 N = normalize(mat3(ssbo.objects[push.objectId].modelMatrix) * fragNormal);
+    vec3 T = normalize(mat3(ssbo.objects[push.objectId].modelMatrix) * fragTangent);
+    T = normalize(T - dot(T, N) * N);
+    vec3 B = normalize(cross(N, T));
+    mat3 fragTBN = transpose(mat3(T, B, N));
+
     vec3 diffuseLight = vec3(0.0);
     vec3 specularLight = vec3(0.0);
 
@@ -189,8 +195,14 @@ void main() {
 
     // TODO it definetly doesnt work
     vec2 uv = fragTexCoord;
-    if (textureQueryLevels(heightSampler[push.objectId]) > 0) {
-        uv =  parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId);
+    if (ssbo.objects[push.objectId].parallaxmode != 0) {
+        if (ssbo.objects[push.objectId].parallaxmode == 1) {
+            uv = parallaxMapping(fragTexCoord, viewDirection, push.objectId);
+        }  else if (ssbo.objects[push.objectId].parallaxmode == 2) {
+            uv = steepParallaxMapping(fragTexCoord, viewDirection, push.objectId);
+        } else if (ssbo.objects[push.objectId].parallaxmode == 3) {
+            uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId);
+        }
     }
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
@@ -202,50 +214,12 @@ void main() {
         color = texture(texSampler[push.objectId], uv).rgb;
     }
 
-    /*// pertubed normals
-    vec3 normalHeightMapLod = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
-    viewDirection = normalize(ubo.inverseView[3].xyz - fragPosWorld.xyz);
-
-    if (textureQueryLevels(normalSampler[push.objectId]) > 0) {
-
-        // tangent space stuff
-        normalHeightMapLod = textureLod(normalSampler[push.objectId], uv, 0.0).rgb;
-        viewDirection = normalize(tangentViewPos - tangentFragPos);
-    }
-
-    vec3 surfaceNormal = normalize(normalHeightMapLod * 2.0 - 1.0);*/
-
-    vec3 normalHeightMapLod = textureLod(normalSampler[push.objectId], uv, 0.0).rgb;
     viewDirection = normalize(ubo.inverseView[3].xyz - fragPosWorld.xyz);
     vec3 surfaceNormal = getFinalNormal(uv);
 
     for (int i = 0; i < ubo.numGameObjects; i++) {
         GameObject object = ssbo.objects[i];
         if (object.isPointLight == 1) {
-            /*vec3 tangentLightPos = object.position.xyz;
-            vec3 directionToLight = tangentLightPos - fragPosWorld.xyz;
-
-            if (textureQueryLevels(normalSampler[push.objectId]) > 0) {
-                tangentLightPos = fragTBN * object.position.xyz;
-                directionToLight = tangentLightPos - tangentFragPos;
-            }
-
-            vec3 reflection = reflect(-directionToLight, surfaceNormal);
-
-            float attenuation = 1.0 / dot(directionToLight, directionToLight);
-            directionToLight = normalize(directionToLight);
-
-            float cosAngIncidence = max(dot(surfaceNormal, normalize(directionToLight)), 0);
-            vec3 intensity = object.rotation.xyz * object.rotation.w * attenuation;
-            diffuseLight += intensity * cosAngIncidence;
-
-            //cool reflections
-            vec3 halfAngle = normalize(directionToLight + viewDirection);
-            float blinnTerm = dot(surfaceNormal, halfAngle);
-            blinnTerm = clamp(blinnTerm, 0, 1);
-            blinnTerm = pow(blinnTerm, 512.0f);
-            specularLight += object.rotation.xyz * attenuation * blinnTerm;*/
-
             vec3 lightPos = object.position.xyz;
             vec3 directionToLight = lightPos - fragPosWorld.xyz;
 

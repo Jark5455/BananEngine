@@ -22,6 +22,13 @@ namespace Banan {
         glm::mat3 normalMatrix();
     };
 
+    struct ParallaxComponent {
+        float heightscale = -1.f;
+        float parallaxBias = -1.f;
+        float numLayers = -1.f;
+        int parallaxmode  = -1;
+    };
+
     struct PointLightComponent {
         float lightIntensity = 1.0f;
     };
@@ -44,6 +51,7 @@ namespace Banan {
             std::shared_ptr<BananModel> model{};
             glm::vec3 color{};
             TransformComponent transform{};
+            ParallaxComponent parallax{};
 
             std::unique_ptr<PointLightComponent> pointLight = nullptr;
 

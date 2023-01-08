@@ -196,21 +196,14 @@ namespace Banan{
                         GameObjectData objectData{glm::vec4(kv.second.transform.translation, 0), glm::vec4(kv.second.transform.rotation, 0), glm::vec4(kv.second.transform.scale, 0)};
                         objectData.hasTexture = kv.second.model->isTextureLoaded() ? (int) kv.first : -1;
                         objectData.hasNormal = kv.second.model->isNormalsLoaded() ? (int) kv.first : -1;
-                        objectData.isPointLight = 0;
+                        objectData.hasHeight = kv.second.model->isHeightmapLoaded() ? (int) kv.first : -1;
 
-                        if (kv.second.model->isHeightmapLoaded()) {
-                            objectData.hasHeight = (int) kv.first;
-                            objectData.heightscale = 0.1;
-                            objectData.parallaxBias = -0.02f;
-                            objectData.numLayers = 48.0f;
-                            objectData.parallaxmode = 4;
-                        } else {
-                            objectData.hasHeight = -1;
-                            objectData.heightscale = -1;
-                            objectData.parallaxBias = -1;
-                            objectData.numLayers = -1;
-                            objectData.parallaxmode = -1;
-                        }
+                        objectData.heightscale = kv.second.parallax.heightscale;
+                        objectData.parallaxBias = kv.second.parallax.parallaxBias;
+                        objectData.numLayers = kv.second.parallax.numLayers;
+                        objectData.parallaxmode = kv.second.parallax.parallaxmode;
+
+                        objectData.isPointLight = 0;
 
                         data.push_back(objectData);
                     } else {
@@ -313,6 +306,12 @@ namespace Banan{
         floor.transform.rotation = {0.f, glm::pi<float>(), 0.f};
         floor.transform.scale = {3.f, 3.f, 3.f};
         floor.transform.id = (int) floor.getId();
+
+        floor.parallax.heightscale = 0.1;
+        floor.parallax.parallaxBias = -0.02f;
+        floor.parallax.numLayers = 48.0f;
+        floor.parallax.parallaxmode = 1;
+
         gameObjects.emplace(floor.getId(), std::move(floor));
 
         std::vector<glm::vec3> lightColors{

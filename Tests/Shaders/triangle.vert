@@ -12,8 +12,7 @@ layout (location = 1) out vec2 fragTexCoord;
 layout (location = 2) out vec3 fragPos;
 layout (location = 3) out vec3 fragNormal;
 layout (location = 4) out vec4 fragPosWorld;
-layout (location = 5) out mat3 fragTBN;
-layout (location = 10) out vec3 fragTangent;
+layout (location = 5) out vec3 fragTangent;
 
 struct GameObject {
     vec4 position;
@@ -58,12 +57,6 @@ layout(push_constant) uniform Push {
 void main() {
     fragPosWorld = ssbo.objects[push.objectId].modelMatrix * vec4(position, 1.0);
     gl_Position = ubo.projection * ubo.view * fragPosWorld;
-
-    vec3 N = normalize(mat3(ssbo.objects[push.objectId].modelMatrix) * normal);
-    vec3 T = normalize(mat3(ssbo.objects[push.objectId].modelMatrix) * tangent);
-    T = normalize(T - dot(T, N) * N);
-    vec3 B = normalize(cross(N, T));
-    fragTBN = transpose(mat3(T, B, N));
 
     fragTexCoord = uv;
     fragColor = color;
