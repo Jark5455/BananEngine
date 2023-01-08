@@ -9,7 +9,8 @@ layout (location = 1) in vec2 fragTexCoord;
 layout (location = 2) in vec3 fragPos;
 layout (location = 3) in vec3 fragNormal;
 layout (location = 4) in vec4 fragPosWorld;
-layout (location = 5) in mat3 fragTBN;
+layout (location = 5) in vec3 fragTangent;
+layout (location = 6) in mat3 fragTBN;
 
 layout (location = 0) out vec4 outNormal;
 layout (location = 1) out vec4 outAlbedo;
@@ -109,6 +110,75 @@ vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
     return mix(currUV, prevUV, nextDepth / (nextDepth - prevDepth));
 }
 
+vec3 getFinalNormal(vec2 inUV)
+{
+
+    //************************************
+    // DEFS VERY IMPORTANT
+    //************************************
+
+    vec3 relSurfPos = fragPosWorld.xyz;
+    // mikkts for conventional vertex-level tangent space
+    // (no normalization is mandatory). Using "bitangent on the fly"
+    // option in xnormal to reduce vertex shader outputs.
+    vec3 mikktsTangent = fragTangent;
+    vec3 mikktsBitangent =  cross(fragNormal, fragTangent);
+
+    // Prepare for surfgrad formulation w/o breaking mikkTSpace
+    // compliance (use same scale as interpolated vertex normal).
+    float renormFactor = 1.0 / length(fragNormal);
+    mikktsTangent *= renormFactor;
+    mikktsBitangent *= renormFactor;
+    vec3 nrmBaseNormal = renormFactor * mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal;
+    // The variables below (plus nrmBaseNormal) need to be
+    // recomputed in the case of post-resolve bump mapping.
+    vec3 dPdx = dFdxFine(relSurfPos);
+    vec3 dPdy = dFdyFine(relSurfPos);
+    vec3 sigmaX = dPdx - dot(dPdx, nrmBaseNormal) * nrmBaseNormal;
+    vec3 sigmaY = dPdy - dot(dPdy, nrmBaseNormal) * nrmBaseNormal;
+    float flip_sign = dot(dPdy, cross(nrmBaseNormal, dPdx)) < 0 ? -1 : 1;
+
+    //************************************
+    // GEN BASIS TB FUNCTION VERY IMPORTANT
+    //************************************
+
+    vec2 dSTdx = dFdxFine(inUV);
+    vec2 dSTdy = dFdyFine(inUV);
+    float det = dot(dSTdx, vec2(dSTdy.y, -dSTdy.x));
+    float sign_det = det < 0.0 ? -1.0 : 1.0;
+    // invC0 represents (dXds, dYds), but we don’t divide
+    // by the determinant. Instead, we scale by the sign.
+    vec2 invC0 = sign_det * vec2(dSTdy.y, -dSTdx.y);
+    vec3 vT = sigmaX * invC0.x + sigmaY * invC0.y;
+    if (abs(det) > 0.0)
+    vT = normalize(vT);
+
+    vec3 vB = (sign_det * flip_sign) * cross(nrmBaseNormal, vT);
+
+    vec3 vM = textureLod(normalSampler[push.objectId], inUV, 0.0).rgb * 2.0 - 1.0;
+
+    //************************************
+    // GEN DERIV FROM TBN
+    //************************************
+
+    float scale = 1.0 / 128.0;
+    // Ensure vM delivers a positive third component using abs() and
+    // constrain vM.z so the range of the derivative is [-128; 128].
+    vec3 vMa = abs(vM);
+    float z_ma = max(vMa.z, scale * max(vMa.x, vMa.y));
+    // Set to match positive vertical texture coordinate axis.
+    bool gFlipVertDeriv = false;
+    float s = gFlipVertDeriv ? -1.0 : 1.0;
+    vec2 derivative = vec2(vM.x, s * vM.y) / z_ma;
+
+    //************************************
+    // FINAL CALC
+    //************************************
+
+    vec3 surfGrad = derivative.x * vT + derivative.y * vB;
+    return normalize(nrmBaseNormal - surfGrad);
+}
+
 void main() {
     vec3 tangentViewPos = fragTBN * ubo.inverseView[3].xyz;
     vec3 tangentFragPos = fragTBN * vec3(fragPosWorld);
@@ -127,27 +197,13 @@ void main() {
 
     vec3 normalHeightMapLod = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
     if (textureQueryLevels(normalSampler[push.objectId]) > 0) {
-        normalHeightMapLod = textureLod(normalSampler[push.objectId], uv, 0.0).rgb;
+        normalHeightMapLod = getFinalNormal(uv);
     }
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
         discard;
     }
 
-    // Compute the surface gradients at each vertex
-    vec3 dpdu = vec3(dFdxFine(fragPos));
-    vec3 dpdv = vec3(dFdyFine(fragPos));
-
-    // Interpolate the gradients across the surface of the triangle
-    vec3 dpduInterp = mix(dpdu, dpdu, uv.y);
-    vec3 dpdvInterp = mix(dpdv, dpdv, uv.x);
-
-    // Use the gradients to perturb the surface normal
-    vec3 perturbedNormal = normalHeightMapLod + dpduInterp + dpdvInterp;
-
-    // Transform the perturbed normal into view space
-    vec3 viewSpaceNormal = mat3(ssbo.objects[push.objectId].normalMatrix) * perturbedNormal;
-
-    outAlbedo = vec4(color, 1.0);
-    outNormal = vec4(normalize(viewSpaceNormal), 1.0);
+    outAlbedo = vec4(color,  uv.x);
+    outNormal = vec4(normalHeightMapLod, uv.y);
 }

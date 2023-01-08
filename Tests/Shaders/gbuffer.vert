@@ -12,7 +12,8 @@ layout (location = 1) out vec2 fragTexCoord;
 layout (location = 2) out vec3 fragPos;
 layout (location = 3) out vec3 fragNormal;
 layout (location = 4) out vec4 fragPosWorld;
-layout (location = 5) out mat3 fragTBN;
+layout (location = 5) out vec3 fragTangent;
+layout (location = 6) out mat3 fragTBN;
 
 struct PointLight {
     vec4 position;
@@ -74,4 +75,5 @@ void main() {
     fragColor = color;
     fragPos = position;
     fragNormal = normal;
+    fragTangent = tangent;
 }

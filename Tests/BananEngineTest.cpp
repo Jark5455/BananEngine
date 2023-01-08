@@ -262,6 +262,7 @@ namespace Banan{
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
                 procrastinatedRenderSystem.render(frameInfo);
+                pointLightSystem.render(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
 
                 bananRenderer.endFrame();
@@ -280,7 +281,7 @@ namespace Banan{
         std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
         auto vase = BananGameObject::createGameObject();
         vase.model = vaseModel;
-        vase.transform.translation = {0.f, .5f, 1.f};
+        vase.transform.translation = {0.f, .5f, 0.f};
         vase.transform.rotation = {-glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
         vase.transform.id = (int) vase.getId();
@@ -308,8 +309,8 @@ namespace Banan{
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
-        floor.transform.translation = {0.f, .5f, 2.f};
-        floor.transform.rotation = {0.f, 0.f, 0.f};
+        floor.transform.translation = {0.f, .5f, 0.f};
+        floor.transform.rotation = {0.f, glm::pi<float>(), 0.f};
         floor.transform.scale = {3.f, 3.f, 3.f};
         floor.transform.id = (int) floor.getId();
         gameObjects.emplace(floor.getId(), std::move(floor));

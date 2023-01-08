@@ -47,7 +47,8 @@ layout(location = 0) out vec4 outColor;
 
 const float PI = 3.1415926535897932384626433832795;
 
-vec3 reconstruct_world_position() {
+vec3 reconstruct_world_position()
+{
     float z = textureLod(depth, inUV, 0.0).r;
     if (z == 1.0)
         discard;
