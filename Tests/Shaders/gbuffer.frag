@@ -124,16 +124,9 @@ vec3 getFinalNormal(vec2 inUV)
     // tangent space normal
     vec3 vM = textureLod(normalSampler[push.objectId], inUV, 0.0).rgb * 2.0 - 1.0;
 
-    // Calc derivative
-    float scale = 1.0 / 128.0;
-    // Ensure vM delivers a positive third component using abs() and
-    // constrain vM.z so the range of the derivative is [-128; 128].
     vec3 vMa = abs(vM);
-    float z_ma = max(vMa.z, scale * max(vMa.x, vMa.y));
-    // Set to match positive vertical texture coordinate axis.
-    bool gFlipVertDeriv = false;
-    float s = gFlipVertDeriv ? -1.0 : 1.0;
-    vec2 derivative = vec2(vM.x, s * vM.y) / z_ma;
+    float z_ma = max(vMa.z, max(vMa.x, vMa.y));
+    vec2 derivative = vec2(vM.x, vM.y) / z_ma;
 
     // calc surface gradient and final normal;
     vec3 surfGrad = derivative.x * vT + derivative.y * vB;

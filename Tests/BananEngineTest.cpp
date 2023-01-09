@@ -306,7 +306,7 @@ namespace Banan{
         floor.parallax.heightscale = 0.1;
         floor.parallax.parallaxBias = -0.02f;
         floor.parallax.numLayers = 48.0f;
-        floor.parallax.parallaxmode = 1;
+        floor.parallax.parallaxmode = 3;
 
         gameObjects.emplace(floor.getId(), std::move(floor));
 
