@@ -120,6 +120,8 @@ vec3 getFinalNormal(vec2 inUV)
     // TBN matrix
     vec3 vT = fragTangent;
     vec3 vB = cross(nrmBaseNormal, vT);
+
+    // tangent space normal
     vec3 vM = textureLod(normalSampler[push.objectId], inUV, 0.0).rgb * 2.0 - 1.0;
 
     // Calc derivative
