@@ -171,6 +171,6 @@ void main() {
         discard;
     }
 
-    outAlbedo = vec4(color,  uv.x);
-    outNormal = vec4(normalHeightMapLod, uv.y);
+    outAlbedo = vec4(color,  0.0);
+    outNormal = vec4(normalHeightMapLod, 0.0);
 }
