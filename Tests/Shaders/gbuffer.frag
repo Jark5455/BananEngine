@@ -107,24 +107,8 @@ vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
 
 vec3 getFinalNormal(vec2 inUV)
 {
-
-    //************************************
-    // DEFS VERY IMPORTANT
-    //************************************
-
     vec3 relSurfPos = fragPosWorld.xyz;
-    // mikkts for conventional vertex-level tangent space
-    // (no normalization is mandatory). Using "bitangent on the fly"
-    // option in xnormal to reduce vertex shader outputs.
-    vec3 mikktsTangent = fragTangent;
-    vec3 mikktsBitangent =  cross(fragNormal, fragTangent);
-
-    // Prepare for surfgrad formulation w/o breaking mikkTSpace
-    // compliance (use same scale as interpolated vertex normal).
-    float renormFactor = 1.0 / length(fragNormal);
-    mikktsTangent *= renormFactor;
-    mikktsBitangent *= renormFactor;
-    vec3 nrmBaseNormal = renormFactor * mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal;
+    vec3 nrmBaseNormal = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
     // The variables below (plus nrmBaseNormal) need to be
     // recomputed in the case of post-resolve bump mapping.
     vec3 dPdx = dFdxFine(relSurfPos);
@@ -133,29 +117,12 @@ vec3 getFinalNormal(vec2 inUV)
     vec3 sigmaY = dPdy - dot(dPdy, nrmBaseNormal) * nrmBaseNormal;
     float flip_sign = dot(dPdy, cross(nrmBaseNormal, dPdx)) < 0 ? -1 : 1;
 
-    //************************************
-    // GEN BASIS TB FUNCTION VERY IMPORTANT
-    //************************************
-
-    vec2 dSTdx = dFdxFine(inUV);
-    vec2 dSTdy = dFdyFine(inUV);
-    float det = dot(dSTdx, vec2(dSTdy.y, -dSTdy.x));
-    float sign_det = det < 0.0 ? -1.0 : 1.0;
-    // invC0 represents (dXds, dYds), but we don’t divide
-    // by the determinant. Instead, we scale by the sign.
-    vec2 invC0 = sign_det * vec2(dSTdy.y, -dSTdx.y);
-    vec3 vT = sigmaX * invC0.x + sigmaY * invC0.y;
-    if (abs(det) > 0.0)
-    vT = normalize(vT);
-
-    vec3 vB = (sign_det * flip_sign) * cross(nrmBaseNormal, vT);
-
+    // TBN matrix
+    vec3 vT = fragTangent;
+    vec3 vB = cross(nrmBaseNormal, vT);
     vec3 vM = textureLod(normalSampler[push.objectId], inUV, 0.0).rgb * 2.0 - 1.0;
 
-    //************************************
-    // GEN DERIV FROM TBN
-    //************************************
-
+    // Calc derivative
     float scale = 1.0 / 128.0;
     // Ensure vM delivers a positive third component using abs() and
     // constrain vM.z so the range of the derivative is [-128; 128].
@@ -166,10 +133,7 @@ vec3 getFinalNormal(vec2 inUV)
     float s = gFlipVertDeriv ? -1.0 : 1.0;
     vec2 derivative = vec2(vM.x, s * vM.y) / z_ma;
 
-    //************************************
-    // FINAL CALC
-    //************************************
-
+    // calc surface gradient and final normal;
     vec3 surfGrad = derivative.x * vT + derivative.y * vB;
     return normalize(nrmBaseNormal - surfGrad);
 }
