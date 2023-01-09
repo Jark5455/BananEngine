@@ -53,7 +53,7 @@ namespace Banan {
         BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = mainRenderTargetPipelineLayout;
-        pipelineConfig.multisampleInfo.rasterizationSamples = bananDevice.getMaxUsableSampleCount();
+        pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
         pipelineConfig.attributeDescriptions.clear();
         pipelineConfig.bindingDescriptions.clear();

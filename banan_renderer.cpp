@@ -64,11 +64,6 @@ namespace Banan {
         } else {
             std::shared_ptr<BananSwapChain> oldSwapChain = std::move(bananSwapChain);
             bananSwapChain = std::make_unique<BananSwapChain>(bananDevice, extent, oldSwapChain);
-
-            if (!oldSwapChain->compareSwapFormats(*bananSwapChain)) {
-                throw std::runtime_error("Swap chain image or depth format has changed");
-            }
-
             assert(bananSwapChain->imageCount() == oldSwapChain->imageCount() && "Swap chain image count has changed!");
         }
 
