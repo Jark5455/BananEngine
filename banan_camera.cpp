@@ -3,8 +3,10 @@
 //
 
 #include "banan_camera.h"
+#include <glm/gtc/type_ptr.hpp>
 
 #include <cmath>
+#include <iostream>
 
 namespace Banan {
     void BananCamera::setOrthographicProjection(float left, float right, float top, float bottom, float near, float far) {
@@ -15,6 +17,14 @@ namespace Banan {
         projectionMatrix[3][0] = -(right + left) / (right - left);
         projectionMatrix[3][1] = -(bottom + top) / (bottom - top);
         projectionMatrix[3][2] = -near / (far - near);
+
+        inverseProjectionMatrix[0][0] = (right - left) / 2.f;
+        inverseProjectionMatrix[1][1] = (bottom - top) / 2.f;
+        inverseProjectionMatrix[2][2] = far - near;
+        inverseProjectionMatrix[3][0] = (left + right) / 2.f;
+        inverseProjectionMatrix[3][1] = (bottom + top) / 2.f;
+        inverseProjectionMatrix[3][2] = near;
+
     }
 
     void BananCamera::setPerspectiveProjection(float fovy, float aspect, float near, float far) {
@@ -26,10 +36,21 @@ namespace Banan {
         projectionMatrix[2][2] = far / (far - near);
         projectionMatrix[2][3] = 1.f;
         projectionMatrix[3][2] = -(far * near) / (far - near);
+
+        inverseProjectionMatrix[0][0] = aspect * tanHalfFovy;
+        inverseProjectionMatrix[1][1] = tanHalfFovy;
+        inverseProjectionMatrix[2][2] = 0.f;
+        inverseProjectionMatrix[3][2] = 1.f;
+        inverseProjectionMatrix[2][3] = (near - far) / (near * far);
+        inverseProjectionMatrix[3][3] = 1.f / near;
     }
 
     const glm::mat4 &BananCamera::getProjection() const {
         return projectionMatrix;
+    }
+
+    const glm::mat4 &BananCamera::getInverseProjection() const {
+        return inverseProjectionMatrix;
     }
 
     const glm::mat4 &BananCamera::getView() const {
