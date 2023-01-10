@@ -38,9 +38,8 @@ struct GameObject {
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
   mat4 projection;
-  mat4 inverseProjection;
+  mat4 shadowProjection;
   mat4 view;
-  mat4 inverseView;
   vec4 ambientLightColor;
   int numGameObjects;
 } ubo;

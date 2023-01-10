@@ -19,13 +19,11 @@ namespace Banan {
             void setViewYXZ(glm::vec3 positon, glm::vec3 rotation);
 
             const glm::mat4& getProjection() const;
-            const glm::mat4& getInverseProjection() const;
             const glm::mat4& getView() const;
             const glm::mat4& getInverseView() const;
             const glm::vec3 getPosition() const;
         private:
             glm::mat4 projectionMatrix{1.f};
-            glm::mat4 inverseProjectionMatrix{1.f};
             glm::mat4 viewMatrix{1.f};
             glm::mat4 inverseViewMatrix{1.f};
     };

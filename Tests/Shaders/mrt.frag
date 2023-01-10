@@ -24,7 +24,7 @@ struct GameObject {
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 projection;
-    mat4 inverseProjection;
+    mat4 shadowProjection;
     mat4 view;
     mat4 inverseView;
     vec4 ambientLightColor;
@@ -52,7 +52,7 @@ vec3 reconstruct_world_position()
     float x = inUV.x * 2.0f - 1.0f;
     float y = inUV.y * 2.0f - 1.0f;
     vec4 position_s = vec4(x, y, z, 1.0f);
-    vec4 position_v =  ubo.inverseView * ubo.inverseProjection * position_s;
+    vec4 position_v =  ubo.inverseView * inverse(ubo.projection) * position_s;
     vec3 worldPos = position_v.xyz / position_v.w;
     return worldPos;
 }

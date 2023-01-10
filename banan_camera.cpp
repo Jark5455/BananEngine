@@ -26,21 +26,10 @@ namespace Banan {
         projectionMatrix[2][2] = far / (far - near);
         projectionMatrix[2][3] = 1.f;
         projectionMatrix[3][2] = -(far * near) / (far - near);
-
-        inverseProjectionMatrix[0][0] = aspect * tanHalfFovy;
-        inverseProjectionMatrix[1][1] = tanHalfFovy;
-        inverseProjectionMatrix[2][2] = 0.f;
-        inverseProjectionMatrix[3][2] = 1.f;
-        inverseProjectionMatrix[2][3] = (near + far) / (near - far);
-        inverseProjectionMatrix[3][3] = glm::inverse(projectionMatrix)[3][3];
     }
 
     const glm::mat4 &BananCamera::getProjection() const {
         return projectionMatrix;
-    }
-
-    const glm::mat4 &BananCamera::getInverseProjection() const {
-        return inverseProjectionMatrix;
     }
 
     const glm::mat4 &BananCamera::getView() const {
