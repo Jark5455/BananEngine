@@ -45,7 +45,6 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 view;
     mat4 inverseView;
     vec4 ambientLightColor;
-    float numLayers;
 } ubo;
 
 layout(set = 0, binding = 1) readonly buffer GameObjects {
