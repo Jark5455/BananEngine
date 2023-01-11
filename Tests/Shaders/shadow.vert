@@ -30,7 +30,7 @@ struct GameObject {
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 projection;
-    mat4 shadowProjection;
+    mat4 inverseProjection;
     mat4 view;
     mat4 inverseView;
     int numGameObjects;
@@ -55,6 +55,6 @@ void main()
     mat4 actuallModelMatrix = push.model;
     actuallModelMatrix[3][3] = 1.0;
 
-    gl_Position = ubo.shadowProjection * push.view * actuallModelMatrix * vec4(position, 1.0);
+    gl_Position = ubo.projection * push.view * actuallModelMatrix * vec4(position, 1.0);
     outPos = actuallModelMatrix * vec4(position, 1.0);
 }

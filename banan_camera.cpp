@@ -24,7 +24,6 @@ namespace Banan {
         inverseProjectionMatrix[3][0] = (left + right) / 2.f;
         inverseProjectionMatrix[3][1] = (bottom + top) / 2.f;
         inverseProjectionMatrix[3][2] = near;
-
     }
 
     void BananCamera::setPerspectiveProjection(float fovy, float aspect, float near, float far) {

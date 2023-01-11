@@ -227,7 +227,7 @@ namespace Banan{
                 ubo.projection = camera.getProjection();
                 ubo.view = camera.getView();
                 ubo.inverseView = camera.getInverseView();
-                ubo.shadowProjection = shadowCubeMapCamera.getProjection();
+                ubo.inverseProjection = camera.getInverseProjection();
                 ubo.numGameObjects = gameObjects.size();
 
                 pointLightSystem.update(frameInfo, ubo);
