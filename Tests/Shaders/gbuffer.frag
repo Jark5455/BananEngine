@@ -147,13 +147,8 @@ vec2 RayMarch(vec2 st0_in, vec2 st1_in)
     return mix(st0_in, st1_in, finalT).xy - st0_in;
 }
 
-vec2 projectVecToTextureSpace(vec3 dir, vec2 texST, float bumpScale, bool skipProj)
+vec2 projectVecToTextureSpace(vec3 dir, vec2 texST, float bumpScale, bool skipProj, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
-    vec3 relSurfPos = fragPosWorld.xyz;
-    vec3 nrmBaseNormal = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
-    vec3 dPdx = dFdxFine(relSurfPos);
-    vec3 dPdy = dFdyFine(relSurfPos);
-
     vec2 texDx = dFdx(texST);
     vec2 texDy = dFdy(texST);
     vec3 vR1 = cross(dPdy, nrmBaseNormal);
@@ -169,17 +164,10 @@ vec2 projectVecToTextureSpace(vec3 dir, vec2 texST, float bumpScale, bool skipPr
     return s * bumpScale * dirTex;
 }
 
-vec3 getFinalNormal(vec2 inUV)
+vec3 getFinalNormal(vec2 inUV, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
-    vec3 relSurfPos = fragPosWorld.xyz;
-    vec3 nrmBaseNormal = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
-    // The variables below (plus nrmBaseNormal) need to be
-    // recomputed in the case of post-resolve bump mapping.
-    vec3 dPdx = dFdxFine(relSurfPos);
-    vec3 dPdy = dFdyFine(relSurfPos);
     vec3 sigmaX = dPdx - dot(dPdx, nrmBaseNormal) * nrmBaseNormal;
     vec3 sigmaY = dPdy - dot(dPdy, nrmBaseNormal) * nrmBaseNormal;
-    float flip_sign = dot(dPdy, cross(nrmBaseNormal, dPdx)) < 0 ? -1 : 1;
 
     // TBN matrix
     vec3 vT = fragTangent;
@@ -197,31 +185,36 @@ vec3 getFinalNormal(vec2 inUV)
     return normalize(nrmBaseNormal - surfGrad);
 }
 
-vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
+vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
-    vec2 projV = projectVecToTextureSpace(viewDir, uv, ssbo.objects[index].heightscale, true);
+    vec2 projV = projectVecToTextureSpace(viewDir, uv, ssbo.objects[index].heightscale, true, dPdx, dPdy, nrmBaseNormal);
     float height = 1 - textureLod(heightSampler[index], uv, 0.0).r - 0.5;
     vec2 p = height * projV;
     return uv + p;
 }
 
-vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
+vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
-    vec2 projV = projectVecToTextureSpace(viewDir, uv, ssbo.objects[index].heightscale, false);
+    vec2 projV = projectVecToTextureSpace(viewDir, uv, ssbo.objects[index].heightscale, false, dPdx, dPdy, nrmBaseNormal);
     float height = textureLod(heightSampler[index], uv, 0.0).r - 1.0;
     vec2 p = RayMarch(uv, uv + projV);
     return uv + p;
 }
 
 void main() {
+
+    vec3 nrmBaseNormal = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
+    vec3 dPdx = dFdxFine(fragPosWorld.xyz);
+    vec3 dPdy = dFdyFine(fragPosWorld.xyz);
+
     vec3 viewDirection = normalize(ubo.inverseView[3].xyz - fragPosWorld.xyz);
 
     vec2 uv = fragTexCoord;
     if (ssbo.objects[push.objectId].parallaxmode != 0) {
         if (ssbo.objects[push.objectId].parallaxmode == 1) {
-            uv = parallaxMapping(fragTexCoord, viewDirection, push.objectId);
+            uv = parallaxMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy,  nrmBaseNormal);
         } else if (ssbo.objects[push.objectId].parallaxmode == 2) {
-            uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId);
+            uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy,  nrmBaseNormal);
         }
     }
 
@@ -232,7 +225,7 @@ void main() {
 
     vec3 normalHeightMapLod = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
     if (textureQueryLevels(normalSampler[push.objectId]) > 0) {
-        normalHeightMapLod = getFinalNormal(uv);
+        normalHeightMapLod = getFinalNormal(uv, dPdx, dPdy, nrmBaseNormal);
     }
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
