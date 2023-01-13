@@ -199,57 +199,18 @@ vec3 getFinalNormal(vec2 inUV)
 
 vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
 {
-    vec2 projV = projectVecToTextureSpace(viewDir, uv, 1.0, true);
-    float height = textureLod(heightSampler[index], uv, 0.0).r - 0.5;
+    vec2 projV = projectVecToTextureSpace(viewDir, uv, 0.35, true);
+    float height = 1 - textureLod(heightSampler[index], uv, 0.0).r - 0.5;
     vec2 p = height * projV;
     return uv + p;
 }
 
-/*vec2 steepParallaxMapping(vec2 uv, vec3 viewDir, int index)
-{
-    viewDir.y = -viewDir.y;
-    float layerDepth = 1.0 / ssbo.objects[push.objectId].numLayers;
-    float currLayerDepth = 0.0;
-    vec2 deltaUV = viewDir.xy * ssbo.objects[push.objectId].heightscale / (viewDir.z * ssbo.objects[push.objectId].numLayers);
-    vec2 currUV = uv;
-    float height = textureLod(heightSampler[index], currUV, 0.0).r;
-    for (int i = 0; i < ssbo.objects[push.objectId].numLayers; i++) {
-        currLayerDepth += layerDepth;
-        currUV -= deltaUV;
-        height = textureLod(heightSampler[index], currUV, 0.0).r;
-        if (height < currLayerDepth) {
-            break;
-        }
-    }
-    return currUV;
-}*/
-
 vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
 {
-
-    vec2 projV = projectVecToTextureSpace(viewDir, uv, 1.0, false);
+    vec2 projV = projectVecToTextureSpace(viewDir, uv, 0.25, false);
     float height = textureLod(heightSampler[index], uv, 0.0).r - 1.0;
     vec2 p = RayMarch(uv, uv + projV);
     return uv + p;
-
-    /*viewDir.y = -viewDir.y;
-    float layerDepth = 1.0 / ssbo.objects[push.objectId].numLayers;
-    float currLayerDepth = 0.0;
-    vec2 deltaUV = viewDir.xy * ssbo.objects[push.objectId].heightscale / (viewDir.z * ssbo.objects[push.objectId].numLayers);
-    vec2 currUV = uv;
-    float height = textureLod(heightSampler[index], currUV, 0.0).r;
-    for (int i = 0; i < ssbo.objects[push.objectId].numLayers; i++) {
-        currLayerDepth += layerDepth;
-        currUV -= deltaUV;
-        height = textureLod(heightSampler[index], currUV, 0.0).r;
-        if (height < currLayerDepth) {
-            break;
-        }
-    }
-    vec2 prevUV = currUV + deltaUV;
-    float nextDepth = height - currLayerDepth;
-    float prevDepth = textureLod(heightSampler[index], prevUV, 0.0).r - currLayerDepth + layerDepth;
-    return mix(currUV, prevUV, nextDepth / (nextDepth - prevDepth));*/
 }
 
 void main() {
