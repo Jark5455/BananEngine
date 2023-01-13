@@ -75,7 +75,7 @@ vec2 RayMarch(vec2 st0_in, vec2 st1_in)
     for(int i = 0; i < iterations; i++)
     {
         bool notStopped = true;
-        int j=0;
+        int j = 0;
 
         while(notStopped && j < nrInnerIts)
         {
@@ -199,7 +199,7 @@ vec3 getFinalNormal(vec2 inUV)
 
 vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
 {
-    vec2 projV = projectVecToTextureSpace(viewDir, uv, 0.35, true);
+    vec2 projV = projectVecToTextureSpace(viewDir, uv, ssbo.objects[index].heightscale, true);
     float height = 1 - textureLod(heightSampler[index], uv, 0.0).r - 0.5;
     vec2 p = height * projV;
     return uv + p;
@@ -207,7 +207,7 @@ vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index)
 
 vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index)
 {
-    vec2 projV = projectVecToTextureSpace(viewDir, uv, 0.25, false);
+    vec2 projV = projectVecToTextureSpace(viewDir, uv, ssbo.objects[index].heightscale, false);
     float height = textureLod(heightSampler[index], uv, 0.0).r - 1.0;
     vec2 p = RayMarch(uv, uv + projV);
     return uv + p;
