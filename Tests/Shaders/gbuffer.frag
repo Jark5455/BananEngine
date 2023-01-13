@@ -202,7 +202,6 @@ vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 
 }
 
 void main() {
-
     vec3 nrmBaseNormal = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
     vec3 dPdx = dFdxFine(fragPosWorld.xyz);
     vec3 dPdy = dFdyFine(fragPosWorld.xyz);
@@ -212,9 +211,9 @@ void main() {
     vec2 uv = fragTexCoord;
     if (ssbo.objects[push.objectId].parallaxmode != 0) {
         if (ssbo.objects[push.objectId].parallaxmode == 1) {
-            uv = parallaxMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy,  nrmBaseNormal);
+            uv = parallaxMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy, nrmBaseNormal);
         } else if (ssbo.objects[push.objectId].parallaxmode == 2) {
-            uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy,  nrmBaseNormal);
+            uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy, nrmBaseNormal);
         }
     }
 

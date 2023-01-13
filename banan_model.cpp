@@ -158,9 +158,10 @@ namespace Banan {
             stagingBuffer.map();
             stagingBuffer.writeToBuffer((void *)image.data);
 
-            normalImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            bananDevice.transitionImageLayout(normalImage->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
+            normalImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, image.mipLevels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            bananDevice.transitionImageLayout(normalImage->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image.mipLevels, 1);
             bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), normalImage->getImageHandle(), image.width, image.height, 1);
+            bananDevice.generateMipMaps(normalImage->getImageHandle(), image.width, image.height, image.mipLevels);
 
             hasNormal = true;
         } else {
@@ -185,9 +186,10 @@ namespace Banan {
             stagingBuffer.map();
             stagingBuffer.writeToBuffer((void *)image.data);
 
-            heightMap = std::make_unique<BananImage>(bananDevice, image.width, image.height, 1, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            bananDevice.transitionImageLayout(heightMap->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
+            heightMap = std::make_unique<BananImage>(bananDevice, image.width, image.height, image.mipLevels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            bananDevice.transitionImageLayout(heightMap->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image.mipLevels, 1);
             bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), heightMap->getImageHandle(), image.width, image.height, 1);
+            bananDevice.generateMipMaps(heightMap->getImageHandle(), image.width, image.height, image.mipLevels);
 
             hasHeightmap = true;
         } else {
