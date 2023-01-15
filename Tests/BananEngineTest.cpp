@@ -109,7 +109,7 @@ namespace Banan{
                 .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
-        //SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
+        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         ComputeSystem computeSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
@@ -185,6 +185,7 @@ namespace Banan{
             camera.setOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
             camera.setPerspectiveProjection(glm::radians(90.f), aspect, 0.1f, 100.f);
 
+            // TODO create some sort of pipeline caching to reduce resizing cost
             if (bananWindow.wasWindowResized()) {
                 for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
                     BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout,*procrastinatedPool);
@@ -268,8 +269,8 @@ namespace Banan{
                 bananRenderer.endGBufferRenderPass(commandBuffer);
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
-                procrastinatedRenderSystem.render(frameInfo);
                 pointLightSystem.render(frameInfo);
+                renderSystem.render(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
 
                 bananRenderer.endFrame();

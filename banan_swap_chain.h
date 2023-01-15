@@ -5,6 +5,7 @@
 #pragma once
 
 #include "banan_device.h"
+#include "banan_image.h"
 
 // vulkan headers
 #include <vulkan/vulkan.h>
@@ -23,7 +24,7 @@ namespace Banan {
         ~BananSwapChain();
 
         BananSwapChain(const BananSwapChain &) = delete;
-        void operator=(const BananSwapChain &) = delete;
+        BananSwapChain &operator=(const BananSwapChain &) = delete;
 
         VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
         VkRenderPass getRenderPass() { return renderPass; }
@@ -38,15 +39,21 @@ namespace Banan {
             return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
         }
 
+        VkFormat findDepthFormat();
+
         VkResult acquireNextImage(uint32_t *imageIndex);
         VkResult submitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex);
+
+        bool compareSwapFormats(const BananSwapChain &otherSwapChain) const;
 
     private:
         void createSwapChain();
         void createImageViews();
+        void createDepthResources();
         void createRenderPass();
         void createFramebuffers();
         void createSyncObjects();
+        void createColorResources();
 
         // Helper functions
         VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
@@ -54,10 +61,19 @@ namespace Banan {
         VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 
         VkFormat swapChainImageFormat;
+        VkFormat swapChainDepthFormat;
         VkExtent2D swapChainExtent;
 
         std::vector<VkFramebuffer> swapChainFramebuffers;
         VkRenderPass renderPass;
+
+        std::vector<VkImage> depthImages;
+        std::vector<VkDeviceMemory> depthImageMemorys;
+        std::vector<VkImageView> depthImageViews;
+
+        std::vector<VkImage> colorImages;
+        std::vector<VkDeviceMemory> colorImageMemorys;
+        std::vector<VkImageView> colorImageViews;
 
         std::vector<VkImage> swapChainImages;
         std::vector<VkImageView> swapChainImageViews;
