@@ -24,7 +24,9 @@ namespace Banan{
             void update(BananFrameInfo &frameInfo, GlobalUbo &ubo);
             void render(BananFrameInfo &frameInfo);
 
-        private:
+            void reconstructPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
+
+    private:
             void createPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
             void createPipeline(VkRenderPass renderPass);
 

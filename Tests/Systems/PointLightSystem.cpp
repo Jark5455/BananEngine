@@ -91,5 +91,12 @@ namespace Banan{
             obj.transform.translation = glm::vec3(rotateLight * glm::vec4(obj.transform.translation, 1.f));
         }
     }
+
+    void PointLightSystem::reconstructPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) {
+        vkDestroyPipelineLayout(bananDevice.device(), pipelineLayout, nullptr);
+
+        createPipelineLayout(layouts);
+        createPipeline(renderPass);
+    }
 }
 

@@ -18,6 +18,7 @@ namespace Banan {
             ~ComputeSystem();
 
             void compute(BananFrameInfo &frameInfo);
+            void reconstructPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
 
         private:
             void createPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);

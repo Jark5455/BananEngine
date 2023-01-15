@@ -73,5 +73,12 @@ namespace Banan{
             obj.model->draw(frameInfo.commandBuffer);
         }
     }
+
+    void SimpleRenderSystem::reconstructPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) {
+        vkDestroyPipelineLayout(bananDevice.device(), pipelineLayout, nullptr);
+
+        createPipelineLayout(layouts);
+        createPipeline(renderPass);
+    }
 }
 

@@ -188,7 +188,7 @@ vec3 getFinalNormal(vec2 inUV, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
     vec2 projV = projectVecToTextureSpace(viewDir, uv, ssbo.objects[index].heightscale, true, dPdx, dPdy, nrmBaseNormal);
-    float height = 1 - textureLod(heightSampler[index], uv, 0.0).r - 0.5;
+    float height = textureLod(heightSampler[index], uv, 0.0).r - 0.5;
     vec2 p = height * projV;
     return uv + p;
 }

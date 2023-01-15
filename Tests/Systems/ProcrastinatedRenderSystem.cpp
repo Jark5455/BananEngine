@@ -108,4 +108,15 @@ namespace Banan {
             throw std::runtime_error("failed to create pipeline layout!");
         }
     }
+
+    void ProcrastinatedRenderSystem::reconstructPipeline(VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts) {
+        vkDestroyPipelineLayout(bananDevice.device(), GBufferPipelineLayout, nullptr);
+        vkDestroyPipelineLayout(bananDevice.device(), mainRenderTargetPipelineLayout, nullptr);
+
+        createGBufferPipelineLayout(layouts);
+        createGBufferPipeline(GBufferRenderPass);
+
+        createMainRenderTargetPipelineLayout(procrastinatedLayouts);
+        createMainRenderTargetPipeline(mainRenderPass);
+    }
 }

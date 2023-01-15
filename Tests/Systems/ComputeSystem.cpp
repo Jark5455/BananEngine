@@ -42,4 +42,11 @@ namespace Banan {
             vkCmdDispatch(frameInfo.commandBuffer, (frameInfo.gameObjects.size() / 256) + 1, 1, 1);
         }
     }
+
+    void ComputeSystem::reconstructPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) {
+        vkDestroyPipelineLayout(bananDevice.device(), pipelineLayout, nullptr);
+
+        createPipelineLayout(layouts);
+        createPipelines(renderPass);
+    }
 }

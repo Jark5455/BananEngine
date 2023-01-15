@@ -27,6 +27,8 @@ namespace Banan{
         void calculateGBuffer(BananFrameInfo &frameInfo);
         void render(BananFrameInfo &frameInfo);
 
+        void reconstructPipeline(VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts);
+
     private:
         void createMainRenderTargetPipeline(VkRenderPass renderPass);
         void createMainRenderTargetPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);

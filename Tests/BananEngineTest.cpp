@@ -109,7 +109,7 @@ namespace Banan{
                 .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
-        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
+        //SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         ComputeSystem computeSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
@@ -185,6 +185,28 @@ namespace Banan{
             camera.setOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
             camera.setPerspectiveProjection(glm::radians(90.f), aspect, 0.1f, 100.f);
 
+            if (bananWindow.wasWindowResized()) {
+                for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+                    BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout,*procrastinatedPool);
+
+                    auto normalInfo = bananRenderer.getGBufferDescriptorInfo()[0];
+                    auto albedoInfo = bananRenderer.getGBufferDescriptorInfo()[1];
+                    auto depthInfo = bananRenderer.getGBufferDescriptorInfo()[2];
+
+                    procrastinatedWriter.writeImage(0, &normalInfo);
+                    procrastinatedWriter.writeImage(1, &albedoInfo);
+                    procrastinatedWriter.writeImage(2, &depthInfo);
+
+                    procrastinatedWriter.overwrite(procrastinatedDescriptorSets[i]);
+                }
+
+                pointLightSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
+                computeSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
+                procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGBufferRenderPass(), bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
+
+                bananWindow.resetWindowResizedFlag();
+            }
+
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
                 BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], gameObjects};
@@ -210,12 +232,8 @@ namespace Banan{
                         GameObjectData pointLightData{glm::vec4(kv.second.transform.translation, 0), glm::vec4(kv.second.color, kv.second.pointLight->lightIntensity), glm::vec4(kv.second.transform.scale.x, -1, -1, -1)};
                         pointLightData.hasTexture = -1;
                         pointLightData.hasNormal = -1;
-                        pointLightData.isPointLight = 1;
                         pointLightData.hasHeight = -1;
-                        pointLightData.heightscale = -1;
-                        pointLightData.parallaxBias = -1;
-                        pointLightData.numLayers = -1;
-                        pointLightData.parallaxmode = -1;
+                        pointLightData.isPointLight = 1;
 
                         data.push_back(pointLightData);
                     }
@@ -291,22 +309,22 @@ namespace Banan{
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/bricks2.jpg");
-        floorBuilder.loadNormals("banan_assets/textures/bricks2_normal.exr");
-        floorBuilder.loadHeightMap("banan_assets/textures/bricks2_disp.jpg");
+        floorBuilder.loadTexture("banan_assets/textures/Tiles_046_basecolor.jpg");
+        floorBuilder.loadNormals("banan_assets/textures/Tiles_046_normal.exr");
+        floorBuilder.loadHeightMap("banan_assets/textures/Tiles_046_height.png");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
         floor.transform.translation = {0.f, .5f, 0.f};
-        floor.transform.rotation = {0.f, glm::pi<float>(), glm::pi<float>() / 2.0};
+        floor.transform.rotation = {0.f, glm::pi<float>(), 0.0};
         floor.transform.scale = {3.f, 3.f, 3.f};
         floor.transform.id = (int) floor.getId();
 
         floor.parallax.heightscale = 0.1;
         floor.parallax.parallaxBias = -0.02f;
         floor.parallax.numLayers = 48.0f;
-        floor.parallax.parallaxmode = 2;
+        floor.parallax.parallaxmode = 1;
 
         gameObjects.emplace(floor.getId(), std::move(floor));
 
@@ -325,6 +343,12 @@ namespace Banan{
             auto rotateLight = glm::rotate(glm::mat4(1.f), (static_cast<float>(i) * glm::two_pi<float>()) / static_cast<float>(lightColors.size()), {0.f, -1.f, 0.f});
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
             pointLight.transform.id = 0;
+
+            pointLight.parallax.heightscale = -1;
+            pointLight.parallax.parallaxBias = -1;
+            pointLight.parallax.numLayers = -1;
+            pointLight.parallax.parallaxmode = -1;
+
             gameObjects.emplace(pointLight.getId(), std::move(pointLight));
         }
 

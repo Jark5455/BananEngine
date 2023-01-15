@@ -108,15 +108,16 @@ namespace Banan {
 
         auto result = bananSwapChain->submitCommandBuffers(&commandBuffer, &currentImageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || bananWindow.wasWindowResized()) {
-            bananWindow.resetWindowResizedFlag();
-            recreateGBufferRenderPass();
             recreateSwapChain();
         } else if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to present swap chain image!");
         }
 
-        isFrameStarted = false;
+        if (bananWindow.wasWindowResized()) {
+            recreateGBufferRenderPass();
+        }
 
+        isFrameStarted = false;
         currentFrameIndex = (currentFrameIndex + 1) % BananSwapChain::MAX_FRAMES_IN_FLIGHT;
     }
 
