@@ -10,7 +10,6 @@
 namespace Banan {
     BananRenderer::BananRenderer(BananWindow &window, BananDevice &device) : bananWindow{window}, bananDevice{device}, bananShadowMapper{std::make_unique<BananShadowMapper>(device)} {
         recreateSwapChain();
-        recreateGBufferRenderPass();
         createCommandBuffers();
     }
 
@@ -111,10 +110,6 @@ namespace Banan {
             recreateSwapChain();
         } else if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to present swap chain image!");
-        }
-
-        if (bananWindow.wasWindowResized()) {
-            recreateGBufferRenderPass();
         }
 
         isFrameStarted = false;
@@ -220,44 +215,18 @@ namespace Banan {
         return {bananShadowMapper->descriptorInfo()};
     }
 
-    void BananRenderer::recreateGBufferRenderPass() {
-        auto extent = bananWindow.getExtent();
-        while (extent.width == 0 || extent.height == 0) {
-            extent = bananWindow.getExtent();
-            glfwWaitEvents();
-        }
-
-        vkDeviceWaitIdle(bananDevice.device());
-
-        // position can be derived from depth
-        // pass in normals
-        // tangents will only be used for parallax mapping anyway, so do it on g pass and apply offset to uv when passing in albedo
-        // color will be passed in the form of texture / color / parallax mapping
-        std::vector<VkFormat> attachmentFormats{VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM};
-
-        GBufferRenderPass = std::make_unique<BananRenderPass>(bananDevice, attachmentFormats, bananWindow.getExtent(), true);
+    std::vector<VkDescriptorImageInfo> BananRenderer::getGBufferDescriptorInfo() {
 
         GBufferInfo.clear();
-        GBufferInfo.push_back(GBufferRenderPass->getFramebufferAttachments()[0]->descriptorInfo());
-        GBufferInfo.push_back(GBufferRenderPass->getFramebufferAttachments()[1]->descriptorInfo());
-        GBufferInfo.push_back(GBufferRenderPass->getFramebufferAttachments()[2]->descriptorInfo());
-    }
 
-    void BananRenderer::beginGBufferRenderPass(VkCommandBuffer commandBuffer) {
-        assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer that is different to the current frame");
-        GBufferRenderPass->beginRenderPass(commandBuffer);
-    }
+        GBufferInfo.push_back(bananSwapChain->gbuffer()[0]->descriptorInfo());
+        GBufferInfo.push_back(bananSwapChain->gbuffer()[1]->descriptorInfo());
+        GBufferInfo.push_back(bananSwapChain->gbuffer()[2]->descriptorInfo());
 
-    void BananRenderer::endGBufferRenderPass(VkCommandBuffer commandBuffer) {
-        assert(commandBuffer == getCurrentCommandBuffer() && "Can't end render pass on command buffer that is different to the current frame");
-        GBufferRenderPass->endRenderPass(commandBuffer);
-    }
+        GBufferInfo[0].sampler = VK_NULL_HANDLE;
+        GBufferInfo[1].sampler = VK_NULL_HANDLE;
+        GBufferInfo[2].sampler = VK_NULL_HANDLE;
 
-    VkRenderPass BananRenderer::getGBufferRenderPass() const {
-        return GBufferRenderPass->getRenderPass();
-    }
-
-    std::vector<VkDescriptorImageInfo> BananRenderer::getGBufferDescriptorInfo() {
         return GBufferInfo;
     }
 }

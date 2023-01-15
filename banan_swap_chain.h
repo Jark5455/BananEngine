@@ -34,6 +34,7 @@ namespace Banan {
         VkExtent2D getSwapChainExtent() { return swapChainExtent; }
         uint32_t width() { return swapChainExtent.width; }
         uint32_t height() { return swapChainExtent.height; }
+        std::vector<std::shared_ptr<BananImage>> gbuffer() { return gBufferAttachments; }
 
         float extentAspectRatio() {
             return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
@@ -49,11 +50,11 @@ namespace Banan {
     private:
         void createSwapChain();
         void createImageViews();
-        void createDepthResources();
         void createRenderPass();
         void createFramebuffers();
         void createSyncObjects();
-        void createColorResources();
+        void createGBufferResources();
+        void createCompositeResources();
 
         // Helper functions
         VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
@@ -67,13 +68,8 @@ namespace Banan {
         std::vector<VkFramebuffer> swapChainFramebuffers;
         VkRenderPass renderPass;
 
-        std::vector<VkImage> depthImages;
-        std::vector<VkDeviceMemory> depthImageMemorys;
-        std::vector<VkImageView> depthImageViews;
-
-        std::vector<VkImage> colorImages;
-        std::vector<VkDeviceMemory> colorImageMemorys;
-        std::vector<VkImageView> colorImageViews;
+        std::vector<std::shared_ptr<BananImage>> gBufferAttachments;
+        std::unique_ptr<BananImage> colorImage;
 
         std::vector<VkImage> swapChainImages;
         std::vector<VkImageView> swapChainImageViews;

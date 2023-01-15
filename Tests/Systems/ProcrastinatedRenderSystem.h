@@ -21,13 +21,13 @@ namespace Banan{
         ProcrastinatedRenderSystem(const ProcrastinatedRenderSystem &) = delete;
         ProcrastinatedRenderSystem &operator=(const ProcrastinatedRenderSystem &) = delete;
 
-        ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts);
+        ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts);
         ~ProcrastinatedRenderSystem();
 
         void calculateGBuffer(BananFrameInfo &frameInfo);
         void render(BananFrameInfo &frameInfo);
 
-        void reconstructPipeline(VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts);
+        void reconstructPipeline(VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts);
 
     private:
         void createMainRenderTargetPipeline(VkRenderPass renderPass);

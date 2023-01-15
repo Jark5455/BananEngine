@@ -56,7 +56,7 @@ namespace Banan{
 
         procrastinatedPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
                 .build();
     }
 
@@ -104,16 +104,16 @@ namespace Banan{
                 .build();
 
         auto procrastinatedSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-                .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .addBinding(2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
-        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
+        //SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         ComputeSystem computeSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
-        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGBufferRenderPass(), bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
+        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
 
         BananCamera camera{};
 
@@ -125,6 +125,8 @@ namespace Banan{
         std::vector<VkDescriptorSet> normalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> heightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> procrastinatedDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+
+        printf("Swapchain address: %p", bananRenderer.getSwapChainRenderPass());
 
         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
 
@@ -203,7 +205,7 @@ namespace Banan{
 
                 pointLightSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
                 computeSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
-                procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGBufferRenderPass(), bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
+                procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
 
                 bananWindow.resetWindowResizedFlag();
             }
@@ -264,13 +266,9 @@ namespace Banan{
                     bananRenderer.endShadowRenderPass(commandBuffer, i);
                 }*/
 
-                bananRenderer.beginGBufferRenderPass(commandBuffer);
-                procrastinatedRenderSystem.calculateGBuffer(frameInfo);
-                bananRenderer.endGBufferRenderPass(commandBuffer);
-
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
-                pointLightSystem.render(frameInfo);
-                renderSystem.render(frameInfo);
+                procrastinatedRenderSystem.calculateGBuffer(frameInfo);
+                procrastinatedRenderSystem.render(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
 
                 bananRenderer.endFrame();

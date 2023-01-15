@@ -35,9 +35,9 @@ layout(set = 0, binding = 1) readonly buffer GameObjects {
     GameObject objects[];
 } ssbo;
 
-layout(set = 1, binding = 0) uniform sampler2D normals;
-layout(set = 1, binding = 1) uniform sampler2D albedo;
-layout(set = 1, binding = 2) uniform sampler2D depth;
+layout(input_attachment_index = 0, binding = 0) uniform subpassInput depth;
+layout(input_attachment_index = 1, binding = 1) uniform subpassInput normals;
+layout(input_attachment_index = 2, binding = 2) uniform subpassInput albedo;
 
 layout(location = 0) out vec4 outColor;
 
@@ -45,7 +45,7 @@ const float PI = 3.1415926535897932384626433832795;
 
 vec3 reconstruct_world_position()
 {
-    float z = textureLod(depth, inUV, 0.0).r;
+    float z = subpassLoad(depth).r;
     if (z == 1.0)
         discard;
 
@@ -59,8 +59,8 @@ vec3 reconstruct_world_position()
 
 void main() {
     vec3 position = reconstruct_world_position();
-    vec3 surfaceNormal = textureLod(normals, inUV, 0.0).rgb;
-    vec3 diffuse = textureLod(albedo, inUV, 0.0).rgb;
+    vec3 surfaceNormal = subpassLoad(normals).rgb;
+    vec3 diffuse = subpassLoad(albedo).rgb;
 
     vec3 diffuseLight = diffuse;
     vec3 specularLight = vec3(0.0);

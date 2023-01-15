@@ -7,9 +7,9 @@
 #include <stdexcept>
 
 namespace Banan {
-    ProcrastinatedRenderSystem::ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts) : bananDevice{device} {
+    ProcrastinatedRenderSystem::ProcrastinatedRenderSystem(BananDevice &device, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts) : bananDevice{device} {
         createGBufferPipelineLayout(layouts);
-        createGBufferPipeline(GBufferRenderPass);
+        createGBufferPipeline(mainRenderPass);
 
         createMainRenderTargetPipelineLayout(procrastinatedLayouts);
         createMainRenderTargetPipeline(mainRenderPass);
@@ -35,6 +35,8 @@ namespace Banan {
             obj.model->bindAll(frameInfo.commandBuffer);
             obj.model->draw(frameInfo.commandBuffer);
         }
+
+        vkCmdNextSubpass(frameInfo.commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
     }
 
     void ProcrastinatedRenderSystem::render(BananFrameInfo &frameInfo) {
@@ -53,7 +55,8 @@ namespace Banan {
         BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = mainRenderTargetPipelineLayout;
-        pipelineConfig.multisampleInfo.rasterizationSamples = bananDevice.getMaxUsableSampleCount();
+        pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        pipelineConfig.subpass = 1;
 
         pipelineConfig.attributeDescriptions.clear();
         pipelineConfig.bindingDescriptions.clear();
@@ -87,6 +90,9 @@ namespace Banan {
         BananPipeline::gbufferPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = GBufferPipelineLayout;
+        pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        pipelineConfig.subpass = 0;
+
         GBufferPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv", pipelineConfig);
 
         delete[] pipelineConfig.colorBlendInfo.pAttachments;
@@ -109,12 +115,12 @@ namespace Banan {
         }
     }
 
-    void ProcrastinatedRenderSystem::reconstructPipeline(VkRenderPass GBufferRenderPass, VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts) {
+    void ProcrastinatedRenderSystem::reconstructPipeline(VkRenderPass mainRenderPass, std::vector<VkDescriptorSetLayout> layouts, std::vector<VkDescriptorSetLayout> procrastinatedLayouts) {
         vkDestroyPipelineLayout(bananDevice.device(), GBufferPipelineLayout, nullptr);
         vkDestroyPipelineLayout(bananDevice.device(), mainRenderTargetPipelineLayout, nullptr);
 
         createGBufferPipelineLayout(layouts);
-        createGBufferPipeline(GBufferRenderPass);
+        createGBufferPipeline(mainRenderPass);
 
         createMainRenderTargetPipelineLayout(procrastinatedLayouts);
         createMainRenderTargetPipeline(mainRenderPass);
