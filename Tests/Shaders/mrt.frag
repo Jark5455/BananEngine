@@ -35,9 +35,9 @@ layout(set = 0, binding = 1) readonly buffer GameObjects {
     GameObject objects[];
 } ssbo;
 
-layout(input_attachment_index = 0, binding = 0) uniform subpassInput depth;
-layout(input_attachment_index = 1, binding = 1) uniform subpassInput normals;
-layout(input_attachment_index = 2, binding = 2) uniform subpassInput albedo;
+layout(set = 1, input_attachment_index = 0, binding = 0) uniform subpassInput depth;
+layout(set = 1, input_attachment_index = 1, binding = 1) uniform subpassInput normals;
+layout(set = 1, input_attachment_index = 2, binding = 2) uniform subpassInput albedo;
 
 layout(location = 0) out vec4 outColor;
 

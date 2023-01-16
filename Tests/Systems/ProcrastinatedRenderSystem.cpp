@@ -56,6 +56,7 @@ namespace Banan {
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = mainRenderTargetPipelineLayout;
         pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        pipelineConfig.depthStencilInfo.depthWriteEnable = VK_FALSE;
         pipelineConfig.subpass = 1;
 
         pipelineConfig.attributeDescriptions.clear();
