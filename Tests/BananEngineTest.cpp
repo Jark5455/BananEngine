@@ -126,8 +126,6 @@ namespace Banan{
         std::vector<VkDescriptorSet> heightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> procrastinatedDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
 
-        printf("Swapchain address: %p", bananRenderer.getSwapChainRenderPass());
-
         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
 
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
