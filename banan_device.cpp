@@ -525,13 +525,6 @@ namespace Banan {
                 sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
                 break;
 
-            case VK_IMAGE_LAYOUT_PREINITIALIZED:
-                // Image is preinitialized
-                // Only valid as initial layout for linear images, preserves memory contents
-                // Make sure host writes have been finished
-                barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-                break;
-
             case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
                 // Image is a color attachment
                 // Make sure any writes to the color buffer have been finished
