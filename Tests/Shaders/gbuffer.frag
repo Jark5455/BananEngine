@@ -164,11 +164,8 @@ vec2 projectVecToTextureSpace(vec3 dir, vec2 texST, float bumpScale, bool skipPr
     return s * bumpScale * dirTex;
 }
 
-vec3 getFinalNormal(vec2 inUV, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
+vec3 getFinalNormal(vec2 inUV, vec3 nrmBaseNormal)
 {
-    vec3 sigmaX = dPdx - dot(dPdx, nrmBaseNormal) * nrmBaseNormal;
-    vec3 sigmaY = dPdy - dot(dPdy, nrmBaseNormal) * nrmBaseNormal;
-
     // TBN matrix
     vec3 vT = fragTangent;
     vec3 vB = cross(nrmBaseNormal, vT);
@@ -224,7 +221,7 @@ void main() {
 
     vec3 normalHeightMapLod = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
     if (textureQueryLevels(normalSampler[push.objectId]) > 0) {
-        normalHeightMapLod = getFinalNormal(uv, dPdx, dPdy, nrmBaseNormal);
+        normalHeightMapLod = getFinalNormal(uv, nrmBaseNormal);
     }
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
