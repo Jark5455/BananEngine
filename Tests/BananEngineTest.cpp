@@ -201,7 +201,7 @@ namespace Banan{
                     procrastinatedWriter.overwrite(procrastinatedDescriptorSets[i]);
                 }
 
-                pointLightSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
+                pointLightSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
                 computeSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
                 procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
 
@@ -307,22 +307,22 @@ namespace Banan{
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/bricks2.jpg");
-        floorBuilder.loadNormals("banan_assets/textures/bricks2_normal.exr");
-        floorBuilder.loadHeightMap("banan_assets/textures/bricks2_disp.jpg");
+        floorBuilder.loadTexture("banan_assets/textures/Tiles_046_basecolor.jpg");
+        floorBuilder.loadNormals("banan_assets/textures/Tiles_046_normal.exr");
+        floorBuilder.loadHeightMap("banan_assets/textures/Tiles_046_height.png");
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
         floor.transform.translation = {0.f, .5f, 0.f};
-        floor.transform.rotation = {0.f, glm::pi<float>(), glm::pi<float>() / 2.0};
+        floor.transform.rotation = {0.f, glm::pi<float>(), 0.0};
         floor.transform.scale = {3.f, 3.f, 3.f};
         floor.transform.id = (int) floor.getId();
 
         floor.parallax.heightscale = 0.1;
         floor.parallax.parallaxBias = -0.02f;
         floor.parallax.numLayers = 48.0f;
-        floor.parallax.parallaxmode = 2;
+        floor.parallax.parallaxmode = 1;
 
         gameObjects.emplace(floor.getId(), std::move(floor));
 

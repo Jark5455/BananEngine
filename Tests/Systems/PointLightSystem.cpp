@@ -70,7 +70,9 @@ namespace Banan{
         }
 
         bananPipeline->bind(frameInfo.commandBuffer);
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
+
+        std::vector<VkDescriptorSet> sets{frameInfo.globalDescriptorSet, frameInfo.procrastinatedDescriptorSet};
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,sets.size(),sets.data(),0,nullptr);
 
         for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
             auto &obj = frameInfo.gameObjects.at(it->second);
