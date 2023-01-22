@@ -66,8 +66,8 @@ vec2 RayMarch(vec2 st0_in, vec2 st1_in)
     vec3 st0 = vec3(st0_in, 0.0);
     vec3 st1 = vec3(st1_in, -1.0);
 
-    int nrStepsAlongRay = int(clamp(4 * distInPix, 8.0, 2048));			// very brute-force
-    float scale = 1.0 / float(nrStepsAlongRay);
+    float nrStepsAlongRay = ssbo.objects[push.objectId].numLayers;			// very brute-force
+    float scale = ssbo.objects[push.objectId].heightscale;
 
     float nrInnerIts = (nrStepsAlongRay + 7) / 8;
 
@@ -96,7 +96,6 @@ vec2 RayMarch(vec2 st0_in, vec2 st1_in)
             float h6 = textureLod(heightSampler[push.objectId], mix(st0, st1, T6).xy, lod_base).r - 1.0;
             float h7 = textureLod(heightSampler[push.objectId], mix(st0, st1, T7).xy, lod_base).r - 1.0;
             float h8 = textureLod(heightSampler[push.objectId], mix(st0, st1, T8).xy, lod_base).r - 1.0;
-
 
             float t_s = t0, t_e = t1;
 

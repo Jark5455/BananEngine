@@ -226,10 +226,6 @@ namespace Banan {
         GBufferInfo.push_back(bananSwapChain->gbuffer()[1]->descriptorInfo());
         GBufferInfo.push_back(bananSwapChain->gbuffer()[2]->descriptorInfo());
 
-        GBufferInfo[0].sampler = VK_NULL_HANDLE;
-        GBufferInfo[1].sampler = VK_NULL_HANDLE;
-        GBufferInfo[2].sampler = VK_NULL_HANDLE;
-
         return GBufferInfo;
     }
 }
