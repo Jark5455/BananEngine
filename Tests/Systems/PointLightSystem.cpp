@@ -54,7 +54,7 @@ namespace Banan{
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
         pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        pipelineConfig.subpass = 1;
+        pipelineConfig.subpass = 2;
         bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/point_light.vert.spv", "shaders/point_light.frag.spv", pipelineConfig);
     }
 
@@ -71,7 +71,7 @@ namespace Banan{
 
         bananPipeline->bind(frameInfo.commandBuffer);
 
-        std::vector<VkDescriptorSet> sets{frameInfo.globalDescriptorSet, frameInfo.procrastinatedDescriptorSet};
+        std::vector<VkDescriptorSet> sets{frameInfo.globalDescriptorSet};
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,sets.size(),sets.data(),0,nullptr);
 
         for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {

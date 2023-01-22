@@ -45,6 +45,8 @@ namespace Banan {
 
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,mainRenderTargetPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
         vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
+
+        vkCmdNextSubpass(frameInfo.commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
     }
 
     void ProcrastinatedRenderSystem::createMainRenderTargetPipeline(VkRenderPass renderPass) {

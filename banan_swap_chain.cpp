@@ -241,9 +241,9 @@ namespace Banan {
         gBufferSubpass.pColorAttachments = gbufferReferences.data();
         gBufferSubpass.pDepthStencilAttachment = &depthReference;
 
-        std::vector<VkAttachmentReference> compositeReferences{1};
-        compositeReferences[0].attachment = 3;
-        compositeReferences[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference compositeReferences{1};
+        compositeReferences.attachment = 3;
+        compositeReferences.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         std::vector<VkAttachmentReference> inputAttachments{3};
         inputAttachments[0] = depthReference;
@@ -256,107 +256,76 @@ namespace Banan {
 
         VkSubpassDescription compositeSubpass{};
         compositeSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        compositeSubpass.colorAttachmentCount = compositeReferences.size();
-        compositeSubpass.pColorAttachments = compositeReferences.data();
-        compositeSubpass.pDepthStencilAttachment = &depthReference;
+        compositeSubpass.colorAttachmentCount = 1;
+        compositeSubpass.pColorAttachments = &compositeReferences;
+        compositeSubpass.pDepthStencilAttachment = nullptr;
         compositeSubpass.inputAttachmentCount = inputAttachments.size();
         compositeSubpass.pInputAttachments = inputAttachments.data();
 
-        std::vector<VkSubpassDependency> dependencies{5};
+        VkSubpassDescription forwardSubpass{};
+        forwardSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        forwardSubpass.colorAttachmentCount = 1;
+        forwardSubpass.pColorAttachments = &compositeReferences;
+        forwardSubpass.pDepthStencilAttachment = &depthReference;
 
-        // null images to color attachment output
+        std::vector<VkSubpassDependency> dependencies{6};
+
+        // ensure attachments are writeable
         dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[0].dstSubpass = 0;
-        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[0].srcAccessMask = 0;
-        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-        // reset depth image if possible
         dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[1].dstSubpass = 0;
-        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependencies[1].srcAccessMask = VK_ACCESS_SHADER_READ_BIT  | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        dependencies[1].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-        // color attachment to shader read only
+        // convert to read only for shader
         dependencies[2].srcSubpass = 0;
         dependencies[2].dstSubpass = 1;
-        dependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[2].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependencies[2].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependencies[2].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[2].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[2].dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT; // extra read access for depth attachment, used to differentiate from color attachments
         dependencies[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-        // depth attachment to shader read only and depth attachment
         dependencies[3].srcSubpass = 0;
         dependencies[3].dstSubpass = 1;
-        dependencies[3].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependencies[3].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependencies[3].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[3].dstAccessMask = VK_ACCESS_SHADER_READ_BIT  | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        dependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[3].dstSubpass = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[3].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dependencies[3].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-        // color attachment output to present src
+        // convert depth back to shader depth stencil attachment optimal
         dependencies[4].srcSubpass = 1;
-        dependencies[4].dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[4].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[4].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        dependencies[4].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependencies[4].dstAccessMask = 0;
-        dependencies[4].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        dependencies[4].dstSubpass = 2;
+        dependencies[4].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependencies[4].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[4].srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+        dependencies[4].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[4].dependencyFlags  = VK_DEPENDENCY_BY_REGION_BIT;
 
-        /*// This dependency transition our images back to color attachment output
-        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[0].dstSubpass = 0;
-        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        // convert attachment to presentable image
+        dependencies[5].srcSubpass = 2;
+        dependencies[5].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[5].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[5].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependencies[5].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[5].dstAccessMask = 0;
+        dependencies[5].dependencyFlags  = VK_DEPENDENCY_BY_REGION_BIT;
 
-        // This dependency transitions the input attachment from depth attachment to shader read
-        dependencies[1].srcSubpass = 0;
-        dependencies[1].dstSubpass = 1;
-        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-        dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-        // This dependency transitions the input attachment from color attachment to shader read
-        dependencies[2].srcSubpass = 0;
-        dependencies[2].dstSubpass = 1;
-        dependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[2].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-        dependencies[2].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        dependencies[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-        // This dependecy transitions the depth image back to depth layout
-        dependencies[3].srcSubpass = 1;
-        dependencies[3].dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[3].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[3].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependencies[3].srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-        dependencies[3].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        dependencies[3].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-        // This dependency transitions the final composition image
-        dependencies[4].srcSubpass = 1;
-        dependencies[4].dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[4].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[4].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        dependencies[4].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-        dependencies[4].dstAccessMask = 0;
-        dependencies[4].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;*/
-
-        std::vector<VkSubpassDescription> subpasses{2};
+        std::vector<VkSubpassDescription> subpasses{3};
         subpasses[0] = gBufferSubpass;
         subpasses[1] = compositeSubpass;
+        subpasses[2] = forwardSubpass;
 
         VkRenderPassCreateInfo renderPassInfo = {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -424,8 +393,8 @@ namespace Banan {
         gBufferAttachments.push_back(std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
         device.transitionImageLayout(gBufferAttachments[0]->getImageHandle(), swapChainDepthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, 1);
-        device.transitionImageLayout(gBufferAttachments[1]->getImageHandle(), VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 1);
-        device.transitionImageLayout(gBufferAttachments[2]->getImageHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 1);
+        device.transitionImageLayout(gBufferAttachments[1]->getImageHandle(), VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
+        device.transitionImageLayout(gBufferAttachments[2]->getImageHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
     }
 
     void BananSwapChain::createCompositeResources() {
