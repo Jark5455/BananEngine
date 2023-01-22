@@ -109,13 +109,13 @@ if (WIN32)
 
     target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR} ${Vulkan_INCLUDE_DIRS} ${ASSIMP_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} ${GLM_PATH} ${ZLIB_INCLUDE_DIRS} ${OPENEXR_INCLUDE_DIRS})
     target_link_directories(${PROJECT_NAME} PUBLIC ${Vulkan_LIBRARIES} ${GLFW_LIB} ${OPENEXR_LIBRARIES})
-    target_link_libraries(${PROJECT_NAME} glfw3 vulkan-1 ${ASSIMP_LIBRARIES} ZLIB::ZLIB)
+    target_link_libraries(${PROJECT_NAME} glfw3 vulkan-1 ${ASSIMP_LIBRARIES})
 
 elseif (UNIX)
     message(STATUS "CREATING BUILD FOR UNIX")
     target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR} /usr/include/OpenEXR/ /usr/include/Imath/)
     target_link_directories(${PROJECT_NAME} PUBLIC ${OPENEXR_LIBRARIES} ${IMATH_LIBRARIES})
-    target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES} ${ASSIMP_LIBRARIES} Imath OpenEXR ZLIB::ZLIB)
+    target_link_libraries(${PROJECT_NAME} glfw Imath OpenEXR ${Vulkan_LIBRARIES} ${ASSIMP_LIBRARIES})
 endif()
 
 execute_process(COMMAND mkdir ${CMAKE_BINARY_DIR}/shaders)
