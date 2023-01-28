@@ -11,24 +11,25 @@ namespace Banan {
     class KeyboardMovementController {
         public:
 
-        enum KeyMappings {
-            moveLeft = SDLK_a,
-            moveRight = SDLK_d,
-            moveForward = SDLK_w,
-            moveBackward = SDLK_s,
+        struct KeyMappings {
+            int moveLeft = SDL_SCANCODE_A;
+            int moveRight = SDL_SCANCODE_D;
+            int moveForward = SDL_SCANCODE_W;
+            int moveBackward = SDL_SCANCODE_S;
 
-            moveUp = SDLK_SPACE,
-            moveDown = SDLK_LCTRL,
+            int moveUp = SDL_SCANCODE_SPACE;
+            int moveDown = SDL_SCANCODE_LCTRL;
 
-            lookLeft = SDLK_LEFT,
-            lookRight = SDLK_RIGHT,
-            lookUp = SDLK_UP,
-            lookDown = SDLK_DOWN,
+            int lookLeft = SDL_SCANCODE_LEFT;
+            int lookRight = SDL_SCANCODE_RIGHT;
+            int lookUp = SDL_SCANCODE_UP;
+            int lookDown = SDL_SCANCODE_DOWN;
         };
 
-        void moveInPlaneXZ(SDL_Window *window, float dt, BananGameObject &object);
+        void moveInPlaneXZ(float dt, BananGameObject &object);
 
         float moveSpeed{3.f};
         float lookSpeed{1.5f};
+        KeyMappings keys{};
     };
 }

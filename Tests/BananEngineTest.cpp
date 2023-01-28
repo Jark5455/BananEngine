@@ -211,7 +211,7 @@ namespace Banan{
             float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
             currentTime = newTime;
 
-            cameraController.moveInPlaneXZ(bananWindow.getSDLWindow(), frameTime, viewerObject);
+            cameraController.moveInPlaneXZ(frameTime, viewerObject);
             camera.setViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
 
             float aspect = bananRenderer.getAspectRatio();
