@@ -266,17 +266,17 @@ namespace Banan {
     }
 
     std::vector<const char *> BananDevice::getRequiredExtensions() {
-        uint32_t glfwExtensionCount = 0;
-        const char **glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-        std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+        unsigned int extensionCount = 0;
+        SDL_Vulkan_GetInstanceExtensions(window.getSDLWindow(), &extensionCount, nullptr);
+        std::vector<const char *> extensionNames(extensionCount);
+        SDL_Vulkan_GetInstanceExtensions(window.getSDLWindow(), &extensionCount, extensionNames.data());
 
         if (enableValidationLayers) {
-            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            extensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
-        return extensions;
+        return extensionNames;
     }
 
     void BananDevice::hasGflwRequiredInstanceExtensions() {

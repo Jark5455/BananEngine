@@ -54,7 +54,10 @@ namespace Banan {
         auto extent = bananWindow.getExtent();
         while (extent.width == 0 || extent.height == 0) {
             extent = bananWindow.getExtent();
-            glfwWaitEvents();
+
+            // process any queued events
+            SDL_Event event;
+            SDL_WaitEvent(&event);
         }
 
         vkDeviceWaitIdle(bananDevice.device());
@@ -106,7 +109,7 @@ namespace Banan {
         }
 
         auto result = bananSwapChain->submitCommandBuffers(&commandBuffer, &currentImageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || bananWindow.wasWindowResized()) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
             recreateSwapChain();
         } else if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to present swap chain image!");

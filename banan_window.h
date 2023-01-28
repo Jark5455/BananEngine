@@ -1,9 +1,9 @@
 #pragma once
 
-#include <tuple>
+#include <vulkan/vulkan.h>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <SDL2/SDL.h>
+#include <SDL_vulkan.h>
 
 namespace Banan {
     class BananWindow {
@@ -17,22 +17,14 @@ namespace Banan {
         BananWindow(const BananWindow &) = delete;
         BananWindow &operator=(const BananWindow &) = delete;
 
-        bool wasWindowResized() { return framebufferResized; }
-        void resetWindowResizedFlag() { framebufferResized = false; }
-        GLFWwindow* getGLFWwindow() const;
-
         void createWindowSurface(VkInstance instance, VkSurfaceKHR *surface);
         VkExtent2D getExtent();
-        bool windowShouldClose();
+        SDL_Window *getSDLWindow() const;
 
     private:
-        static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
-
         int width;
         int height;
 
-        bool framebufferResized = false;
-
-        GLFWwindow *window;
+        SDL_Window *window;
     };
 }

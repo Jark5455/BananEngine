@@ -40,12 +40,12 @@ namespace Banan{
         void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
         void beginShadowRenderPass(VkCommandBuffer commandBuffer);
         void endShadowRenderPass(VkCommandBuffer commandBuffer, uint32_t faceindex);
+        void recreateSwapChain();
 
     private:
         void createCommandBuffers();
         void createShadowMapper();
         void freeCommandBuffers();
-        void recreateSwapChain();
 
         BananWindow &bananWindow;
         BananDevice &bananDevice;

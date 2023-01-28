@@ -66,7 +66,7 @@ namespace Banan{
 
         std::vector<std::unique_ptr<BananBuffer>> uboBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (auto & uboBuffer : uboBuffers) {
-            uboBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            uboBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             uboBuffer->map();
         }
 
@@ -170,43 +170,53 @@ namespace Banan{
 
         auto currentTime = std::chrono::high_resolution_clock::now();
 
-        while(!bananWindow.windowShouldClose())
+        while(true)
         {
-            glfwPollEvents();
+
+            SDL_Event event;
+            SDL_PollEvent(&event);
+
+            switch(event.type) {
+                case SDL_WINDOWEVENT:
+                    if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                        bananRenderer.recreateSwapChain();
+
+                        for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+                            BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout,*procrastinatedPool);
+
+                            auto normalInfo = bananRenderer.getGBufferDescriptorInfo()[0];
+                            auto albedoInfo = bananRenderer.getGBufferDescriptorInfo()[1];
+                            auto depthInfo = bananRenderer.getGBufferDescriptorInfo()[2];
+
+                            procrastinatedWriter.writeImage(0, &normalInfo);
+                            procrastinatedWriter.writeImage(1, &albedoInfo);
+                            procrastinatedWriter.writeImage(2, &depthInfo);
+
+                            procrastinatedWriter.overwrite(procrastinatedDescriptorSets[i]);
+                        }
+
+                        pointLightSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
+                        computeSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
+                        procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
+                    }
+
+                    continue;
+
+                case SDL_QUIT:
+                    vkDeviceWaitIdle(bananDevice.device());
+                    return;
+            }
 
             auto newTime = std::chrono::high_resolution_clock::now();
             float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
             currentTime = newTime;
 
-            cameraController.moveInPlaneXZ(bananWindow.getGLFWwindow(), frameTime, viewerObject);
+            cameraController.moveInPlaneXZ(bananWindow.getSDLWindow(), frameTime, viewerObject);
             camera.setViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
 
             float aspect = bananRenderer.getAspectRatio();
             camera.setOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
             camera.setPerspectiveProjection(glm::radians(90.f), aspect, 0.1f, 100.f);
-
-            // TODO create some sort of pipeline caching to reduce resizing cost
-            if (bananWindow.wasWindowResized()) {
-                for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
-                    BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout,*procrastinatedPool);
-
-                    auto normalInfo = bananRenderer.getGBufferDescriptorInfo()[0];
-                    auto albedoInfo = bananRenderer.getGBufferDescriptorInfo()[1];
-                    auto depthInfo = bananRenderer.getGBufferDescriptorInfo()[2];
-
-                    procrastinatedWriter.writeImage(0, &normalInfo);
-                    procrastinatedWriter.writeImage(1, &albedoInfo);
-                    procrastinatedWriter.writeImage(2, &depthInfo);
-
-                    procrastinatedWriter.overwrite(procrastinatedDescriptorSets[i]);
-                }
-
-                pointLightSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
-                computeSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
-                procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
-
-                bananWindow.resetWindowResizedFlag();
-            }
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
@@ -273,8 +283,6 @@ namespace Banan{
                 bananRenderer.endFrame();
             }
         }
-
-        vkDeviceWaitIdle(bananDevice.device());
     }
 
     void BananEngineTest::loadGameObjects() {
