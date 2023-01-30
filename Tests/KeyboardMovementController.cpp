@@ -23,12 +23,12 @@ namespace Banan {
             rotate.y -= 1.f;
         }
 
-        if (keyboardState[keys.lookDown]) {
-            rotate.x -= 1.f;
-        }
-
         if (keyboardState[keys.lookUp]) {
             rotate.x += 1.f;
+        }
+
+        if (keyboardState[keys.lookDown]) {
+            rotate.x -= 1.f;
         }
 
         if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon()) {
