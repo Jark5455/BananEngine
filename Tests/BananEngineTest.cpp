@@ -10,6 +10,9 @@
 #include "Systems/ComputeSystem.h"
 #include "Systems/ProcrastinatedRenderSystem.h"
 
+#include "Constants/AreaTex.h"
+#include "Constants/SearchTex.h"
+
 #include "KeyboardMovementController.h"
 
 #define GLM_FORCE_RADIANS
@@ -57,6 +60,11 @@ namespace Banan{
         procrastinatedPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
+                .build();
+
+        resolvePool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
                 .build();
     }
 
@@ -107,6 +115,12 @@ namespace Banan{
                 .addBinding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .addBinding(2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                .build();
+
+        auto resolveLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .build();
 
         //SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
@@ -163,6 +177,14 @@ namespace Banan{
             procrastinatedWriter.writeImage(2, &depthInfo);
 
             procrastinatedWriter.build(procrastinatedDescriptorSets[i], std::vector<uint32_t> {});
+
+            BananDescriptorWriter resolveWriter = BananDescriptorWriter(*resolveLayout, *resolvePool);
+
+            auto areaTexInfo = areaTex->descriptorInfo();
+            auto searchTexInfo = searchTex->descriptorInfo();
+
+            resolveWriter.writeImage(1, &areaTexInfo);
+            resolveWriter.writeImage(2, &searchTexInfo);
         }
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -286,6 +308,33 @@ namespace Banan{
     }
 
     void BananEngineTest::loadGameObjects() {
+
+        // O3 won't work without this for some reason :|
+        void *areaTexData = malloc(sizeof(areaTexBytes));
+        memcpy(areaTexData, areaTexBytes, sizeof(areaTexBytes));
+
+        void *searchTexData = malloc(sizeof(searchTexBytes));
+        memcpy(searchTexData, searchTexBytes, sizeof(searchTexBytes));
+
+        // SMAA Textures stuff
+        BananBuffer areaTexStagingBuffer{bananDevice, 2, AREATEX_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+        areaTexStagingBuffer.map();
+        areaTexStagingBuffer.writeToBuffer(areaTexData);
+
+        areaTex = std::make_unique<BananImage>(bananDevice, AREATEX_WIDTH, AREATEX_HEIGHT, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        bananDevice.transitionImageLayout(areaTex->getImageHandle(), VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
+        bananDevice.copyBufferToImage(areaTexStagingBuffer.getBuffer(), areaTex->getImageHandle(), AREATEX_WIDTH, AREATEX_HEIGHT, 1);
+        bananDevice.transitionImageLayout(areaTex->getImageHandle(), VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 1);
+
+        BananBuffer searchTexStagingBuffer{bananDevice, 1, SEARCHTEX_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+        searchTexStagingBuffer.map();
+        searchTexStagingBuffer.writeToBuffer(searchTexData);
+
+        searchTex = std::make_unique<BananImage>(bananDevice, SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        bananDevice.transitionImageLayout(searchTex->getImageHandle(), VK_FORMAT_R8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
+        bananDevice.copyBufferToImage(searchTexStagingBuffer.getBuffer(), searchTex->getImageHandle(), SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT, 1);
+        bananDevice.transitionImageLayout(searchTex->getImageHandle(), VK_FORMAT_R8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 1);
+
         BananModel::Builder vaseBuilder{};
         vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
         vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
@@ -374,6 +423,9 @@ namespace Banan{
                 }
             }
         }
+
+        free(areaTexData);
+        free(searchTexData);
     }
 
     std::shared_ptr<BananLogger> BananEngineTest::getLogger() {

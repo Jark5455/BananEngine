@@ -54,6 +54,8 @@ namespace Banan {
         void createFramebuffers();
         void createSyncObjects();
         void createGBufferResources();
+        void createSMAAResources();
+        void createResolveRenderpass();
 
         // Helper functions
         VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
@@ -65,9 +67,16 @@ namespace Banan {
         VkExtent2D swapChainExtent;
 
         std::vector<VkFramebuffer> swapChainFramebuffers;
+        std::vector<VkFramebuffer> resolveFramebuffers;
+
         VkRenderPass renderPass;
+        VkRenderPass resolveRenderPass;
 
         std::vector<std::shared_ptr<BananImage>> gBufferAttachments;
+
+        std::shared_ptr<BananImage> colorImage;
+        std::shared_ptr<BananImage> edgeImage;
+        std::shared_ptr<BananImage> blendImage;
 
         std::vector<VkImage> swapChainImages;
         std::vector<VkImageView> swapChainImageViews;
