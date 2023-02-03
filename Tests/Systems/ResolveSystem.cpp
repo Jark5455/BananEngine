@@ -29,6 +29,10 @@ namespace Banan {
         // why not use the existing variables HEIGHT or WIDTH? - On high pixel density displays such as apples "retina" display these values are incorrect, but the swap chain corrects these values
         PipelineConfigInfo pipelineConfig{};
         BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
+
+        pipelineConfig.attributeDescriptions.clear();
+        pipelineConfig.bindingDescriptions.clear();
+
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = edgeDetectionPipelineLayout;
         pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -54,6 +58,10 @@ namespace Banan {
         // why not use the existing variables HEIGHT or WIDTH? - On high pixel density displays such as apples "retina" display these values are incorrect, but the swap chain corrects these values
         PipelineConfigInfo pipelineConfig{};
         BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
+
+        pipelineConfig.attributeDescriptions.clear();
+        pipelineConfig.bindingDescriptions.clear();
+
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = blendWeightPipelineLayout;
         pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -79,6 +87,10 @@ namespace Banan {
         // why not use the existing variables HEIGHT or WIDTH? - On high pixel density displays such as apples "retina" display these values are incorrect, but the swap chain corrects these values
         PipelineConfigInfo pipelineConfig{};
         BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
+
+        pipelineConfig.attributeDescriptions.clear();
+        pipelineConfig.bindingDescriptions.clear();
+
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = resolvePipelineLayout;
         pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -114,14 +126,26 @@ namespace Banan {
     }
 
     void ResolveSystem::runEdgeDetection(BananFrameInfo &frameInfo) {
+        edgeDetectionPipeline->bind(frameInfo.commandBuffer);
+        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.edgeDetectionDescriptorSet};
 
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,edgeDetectionPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+        vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
     }
 
     void ResolveSystem::calculateBlendWeights(BananFrameInfo &frameInfo) {
+        blendWeightPipeline->bind(frameInfo.commandBuffer);
+        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.blendWeightDescriptorSet};
 
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,blendWeightPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+        vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
     }
 
     void ResolveSystem::resolveImage(BananFrameInfo &frameInfo) {
+        resolvePipeline->bind(frameInfo.commandBuffer);
+        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.resolveDescriptorSet};
 
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,resolvePipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+        vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
     }
 }

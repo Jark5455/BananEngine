@@ -33,7 +33,6 @@ namespace Banan{
         VkCommandBuffer getCurrentCommandBuffer() const;
 
         int getFrameIndex() const;
-        std::vector<VkDescriptorImageInfo> getShadowDescriptorInfo();
         std::vector<VkDescriptorImageInfo> getGBufferDescriptorInfo();
 
         VkDescriptorImageInfo getGeometryDescriptorInfo();
@@ -46,7 +45,6 @@ namespace Banan{
         void beginEdgeDetectionRenderPass(VkCommandBuffer commandBuffer);
         void beginBlendWeightRenderPass(VkCommandBuffer commandBuffer);
         void beginResolveRenderPass(VkCommandBuffer commandBuffer);
-        void beginShadowRenderPass(VkCommandBuffer commandBuffer);
 
         void endRenderPass(VkCommandBuffer commandBuffer);
 
@@ -54,7 +52,6 @@ namespace Banan{
 
     private:
         void createCommandBuffers();
-        void createShadowMapper();
         void freeCommandBuffers();
 
         BananWindow &bananWindow;

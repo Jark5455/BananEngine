@@ -275,46 +275,6 @@ namespace Banan {
         return bananSwapChain->extentAspectRatio();
     }
 
-    void BananRenderer::beginShadowRenderPass(VkCommandBuffer commandBuffer) {
-        assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer that is different to the current frame");
-        VkClearValue clearValues[2];
-        clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-        clearValues[1].depthStencil = { 1.0f, 0 };
-
-        VkRenderPassBeginInfo renderPassBeginInfo{};
-        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        // Reuse render pass from example pass
-        renderPassBeginInfo.renderPass = bananShadowMapper->getRenderPass();
-        renderPassBeginInfo.framebuffer = bananShadowMapper->getFramebuffer();
-        renderPassBeginInfo.renderArea.extent.width = 1024;
-        renderPassBeginInfo.renderArea.extent.height = 1024;
-        renderPassBeginInfo.clearValueCount = 2;
-        renderPassBeginInfo.pClearValues = clearValues;
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        VkViewport viewport{};
-        viewport.x = 0;
-        viewport.y = 1024;
-        viewport.width = 1024;
-        viewport.height = -1024;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-        VkRect2D scissor{};
-        scissor.extent.width = 1024;
-        scissor.extent.height = 1024;
-        scissor.offset.x = 0;
-        scissor.offset.y = 0;
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-    }
-
-    std::vector<VkDescriptorImageInfo> BananRenderer::getShadowDescriptorInfo() {
-        return {bananShadowMapper->descriptorInfo()};
-    }
-
     std::vector<VkDescriptorImageInfo> BananRenderer::getGBufferDescriptorInfo() {
 
         GBufferInfo.clear();

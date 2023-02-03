@@ -49,6 +49,9 @@ namespace Banan {
         VkDescriptorSet normalDescriptorSet;
         VkDescriptorSet heightDescriptorSet;
         VkDescriptorSet procrastinatedDescriptorSet;
+        VkDescriptorSet edgeDetectionDescriptorSet;
+        VkDescriptorSet blendWeightDescriptorSet;
+        VkDescriptorSet resolveDescriptorSet;
         BananGameObject::Map &gameObjects;
     };
 }

@@ -202,6 +202,7 @@ namespace Banan{
             auto blendInfo = bananRenderer.getBlendWeightDescriptorInfo();
 
             edgeDetectionWriter.writeImage(0, &geometryInfo);
+
             edgeDetectionWriter.build(edgeDetectionDescriptorSets[i], std::vector<uint32_t> {});
 
             BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *blendWeightPool);
@@ -306,7 +307,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], gameObjects};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], gameObjects};
 
                 std::vector<GameObjectData> data{};
                 data.reserve(gameObjects.size());

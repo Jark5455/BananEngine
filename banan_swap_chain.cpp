@@ -361,7 +361,7 @@ namespace Banan {
             VkAttachmentDescription edgeAttachment{};
 
             // techically this could be R8G8 but for some reason its slower on nvidia, will test on amd later
-            edgeAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+            edgeAttachment.format = VK_FORMAT_R8G8_UNORM;
             edgeAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
             edgeAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
             edgeAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -481,8 +481,8 @@ namespace Banan {
             resolveAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
             resolveAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            resolveAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            resolveAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
             VkAttachmentReference resolveAttachmentReference{};
             resolveAttachmentReference.attachment = 0;
@@ -493,9 +493,11 @@ namespace Banan {
             resolveAttachmentSubpass.colorAttachmentCount = 1;
             resolveAttachmentSubpass.pColorAttachments = &resolveAttachmentReference;
 
+            // convert to presentable image
+
             std::vector<VkSubpassDependency> dependencies{2};
 
-            // ensure writeability
+            // convert to writeable
             dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
             dependencies[0].dstSubpass = 0;
             dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
@@ -504,7 +506,7 @@ namespace Banan {
             dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-            // shader read only
+            // convert to presentable
             dependencies[1].srcSubpass = 0;
             dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
             dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
