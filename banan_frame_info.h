@@ -44,7 +44,6 @@ namespace Banan {
         float frameTime;
         VkCommandBuffer commandBuffer;
         BananCamera &camera;
-        BananCamera &shadowCubeMapCamera;
         VkDescriptorSet globalDescriptorSet;
         VkDescriptorSet textureDescriptorSet;
         VkDescriptorSet normalDescriptorSet;

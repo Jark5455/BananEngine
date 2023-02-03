@@ -93,8 +93,8 @@ endif()
 
 include_directories(/usr/include/stb)
 
-add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp banan_renderer.cpp banan_camera.cpp banan_buffer.cpp banan_descriptor.cpp banan_image.cpp banan_shadow_mapper.cpp banan_renderpass.cpp banan_renderpass.h Tests/Constants/SearchTex.h Tests/Constants/AreaTex.h)
-add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp Tests/Systems/SimpleRenderSystem.cpp Tests/Systems/PointLightSystem.cpp Tests/KeyboardMovementController.cpp Tests/Systems/ShadowSystem.cpp Tests/Systems/ComputeSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.h)
+add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp banan_renderer.cpp banan_camera.cpp banan_buffer.cpp banan_descriptor.cpp banan_image.cpp banan_renderpass.cpp banan_renderpass.h Tests/Constants/SearchTex.h Tests/Constants/AreaTex.h)
+add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp Tests/Systems/SimpleRenderSystem.cpp Tests/Systems/PointLightSystem.cpp Tests/KeyboardMovementController.cpp Tests/Systems/ComputeSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.h Tests/Systems/ResolveSystem.cpp Tests/Systems/ResolveSystem.h)
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build")
@@ -125,14 +125,20 @@ execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.vert -o
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/point_light.frag -o ${CMAKE_BINARY_DIR}/shaders/point_light.frag.spv)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/point_light.vert -o ${CMAKE_BINARY_DIR}/shaders/point_light.vert.spv)
 
-execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/shadow.frag -o ${CMAKE_BINARY_DIR}/shaders/shadow.frag.spv)
-execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/shadow.vert -o ${CMAKE_BINARY_DIR}/shaders/shadow.vert.spv)
-
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/mrt.frag -o ${CMAKE_BINARY_DIR}/shaders/mrt.frag.spv)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/mrt.vert -o ${CMAKE_BINARY_DIR}/shaders/mrt.vert.spv)
 
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/gbuffer.frag -o ${CMAKE_BINARY_DIR}/shaders/gbuffer.frag.spv)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/gbuffer.vert -o ${CMAKE_BINARY_DIR}/shaders/gbuffer.vert.spv)
+
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/edge.frag -o ${CMAKE_BINARY_DIR}/shaders/edge.frag.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/edge.vert -o ${CMAKE_BINARY_DIR}/shaders/edge.vert.spv)
+
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/blend.frag -o ${CMAKE_BINARY_DIR}/shaders/blend.frag.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/blend.vert -o ${CMAKE_BINARY_DIR}/shaders/blend.vert.spv)
+
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/resolve.frag -o ${CMAKE_BINARY_DIR}/shaders/resolve.frag.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/resolve.vert -o ${CMAKE_BINARY_DIR}/shaders/resolve.vert.spv)
 
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/calc_normal_mats.comp -o ${CMAKE_BINARY_DIR}/shaders/calc_normal_mats.comp.spv)
 

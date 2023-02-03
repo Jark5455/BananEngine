@@ -5,8 +5,7 @@
 #include "BananEngineTest.h"
 
 #include "Systems/PointLightSystem.h"
-#include "Systems/SimpleRenderSystem.h"
-#include "Systems/ShadowSystem.h"
+#include "Systems/ResolveSystem.h"
 #include "Systems/ComputeSystem.h"
 #include "Systems/ProcrastinatedRenderSystem.h"
 
@@ -62,9 +61,19 @@ namespace Banan{
                 .addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
                 .build();
 
-        resolvePool = BananDescriptorPool::Builder(bananDevice)
+        edgeDetectionPool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .build();
+
+        blendWeightPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
+                .build();
+
+        resolvePool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 2)
                 .build();
     }
 
@@ -117,28 +126,36 @@ namespace Banan{
                 .addBinding(2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
-        auto resolveLayout = BananDescriptorSetLayout::Builder(bananDevice)
+        auto edgeDetectionSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .build();
+
+        auto blendWeightSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .build();
 
-        //SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
-        PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
-        //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
-        ComputeSystem computeSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
-        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
+        auto resolveLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .build();
+
+        PointLightSystem pointLightSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
+        ComputeSystem computeSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
+        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
+        ResolveSystem resolveSystem{bananDevice, bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()}};
 
         BananCamera camera{};
-
-        BananCamera shadowCubeMapCamera{};
-        shadowCubeMapCamera.setPerspectiveProjection(glm::radians(-90.f), 1.f, 0.1f, 1024.f);
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> textureDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> normalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> heightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> procrastinatedDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        std::vector<VkDescriptorSet> edgeDetectionDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        std::vector<VkDescriptorSet> blendWeightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        std::vector<VkDescriptorSet> resolveDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
 
         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
 
@@ -178,13 +195,32 @@ namespace Banan{
 
             procrastinatedWriter.build(procrastinatedDescriptorSets[i], std::vector<uint32_t> {});
 
-            BananDescriptorWriter resolveWriter = BananDescriptorWriter(*resolveLayout, *resolvePool);
+            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *edgeDetectionPool);
+
+            auto geometryInfo = bananRenderer.getGeometryDescriptorInfo();
+            auto edgeInfo = bananRenderer.getEdgeDescriptorInfo();
+            auto blendInfo = bananRenderer.getBlendWeightDescriptorInfo();
+
+            edgeDetectionWriter.writeImage(0, &geometryInfo);
+            edgeDetectionWriter.build(edgeDetectionDescriptorSets[i], std::vector<uint32_t> {});
+
+            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *blendWeightPool);
 
             auto areaTexInfo = areaTex->descriptorInfo();
             auto searchTexInfo = searchTex->descriptorInfo();
 
-            resolveWriter.writeImage(1, &areaTexInfo);
-            resolveWriter.writeImage(2, &searchTexInfo);
+            blendWeightWriter.writeImage(0, &edgeInfo);
+            blendWeightWriter.writeImage(1, &areaTexInfo);
+            blendWeightWriter.writeImage(2, &searchTexInfo);
+
+            blendWeightWriter.build(blendWeightDescriptorSets[i], std::vector<uint32_t> {});
+
+            BananDescriptorWriter resolveWriter(*resolveLayout, *resolvePool);
+
+            resolveWriter.writeImage(0, &geometryInfo);
+            resolveWriter.writeImage(1, &blendInfo);
+
+            resolveWriter.build(resolveDescriptorSets[i], std::vector<uint32_t> {});
         }
 
         auto viewerObject = BananGameObject::createGameObject();
@@ -215,11 +251,39 @@ namespace Banan{
                             procrastinatedWriter.writeImage(2, &depthInfo);
 
                             procrastinatedWriter.overwrite(procrastinatedDescriptorSets[i]);
+
+                            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *edgeDetectionPool);
+
+                            auto geometryInfo = bananRenderer.getGeometryDescriptorInfo();
+                            auto edgeInfo = bananRenderer.getEdgeDescriptorInfo();
+                            auto blendInfo = bananRenderer.getBlendWeightDescriptorInfo();
+
+                            edgeDetectionWriter.writeImage(0, &geometryInfo);
+                            edgeDetectionWriter.overwrite(edgeDetectionDescriptorSets[i]);
+
+                            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *blendWeightPool);
+
+                            auto areaTexInfo = areaTex->descriptorInfo();
+                            auto searchTexInfo = searchTex->descriptorInfo();
+
+                            blendWeightWriter.writeImage(0, &edgeInfo);
+                            blendWeightWriter.writeImage(1, &areaTexInfo);
+                            blendWeightWriter.writeImage(2, &searchTexInfo);
+
+                            blendWeightWriter.overwrite(blendWeightDescriptorSets[i]);
+
+                            BananDescriptorWriter resolveWriter(*resolveLayout, *resolvePool);
+
+                            resolveWriter.writeImage(0, &geometryInfo);
+                            resolveWriter.writeImage(1, &blendInfo);
+
+                            resolveWriter.overwrite(resolveDescriptorSets[i]);
                         }
 
-                        pointLightSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
-                        computeSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
-                        procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
+                        pointLightSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
+                        computeSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
+                        procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
+                        resolveSystem.reconstructPipelines(bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()});
                     }
 
                     continue;
@@ -242,7 +306,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, shadowCubeMapCamera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], gameObjects};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], gameObjects};
 
                 std::vector<GameObjectData> data{};
                 data.reserve(gameObjects.size());
@@ -296,11 +360,23 @@ namespace Banan{
                     bananRenderer.endShadowRenderPass(commandBuffer, i);
                 }*/
 
-                bananRenderer.beginSwapChainRenderPass(commandBuffer);
+                bananRenderer.beginGeometryRenderPass(commandBuffer);
                 procrastinatedRenderSystem.calculateGBuffer(frameInfo);
                 procrastinatedRenderSystem.render(frameInfo);
                 pointLightSystem.render(frameInfo);
-                bananRenderer.endSwapChainRenderPass(commandBuffer);
+                bananRenderer.endRenderPass(commandBuffer);
+
+                bananRenderer.beginEdgeDetectionRenderPass(commandBuffer);
+                resolveSystem.runEdgeDetection(frameInfo);
+                bananRenderer.endRenderPass(commandBuffer);
+
+                bananRenderer.beginBlendWeightRenderPass(commandBuffer);
+                resolveSystem.calculateBlendWeights(frameInfo);
+                bananRenderer.endRenderPass(commandBuffer);
+
+                bananRenderer.beginResolveRenderPass(commandBuffer);
+                resolveSystem.resolveImage(frameInfo);
+                bananRenderer.endRenderPass(commandBuffer);
 
                 bananRenderer.endFrame();
             }

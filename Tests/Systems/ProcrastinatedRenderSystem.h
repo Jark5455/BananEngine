@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 #include <banan_camera.h>
 #include <banan_pipeline.h>
 #include <banan_device.h>

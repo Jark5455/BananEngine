@@ -6,7 +6,6 @@
 
 #include "banan_window.h"
 #include "banan_swap_chain.h"
-#include "banan_shadow_mapper.h"
 #include "banan_device.h"
 #include "banan_model.h"
 #include "banan_renderpass.h"
@@ -24,8 +23,11 @@ namespace Banan{
         BananRenderer(BananWindow &window, BananDevice &device);
         ~BananRenderer();
 
-        VkRenderPass getSwapChainRenderPass() const;
-        VkRenderPass getShadowRenderPass() const;
+        VkRenderPass getGeometryRenderPass() const;
+        VkRenderPass getEdgeDetectionRenderPass() const;
+        VkRenderPass getBlendWeightRenderPass() const;
+        VkRenderPass getResolveRenderPass() const;
+
         float getAspectRatio() const;
         bool isFrameInProgress() const;
         VkCommandBuffer getCurrentCommandBuffer() const;
@@ -34,12 +36,20 @@ namespace Banan{
         std::vector<VkDescriptorImageInfo> getShadowDescriptorInfo();
         std::vector<VkDescriptorImageInfo> getGBufferDescriptorInfo();
 
+        VkDescriptorImageInfo getGeometryDescriptorInfo();
+        VkDescriptorImageInfo getEdgeDescriptorInfo();
+        VkDescriptorImageInfo getBlendWeightDescriptorInfo();
+
         VkCommandBuffer beginFrame();
         void endFrame();
-        void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
-        void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
+        void beginGeometryRenderPass(VkCommandBuffer commandBuffer);
+        void beginEdgeDetectionRenderPass(VkCommandBuffer commandBuffer);
+        void beginBlendWeightRenderPass(VkCommandBuffer commandBuffer);
+        void beginResolveRenderPass(VkCommandBuffer commandBuffer);
         void beginShadowRenderPass(VkCommandBuffer commandBuffer);
-        void endShadowRenderPass(VkCommandBuffer commandBuffer, uint32_t faceindex);
+
+        void endRenderPass(VkCommandBuffer commandBuffer);
+
         void recreateSwapChain();
 
     private:
@@ -50,7 +60,6 @@ namespace Banan{
         BananWindow &bananWindow;
         BananDevice &bananDevice;
         std::unique_ptr<BananSwapChain> bananSwapChain;
-        std::unique_ptr<BananShadowMapper> bananShadowMapper;
         std::vector<VkCommandBuffer> commandBuffers{};
         std::vector<VkDescriptorImageInfo> GBufferInfo{};
 
