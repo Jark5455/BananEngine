@@ -19,7 +19,7 @@ namespace Banan {
     class BananSwapChain {
     public:
 
-        static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+        static constexpr int MAX_FRAMES_IN_FLIGHT = 3;
         BananSwapChain(BananDevice &deviceRef, VkExtent2D extent, std::shared_ptr<BananSwapChain> previous);
         ~BananSwapChain();
 
@@ -68,7 +68,7 @@ namespace Banan {
         void createGeometryFramebuffer();
         void createSyncObjects();
         void createGBufferResources();
-        void createSMAAResources();
+        void createResolveResources();
         void createResolveRenderpasses();
         void createResolveFramebuffers();
 

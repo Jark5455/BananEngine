@@ -16,7 +16,7 @@ namespace Banan {
         createSwapChain();
         createImageViews();
         createGBufferResources();
-        createSMAAResources();
+        createResolveResources();
         createGeometryRenderPass();
         createGeometryFramebuffer();
         createResolveRenderpasses();
@@ -234,8 +234,8 @@ namespace Banan {
         attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[3].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        attachments[3].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attachments[3].initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachments[3].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
         VkAttachmentReference depthReference = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 
@@ -252,9 +252,9 @@ namespace Banan {
         gBufferSubpass.pColorAttachments = gbufferReferences.data();
         gBufferSubpass.pDepthStencilAttachment = &depthReference;
 
-        VkAttachmentReference compositeReferences{1};
-        compositeReferences.attachment = 3;
-        compositeReferences.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference compositeReference{};
+        compositeReference.attachment = 3;
+        compositeReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         std::vector<VkAttachmentReference> inputAttachments{3};
         inputAttachments[0] = depthReference;
@@ -269,7 +269,7 @@ namespace Banan {
         VkSubpassDescription compositeSubpass{};
         compositeSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         compositeSubpass.colorAttachmentCount = 1;
-        compositeSubpass.pColorAttachments = &compositeReferences;
+        compositeSubpass.pColorAttachments = &compositeReference;
         compositeSubpass.pDepthStencilAttachment = nullptr;
         compositeSubpass.inputAttachmentCount = inputAttachments.size();
         compositeSubpass.pInputAttachments = inputAttachments.data();
@@ -277,7 +277,7 @@ namespace Banan {
         VkSubpassDescription forwardSubpass{};
         forwardSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         forwardSubpass.colorAttachmentCount = 1;
-        forwardSubpass.pColorAttachments = &compositeReferences;
+        forwardSubpass.pColorAttachments = &compositeReference;
         forwardSubpass.pDepthStencilAttachment = &depthReference;
 
         std::vector<VkSubpassDependency> dependencies{4};
@@ -285,9 +285,9 @@ namespace Banan {
         // ensure attachments are writeable
         dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[0].dstSubpass = 0;
-        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
@@ -312,9 +312,9 @@ namespace Banan {
         // convert readable image
         dependencies[3].srcSubpass = 2;
         dependencies[3].dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependencies[3].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependencies[3].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dependencies[3].dependencyFlags  = VK_DEPENDENCY_BY_REGION_BIT;
 
@@ -360,15 +360,15 @@ namespace Banan {
         {
             VkAttachmentDescription edgeAttachment{};
 
-            // techically this could be R8G8 but for some reason its slower on nvidia, will test on amd later
+            // techically this is really slow using R8G8 on nvidia cards, but i dont care
             edgeAttachment.format = VK_FORMAT_R8G8_UNORM;
             edgeAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
             edgeAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
             edgeAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
             edgeAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             edgeAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            edgeAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            edgeAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            edgeAttachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            edgeAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             VkAttachmentReference edgeAttachmentReference{};
             edgeAttachmentReference.attachment = 0;
@@ -424,8 +424,8 @@ namespace Banan {
             blendAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
             blendAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             blendAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            blendAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            blendAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            blendAttachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            blendAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             VkAttachmentReference blendAttachmentReference{};
             blendAttachmentReference.attachment = 0;
@@ -622,14 +622,14 @@ namespace Banan {
         device.transitionImageLayout(gBufferAttachments[2]->getImageHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
     }
 
-    void BananSwapChain::createSMAAResources() {
+    void BananSwapChain::createResolveResources() {
         geometryImage = std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         edgeImage = std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         blendImage = std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        device.transitionImageLayout(geometryImage->getImageHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
-        device.transitionImageLayout(edgeImage->getImageHandle(), VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
-        device.transitionImageLayout(blendImage->getImageHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
+        device.transitionImageLayout(geometryImage->getImageHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 1);
+        device.transitionImageLayout(edgeImage->getImageHandle(), VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 1);
+        device.transitionImageLayout(blendImage->getImageHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 1);
     }
 
     VkSurfaceFormatKHR BananSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
