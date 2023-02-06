@@ -19,7 +19,7 @@ namespace Banan {
     class BananSwapChain {
     public:
 
-        static constexpr int MAX_FRAMES_IN_FLIGHT = 3;
+        static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
         BananSwapChain(BananDevice &deviceRef, VkExtent2D extent, std::shared_ptr<BananSwapChain> previous);
         ~BananSwapChain();
 
