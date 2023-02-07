@@ -325,6 +325,9 @@ namespace Banan{
 
                         objectData.isPointLight = 0;
 
+                        objectData.modelMatrix = kv.second.transform.mat4();
+                        objectData.modelMatrix = kv.second.transform.normalMatrix();
+
                         data.push_back(objectData);
                     } else {
                         GameObjectData pointLightData{glm::vec4(kv.second.transform.translation, 0), glm::vec4(kv.second.color, kv.second.pointLight->lightIntensity), glm::vec4(kv.second.transform.scale.x, -1, -1, -1)};
@@ -352,8 +355,6 @@ namespace Banan{
 
                 storageBuffers[frameIndex]->writeToBuffer(data.data());
                 storageBuffers[frameIndex]->flush();
-
-                computeSystem.compute(frameInfo);
 
                 /*for (int i = 0; i < 6; i++) {
                     bananRenderer.beginShadowRenderPass(commandBuffer);
