@@ -17,6 +17,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -89,7 +90,7 @@ namespace Banan{
 
         std::vector<std::unique_ptr<BananBuffer>> storageBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (auto & storageBuffer : storageBuffers) {
-            storageBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minStorageBufferOffsetAlignment);
+            storageBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             storageBuffer->map();
         }
 
@@ -141,8 +142,9 @@ namespace Banan{
                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .build();
 
+        ComputeSystem computeSystem{bananDevice, {globalSetLayout->getDescriptorSetLayout()}};
+
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
-        ComputeSystem computeSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
         ResolveSystem resolveSystem{bananDevice, bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()}};
 
@@ -282,7 +284,7 @@ namespace Banan{
                         }
 
                         pointLightSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
-                        computeSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
+                        computeSystem.reconstructPipeline({globalSetLayout->getDescriptorSetLayout()});
                         procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
                         resolveSystem.reconstructPipelines(bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()});
                     }
@@ -309,11 +311,15 @@ namespace Banan{
                 int frameIndex = bananRenderer.getFrameIndex();
                 BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], gameObjects};
 
+                // ok heres the plan to fix this, one descriptor has the buffer as a regular storage buffer, another has the buffer as a dynamic storage buffer, we write the buffer to both descriptors
+                // then we calculate the stuff in the comp shader, and finally we apply a execution to guarantee that the shader has finished execution before doing the actual rendering
+
                 std::vector<GameObjectData> data{};
                 data.reserve(gameObjects.size());
                 for (auto &kv : gameObjects) {
                     if (kv.second.model != nullptr) {
                         GameObjectData objectData{glm::vec4(kv.second.transform.translation, 0), glm::vec4(kv.second.transform.rotation, 0), glm::vec4(kv.second.transform.scale, 0)};
+
                         objectData.hasTexture = kv.second.model->isTextureLoaded() ? (int) kv.first : -1;
                         objectData.hasNormal = kv.second.model->isNormalsLoaded() ? (int) kv.first : -1;
                         objectData.hasHeight = kv.second.model->isHeightmapLoaded() ? (int) kv.first : -1;
@@ -323,10 +329,10 @@ namespace Banan{
                         objectData.numLayers = kv.second.parallax.numLayers;
                         objectData.parallaxmode = kv.second.parallax.parallaxmode;
 
-                        objectData.isPointLight = 0;
-
                         objectData.modelMatrix = kv.second.transform.mat4();
-                        objectData.modelMatrix = kv.second.transform.normalMatrix();
+                        objectData.normalMatrix = kv.second.transform.normalMatrix();
+
+                        objectData.isPointLight = 0;
 
                         data.push_back(objectData);
                     } else {
@@ -355,6 +361,21 @@ namespace Banan{
 
                 storageBuffers[frameIndex]->writeToBuffer(data.data());
                 storageBuffers[frameIndex]->flush();
+
+//                computeSystem.compute(frameInfo);
+
+//                // ensure compute shader finishes work (it isnt working)
+//                VkBufferMemoryBarrier barrier;
+//                barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+//                barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+//                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+//                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//                barrier.buffer = storageBuffers[frameIndex]->getBuffer();
+//                barrier.size = storageBuffers[frameIndex]->getBufferSize();
+//                barrier.offset = 0;
+//
+//                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,nullptr, 1, &barrier, 0, nullptr);
 
                 /*for (int i = 0; i < 6; i++) {
                     bananRenderer.beginShadowRenderPass(commandBuffer);
@@ -450,7 +471,7 @@ namespace Banan{
         auto floor = BananGameObject::createGameObject();
         floor.model = floorModel;
         floor.transform.translation = {0.f, .5f, 0.f};
-        floor.transform.rotation = {0.f, glm::pi<float>(), 0.0};
+        floor.transform.rotation = {0.f, glm::pi<float>(), 0.0f};
         floor.transform.scale = {3.f, 3.f, 3.f};
         floor.transform.id = (int) floor.getId();
 

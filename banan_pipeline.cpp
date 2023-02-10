@@ -48,7 +48,6 @@ namespace Banan{
 
     void BananPipeline::createComputePipeline(const std::string &computeFilepath, const PipelineConfigInfo &info) {
         assert(info.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline: no pipelineLayout provided in configInfo");
-        assert(info.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline: no renderPass provided in configInfo");
 
         auto computeCode = readFile(computeFilepath);
         createShaderModule(computeCode, &computeShaderModule);

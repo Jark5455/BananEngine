@@ -16,13 +16,13 @@ namespace Banan {
         alignas(16) glm::mat4 view{1.f};
         alignas(16) glm::mat4 inverseView{1.f};
         alignas(16) glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.25f};
-        alignas(4) int numGameObjects;
+        int numGameObjects;
     };
 
     struct GameObjectData {
-        glm::vec4 position{1.f};
-        glm::vec4 rotation{1.f};
-        glm::vec4 scale{1.f};
+        alignas(16) glm::vec4 position{1.f};
+        alignas(16) glm::vec4 rotation{1.f};
+        alignas(16) glm::vec4 scale{1.f};
 
         alignas(16) glm::mat4 modelMatrix{1.f};
         alignas(16) glm::mat4 normalMatrix{1.f};

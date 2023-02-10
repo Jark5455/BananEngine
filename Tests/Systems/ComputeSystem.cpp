@@ -7,9 +7,9 @@
 #include <stdexcept>
 
 namespace Banan {
-    ComputeSystem::ComputeSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device} {
+    ComputeSystem::ComputeSystem(BananDevice &device, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device} {
         createPipelineLayout(layouts);
-        createPipelines(renderPass);
+        createPipelines();
     }
 
     ComputeSystem::~ComputeSystem() {
@@ -28,9 +28,8 @@ namespace Banan {
         }
     }
 
-    void ComputeSystem::createPipelines(VkRenderPass renderPass) {
+    void ComputeSystem::createPipelines() {
         PipelineConfigInfo pipelineConfig{};
-        pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
         bananPipelines.push_back(std::make_shared<BananPipeline>(bananDevice, "shaders/calc_normal_mats.comp.spv", pipelineConfig));
     }
@@ -43,10 +42,10 @@ namespace Banan {
         }
     }
 
-    void ComputeSystem::reconstructPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) {
+    void ComputeSystem::reconstructPipeline(std::vector<VkDescriptorSetLayout> layouts) {
         vkDestroyPipelineLayout(bananDevice.device(), pipelineLayout, nullptr);
 
         createPipelineLayout(layouts);
-        createPipelines(renderPass);
+        createPipelines();
     }
 }
