@@ -242,7 +242,7 @@ namespace Banan {
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = bananSwapChain->getResolveRenderpass();
-        renderPassInfo.framebuffer = bananSwapChain->getResolveFramebuffer(currentFrameIndex);
+        renderPassInfo.framebuffer = bananSwapChain->getResolveFramebuffer(currentImageIndex);
 
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
