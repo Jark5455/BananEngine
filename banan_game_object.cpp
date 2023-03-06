@@ -54,7 +54,7 @@ namespace Banan {
                     translation.x,
                     translation.y,
                     translation.z,
-                    id
+                    1
                 }
         };
     }

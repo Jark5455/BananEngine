@@ -97,24 +97,23 @@ namespace Banan {
     }
 
     bool BananDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<uint32_t> descriptorCount) const {
-
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;
         allocInfo.pSetLayouts = &descriptorSetLayout;
         allocInfo.descriptorSetCount = 1;
 
-        if (!descriptorCount.empty()) {
-            VkDescriptorSetVariableDescriptorCountAllocateInfoEXT descriptorSetVariableDescriptorCountAllocateInfoExt{};
-            descriptorSetVariableDescriptorCountAllocateInfoExt.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
-            descriptorSetVariableDescriptorCountAllocateInfoExt.descriptorSetCount = descriptorCount.size();
-            descriptorSetVariableDescriptorCountAllocateInfoExt.pDescriptorCounts = descriptorCount.data();
-            allocInfo.pNext = &descriptorSetVariableDescriptorCountAllocateInfoExt;
-        }
+        VkDescriptorSetVariableDescriptorCountAllocateInfoEXT descriptorSetVariableDescriptorCountAllocateInfoExt{};
+        descriptorSetVariableDescriptorCountAllocateInfoExt.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
+        descriptorSetVariableDescriptorCountAllocateInfoExt.descriptorSetCount = descriptorCount.size();
+        descriptorSetVariableDescriptorCountAllocateInfoExt.pDescriptorCounts = descriptorCount.data();
+
+        allocInfo.pNext = descriptorCount.empty() ? nullptr : &descriptorSetVariableDescriptorCountAllocateInfoExt;
 
         if (vkAllocateDescriptorSets(bananDevice.device(), &allocInfo, &descriptor) != VK_SUCCESS) {
             return false;
         }
+
         return true;
     }
 

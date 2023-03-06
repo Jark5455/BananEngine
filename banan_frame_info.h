@@ -39,6 +39,12 @@ namespace Banan {
         int isPointLight;
     };
 
+    struct PointLightData {
+        alignas(16) glm::vec3 position{1.f};
+        alignas(16) glm::vec3 color{1.f};
+        int intensity;
+    };
+
     struct BananFrameInfo {
         int frameIndex;
         float frameTime;
