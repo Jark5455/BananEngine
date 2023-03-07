@@ -30,7 +30,7 @@ namespace Banan {
             auto &obj = kv.second;
             if (obj.model == nullptr) continue;
 
-            vkCmdPushConstants(frameInfo.commandBuffer, GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(id_t), &kv.first);
+            vkCmdPushConstants(frameInfo.commandBuffer, GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(BananGameObject::id_t), &kv.first);
 
             obj.model->bindAll(frameInfo.commandBuffer);
             obj.model->draw(frameInfo.commandBuffer);

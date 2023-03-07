@@ -1,7 +1,9 @@
 include(./.env.cmake OPTIONAL RESULT_VARIABLE LOCAL_ENV)
+include(CMakePrintHelpers)
+
 message(STATUS "Local .env.cmake: ${LOCAL_ENV}")
 
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.7)
 set(NAME BananEngine)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -103,13 +105,16 @@ if (WIN32)
     message(STATUS "CREATING BUILD FOR WINDOWS")
 
     if (USE_MINGW)
-        target_include_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/include)
-        target_link_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/lib)
+        target_include_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/include/)
+        target_include_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/include/stb/)
+        target_include_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/include/OpenEXR/)
+        target_include_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/include/Imath/)
+        target_link_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/lib/)
     endif()
 
     target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR} ${Vulkan_INCLUDE_DIRS} ${ASSIMP_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} ${GLM_PATH} ${ZLIB_INCLUDE_DIRS} ${OPENEXR_INCLUDE_DIRS})
     target_link_directories(${PROJECT_NAME} PUBLIC ${Vulkan_LIBRARIES} ${GLFW_LIB} ${OPENEXR_LIBRARIES})
-    target_link_libraries(${PROJECT_NAME} vulkan-1 ${ASSIMP_LIBRARIES} ${SDL2_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} vulkan-1 ${ASSIMP_LIBRARIES} ${SDL2_LIBRARIES} OpenEXR Imath)
 
 elseif (UNIX)
     message(STATUS "CREATING BUILD FOR UNIX")

@@ -23,7 +23,7 @@ namespace Banan {
             BananEntityManager &operator=(const BananEntityManager &) = delete;
 
             void constructGameObject(BananModel::Builder);
-            void duplicateInstance(id_t gameObjectId);
+            void duplicateInstance(BananGameObject::id_t gameObjectId);
             void generateSSBOs();
 
             std::vector<GameObjectData> getGameObjectData();
