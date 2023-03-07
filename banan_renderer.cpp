@@ -152,9 +152,9 @@ namespace Banan {
 
         std::array<VkClearValue, 4> clearValues{};
         clearValues[0].depthStencil = {1.0f, 0};
-        clearValues[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
-        clearValues[2].color = {0.0f, 0.0f, 0.0f, 1.0f};
-        clearValues[3].color = {0.1f, 0.1f, 0.1f, 1.0f};
+        clearValues[1].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[2].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[3].color = {{0.1f, 0.1f, 0.1f, 1.0f}};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -185,7 +185,7 @@ namespace Banan {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
 
-        VkClearValue clearValue = {0.0f, 0.0f};
+        VkClearValue clearValue = {{{0.0f, 0.0f}}};
 
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearValue;
@@ -216,7 +216,7 @@ namespace Banan {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
 
-        VkClearValue clearValue = {0.0f, 0.0f, 0.0f, 1.0f};
+        VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
 
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearValue;
@@ -242,12 +242,12 @@ namespace Banan {
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = bananSwapChain->getResolveRenderpass();
-        renderPassInfo.framebuffer = bananSwapChain->getResolveFramebuffer(currentImageIndex);
+        renderPassInfo.framebuffer = bananSwapChain->getResolveFramebuffer((int) currentImageIndex);
 
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
 
-        VkClearValue clearValue = {0.0f, 0.0f, 0.0f, 1.0f};
+        VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
 
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearValue;

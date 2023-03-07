@@ -57,6 +57,6 @@ namespace Banan {
 
         private:
             BananGameObject(id_t objId) : id{objId} {}
-            const id_t id;
+            id_t id;
     };
 }
