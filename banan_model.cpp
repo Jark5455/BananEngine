@@ -130,10 +130,12 @@ namespace Banan {
             stagingBuffer.map();
             stagingBuffer.writeToBuffer((void *)image.data);
 
+            VkCommandBuffer commandBuffer = bananDevice.beginSingleTimeCommands();
             textureImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, image.mipLevels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            bananDevice.transitionImageLayout(textureImage->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image.mipLevels, 1);
+            textureImage->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            bananDevice.endSingleTimeCommands(commandBuffer);
             bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), textureImage->getImageHandle(), image.width, image.height, 1);
-            bananDevice.generateMipMaps(textureImage->getImageHandle(), image.width, image.height, image.mipLevels);
+            textureImage->generateMipMaps(image.mipLevels);
 
             hasTexture = true;
         } else {
@@ -158,8 +160,10 @@ namespace Banan {
             stagingBuffer.map();
             stagingBuffer.writeToBuffer((void *)image.data);
 
+            VkCommandBuffer commandBuffer = bananDevice.beginSingleTimeCommands();
             normalImage = std::make_unique<BananImage>(bananDevice, image.width, image.height, image.mipLevels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            bananDevice.transitionImageLayout(normalImage->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image.mipLevels, 1);
+            normalImage->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            bananDevice.endSingleTimeCommands(commandBuffer);
             bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), normalImage->getImageHandle(), image.width, image.height, 1);
             bananDevice.generateMipMaps(normalImage->getImageHandle(), image.width, image.height, image.mipLevels);
 
@@ -186,8 +190,10 @@ namespace Banan {
             stagingBuffer.map();
             stagingBuffer.writeToBuffer((void *)image.data);
 
+            VkCommandBuffer commandBuffer = bananDevice.beginSingleTimeCommands();
             heightMap = std::make_unique<BananImage>(bananDevice, image.width, image.height, image.mipLevels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            bananDevice.transitionImageLayout(heightMap->getImageHandle(), format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image.mipLevels, 1);
+            heightMap->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            bananDevice.endSingleTimeCommands(commandBuffer);
             bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), heightMap->getImageHandle(), image.width, image.height, 1);
             bananDevice.generateMipMaps(heightMap->getImageHandle(), image.width, image.height, image.mipLevels);
 

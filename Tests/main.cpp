@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 
-int main(int argv, char** args) {
+int main( [[maybe_unused]] int argv, [[maybe_unused]] char** args) {
     Banan::BananEngineTest app{};
     auto logger = app.getLogger();
 

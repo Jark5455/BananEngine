@@ -316,29 +316,37 @@ namespace Banan{
                 data.reserve(gameObjects.size());
                 for (auto &kv : gameObjects) {
                     if (kv.second.model != nullptr) {
-                        GameObjectData objectData{glm::vec4(kv.second.transform.translation, 0), glm::vec4(kv.second.transform.rotation, 0), glm::vec4(kv.second.transform.scale, 0)};
-
-                        objectData.hasTexture = kv.second.model->isTextureLoaded() ? (int) kv.first : -1;
-                        objectData.hasNormal = kv.second.model->isNormalsLoaded() ? (int) kv.first : -1;
-                        objectData.hasHeight = kv.second.model->isHeightmapLoaded() ? (int) kv.first : -1;
-
-                        objectData.heightscale = kv.second.parallax.heightscale;
-                        objectData.parallaxBias = kv.second.parallax.parallaxBias;
-                        objectData.numLayers = kv.second.parallax.numLayers;
-                        objectData.parallaxmode = kv.second.parallax.parallaxmode;
-
-                        objectData.modelMatrix = kv.second.transform.mat4();
-                        objectData.normalMatrix = kv.second.transform.normalMatrix();
-
-                        objectData.isPointLight = 0;
+                        GameObjectData objectData{glm::vec4(kv.second.transform.translation, 0),
+                                                  glm::vec4(kv.second.transform.rotation,0),
+                                                  glm::vec4(kv.second.transform.scale, 0),
+                                                  kv.second.transform.mat4(),
+                                                  kv.second.transform.normalMatrix(),
+                                                  kv.second.model->isTextureLoaded() ? (int) kv.first : -1,
+                                                  kv.second.model->isNormalsLoaded() ? (int) kv.first : -1,
+                                                  kv.second.model->isHeightmapLoaded() ? (int) kv.first : -1,
+                                                  kv.second.parallax.heightscale,
+                                                  kv.second.parallax.parallaxBias,
+                                                  kv.second.parallax.numLayers,
+                                                  kv.second.parallax.parallaxmode,
+                                                  0
+                        };
 
                         data.push_back(objectData);
                     } else {
-                        GameObjectData pointLightData{glm::vec4(kv.second.transform.translation, 0), glm::vec4(kv.second.color, kv.second.pointLight->lightIntensity), glm::vec4(kv.second.transform.scale.x, -1, -1, -1)};
-                        pointLightData.hasTexture = -1;
-                        pointLightData.hasNormal = -1;
-                        pointLightData.hasHeight = -1;
-                        pointLightData.isPointLight = 1;
+                        GameObjectData pointLightData{glm::vec4(kv.second.transform.translation, 0),
+                                                      glm::vec4(kv.second.color, kv.second.pointLight->lightIntensity),
+                                                      glm::vec4(kv.second.transform.scale.x, -1, -1, -1),
+                                                      glm::mat4{1.f},
+                                                      glm::mat4{1.f},
+                                                      -1,
+                                                      -1,
+                                                      -1,
+                                                      -1,
+                                                      -1,
+                                                      -1,
+                                                      -1,
+                                                      1
+                        };
 
                         data.push_back(pointLightData);
                     }
@@ -410,19 +418,28 @@ namespace Banan{
         areaTexStagingBuffer.map();
         areaTexStagingBuffer.writeToBuffer((void *) &areaTexBytes, AREATEX_SIZE);
 
-        areaTex = std::make_unique<BananImage>(bananDevice, AREATEX_WIDTH, AREATEX_HEIGHT, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        bananDevice.transitionImageLayout(areaTex->getImageHandle(), VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
-        bananDevice.copyBufferToImage(areaTexStagingBuffer.getBuffer(), areaTex->getImageHandle(), AREATEX_WIDTH, AREATEX_HEIGHT, 1);
-        bananDevice.transitionImageLayout(areaTex->getImageHandle(), VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 1);
-
         BananBuffer searchTexStagingBuffer{bananDevice, 1, SEARCHTEX_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         searchTexStagingBuffer.map();
         searchTexStagingBuffer.writeToBuffer((void *) &searchTexBytes, SEARCHTEX_SIZE);
 
+        VkCommandBuffer commandBuffer = bananDevice.beginSingleTimeCommands();
+
+        areaTex = std::make_unique<BananImage>(bananDevice, AREATEX_WIDTH, AREATEX_HEIGHT, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        areaTex->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
         searchTex = std::make_unique<BananImage>(bananDevice, SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        bananDevice.transitionImageLayout(searchTex->getImageHandle(), VK_FORMAT_R8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
+        searchTex->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+        bananDevice.endSingleTimeCommands(commandBuffer);
+        commandBuffer = bananDevice.beginSingleTimeCommands();
+
+        bananDevice.copyBufferToImage(areaTexStagingBuffer.getBuffer(), areaTex->getImageHandle(), AREATEX_WIDTH, AREATEX_HEIGHT, 1);
         bananDevice.copyBufferToImage(searchTexStagingBuffer.getBuffer(), searchTex->getImageHandle(), SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT, 1);
-        bananDevice.transitionImageLayout(searchTex->getImageHandle(), VK_FORMAT_R8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 1);
+
+        areaTex->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        searchTex->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        bananDevice.endSingleTimeCommands(commandBuffer);
 
         BananModel::Builder vaseBuilder{};
         vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
@@ -481,7 +498,7 @@ namespace Banan{
                 {1.f, 1.f, 1.f}
         };
 
-        for (int i = 0; i < lightColors.size(); i++) {
+        for (size_t i = 0; i < lightColors.size(); i++) {
             auto pointLight = BananGameObject::makePointLight(0.5f);
             pointLight.color = lightColors[i];
             auto rotateLight = glm::rotate(glm::mat4(1.f), (static_cast<float>(i) * glm::two_pi<float>()) / static_cast<float>(lightColors.size()), {0.f, -1.f, 0.f});

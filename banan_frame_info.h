@@ -20,17 +20,17 @@ namespace Banan {
     };
 
     struct GameObjectData {
-        alignas(16) glm::vec4 position{1.f};
-        alignas(16) glm::vec4 rotation{1.f};
-        alignas(16) glm::vec4 scale{1.f};
+        alignas(16) glm::vec4 position;
+        alignas(16) glm::vec4 rotation;
+        alignas(16) glm::vec4 scale;
 
-        alignas(16) glm::mat4 modelMatrix{1.f};
-        alignas(16) glm::mat4 normalMatrix{1.f};
+        alignas(16) glm::mat4 modelMatrix;
+        alignas(16) glm::mat4 normalMatrix;
 
         int hasTexture;
         int hasNormal;
-
         int hasHeight;
+
         float heightscale;
         float parallaxBias;
         float numLayers;

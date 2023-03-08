@@ -25,6 +25,8 @@ namespace Banan {
         imageInfo.samples = numSamples;
 
         bananDevice.createImageWithInfo(imageInfo, memoryPropertyFlags, image, memory);
+        imageExtent = {width, height};
+        imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
         createTextureSampler();
         createTextureImageView();
@@ -95,8 +97,38 @@ namespace Banan {
         }
     }
 
+    void BananImage::transitionLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout) {
+        bananDevice.transitionImageLayout(commandBuffer, image, imageFormat, oldLayout, newLayout, mipLevels, 1);
+        imageLayout = newLayout;
+    }
+
+    void BananImage::generateMipMaps(uint32_t m) {
+        bananDevice.generateMipMaps(image, imageExtent.width, imageExtent.height, m);
+        mipLevels = m;
+    }
+
     VkImage BananImage::getImageHandle() {
         return image;
+    }
+
+    VkImageView BananImage::getImageView() {
+        return imageView;
+    }
+
+    VkSampler BananImage::getImageSampler() {
+        return imageSampler;
+    }
+
+    VkExtent2D BananImage::getImageExtent() {
+        return imageExtent;
+    }
+
+    VkFormat BananImage::getImageFormat() {
+        return imageFormat;
+    }
+
+    VkImageLayout BananImage::getImageLayout() {
+        return imageLayout;
     }
 
     BananCubemap::BananCubemap(BananDevice &device, uint32_t sideLength, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) : bananDevice{device}, cubemapImageFormat{format}, mipLevels{mipLevels} {

@@ -19,6 +19,14 @@ namespace Banan {
 
             VkDescriptorImageInfo descriptorInfo();
             VkImage getImageHandle();
+            VkImageView getImageView();
+            VkSampler getImageSampler();
+            VkExtent2D getImageExtent();
+            VkFormat getImageFormat();
+            VkImageLayout getImageLayout();
+
+            void transitionLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout);
+            void generateMipMaps(uint32_t mipLevels);
 
         private:
 
@@ -31,6 +39,8 @@ namespace Banan {
             VkImageView imageView;
             VkSampler imageSampler;
             VkDeviceMemory memory;
+            VkExtent2D imageExtent;
+            VkImageLayout imageLayout;
             uint32_t mipLevels;
     };
 
