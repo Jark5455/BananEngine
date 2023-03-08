@@ -252,9 +252,7 @@ namespace Banan {
         gBufferSubpass.pColorAttachments = gbufferReferences.data();
         gBufferSubpass.pDepthStencilAttachment = &depthReference;
 
-        VkAttachmentReference compositeReferences{1};
-        compositeReferences.attachment = 3;
-        compositeReferences.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference compositeReferences{3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
         std::vector<VkAttachmentReference> inputAttachments{3};
         inputAttachments[0] = depthReference;

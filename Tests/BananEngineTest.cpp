@@ -353,7 +353,7 @@ namespace Banan{
                 ubo.inverseProjection = camera.getInverseProjection();
                 ubo.numGameObjects = gameObjects.size();
 
-                pointLightSystem.update(frameInfo, ubo);
+                pointLightSystem.update(frameInfo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
 
@@ -408,7 +408,7 @@ namespace Banan{
         // SMAA Textures stuff
         BananBuffer areaTexStagingBuffer{bananDevice, 2, AREATEX_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         areaTexStagingBuffer.map();
-        areaTexStagingBuffer.writeToBuffer((void *) &areaTexBytes);
+        areaTexStagingBuffer.writeToBuffer((void *) &areaTexBytes, AREATEX_SIZE);
 
         areaTex = std::make_unique<BananImage>(bananDevice, AREATEX_WIDTH, AREATEX_HEIGHT, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         bananDevice.transitionImageLayout(areaTex->getImageHandle(), VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);
@@ -417,7 +417,7 @@ namespace Banan{
 
         BananBuffer searchTexStagingBuffer{bananDevice, 1, SEARCHTEX_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         searchTexStagingBuffer.map();
-        searchTexStagingBuffer.writeToBuffer((void *) &searchTexBytes);
+        searchTexStagingBuffer.writeToBuffer((void *) &searchTexBytes, SEARCHTEX_SIZE);
 
         searchTex = std::make_unique<BananImage>(bananDevice, SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         bananDevice.transitionImageLayout(searchTex->getImageHandle(), VK_FORMAT_R8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, 1);

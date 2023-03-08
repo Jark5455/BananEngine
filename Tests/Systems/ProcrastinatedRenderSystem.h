@@ -9,7 +9,6 @@
 #include <banan_device.h>
 #include <banan_game_object.h>
 #include <banan_frame_info.h>
-#include <banan_renderpass.h>
 
 #include <memory>
 #include <vector>
@@ -37,7 +36,6 @@ namespace Banan{
 
         BananDevice &bananDevice;
 
-        std::unique_ptr<BananRenderPass> GBufferRenderPass;
         std::unique_ptr<BananPipeline> GBufferPipeline;
         VkPipelineLayout GBufferPipelineLayout;
 

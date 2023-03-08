@@ -14,7 +14,8 @@
 #include <memory>
 #include <vector>
 
-int main();
+int main(int argv, char** args);
+
 namespace Banan{
     class BananEngineTest {
     public:

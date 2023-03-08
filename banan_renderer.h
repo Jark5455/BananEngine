@@ -8,7 +8,6 @@
 #include "banan_swap_chain.h"
 #include "banan_device.h"
 #include "banan_model.h"
-#include "banan_renderpass.h"
 
 #include <memory>
 #include <vector>

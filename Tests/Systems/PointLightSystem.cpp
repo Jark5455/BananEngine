@@ -75,8 +75,6 @@ namespace Banan{
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,sets.size(),sets.data(),0,nullptr);
 
         for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
-            auto &obj = frameInfo.gameObjects.at(it->second);
-
             vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(BananGameObject::id_t), &it->second);
             vkCmdDraw(frameInfo.commandBuffer, 6, 1, 0, 0);
         }
@@ -84,8 +82,7 @@ namespace Banan{
         vkCmdDraw(frameInfo.commandBuffer, 6, 1, 0, 0);
     }
 
-    void PointLightSystem::update(BananFrameInfo &frameInfo, GlobalUbo &ubo) {
-        int lightIndex = 0;
+    void PointLightSystem::update(BananFrameInfo &frameInfo) {
         for (auto &kv : frameInfo.gameObjects) {
             auto &obj = kv.second;
             if (obj.pointLight == nullptr) continue;

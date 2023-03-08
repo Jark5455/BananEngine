@@ -21,7 +21,7 @@ namespace Banan{
             PointLightSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
             ~PointLightSystem();
 
-            void update(BananFrameInfo &frameInfo, GlobalUbo &ubo);
+            void update(BananFrameInfo &frameInfo);
             void render(BananFrameInfo &frameInfo);
 
             void reconstructPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
