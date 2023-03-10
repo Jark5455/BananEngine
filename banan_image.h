@@ -65,6 +65,8 @@ namespace Banan {
             VkImageView cubemapImageView;
             VkSampler cubemapImageSampler;
             VkDeviceMemory memory;
+            VkExtent2D cubemapFaceExtent;
+            VkImageLayout cubemapImageLayout;
             uint32_t mipLevels;
     };
 }

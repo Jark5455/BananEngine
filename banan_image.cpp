@@ -152,6 +152,9 @@ namespace Banan {
 
         createTextureSampler();
         createTextureImageView();
+
+        cubemapImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        cubemapFaceExtent = {sideLength, sideLength};
     }
 
     BananCubemap::~BananCubemap() {

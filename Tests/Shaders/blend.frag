@@ -2,12 +2,25 @@
 
 // TODO move this to ubo also lmao
 
+#define SMAA_PRESET_ULTRA
+
+#if defined(SMAA_PRESET_LOW)
+#define SMAA_MAX_SEARCH_STEPS 4
+#elif defined(SMAA_PRESET_MEDIUM)
+#define SMAA_MAX_SEARCH_STEPS 8
+#elif defined(SMAA_PRESET_HIGH)
+#define SMAA_MAX_SEARCH_STEPS 16
+#elif defined(SMAA_PRESET_ULTRA)
+#define SMAA_MAX_SEARCH_STEPS 32
+#endif
+
+#ifndef SMAA_MAX_SEARCH_STEPS
+#define SMAA_MAX_SEARCH_STEPS 16
+#endif
+
 // Defaults
 #ifndef SMAA_THRESHOLD
 #define SMAA_THRESHOLD 0.1
-#endif
-#ifndef SMAA_MAX_SEARCH_STEPS
-#define SMAA_MAX_SEARCH_STEPS 16
 #endif
 #ifndef SMAA_MAX_SEARCH_STEPS_DIAG
 #define SMAA_MAX_SEARCH_STEPS_DIAG 8
