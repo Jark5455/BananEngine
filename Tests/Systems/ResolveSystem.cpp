@@ -1,7 +1,7 @@
 //
 // Created by yashr on 2/3/23.
 //
-
+#include <stdexcept>
 #include "ResolveSystem.h"
 
 namespace Banan {
