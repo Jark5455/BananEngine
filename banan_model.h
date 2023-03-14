@@ -62,7 +62,7 @@ namespace Banan {
         BananModel(const BananModel &) = delete;
         BananModel &operator=(const BananModel &) = delete;
 
-        static std::unique_ptr<BananModel> createModelFromFile(BananDevice &device, const std::string &filepath);
+        static std::shared_ptr<BananModel> createModelFromFile(BananDevice &device, const std::string &filepath);
 
         void bindPosition(VkCommandBuffer commandBuffer);
         void bindAll(VkCommandBuffer commandBuffer);

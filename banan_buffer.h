@@ -38,8 +38,8 @@ namespace Banan {
         VkMemoryPropertyFlags getMemoryPropertyFlags() const;
         VkDeviceSize getBufferSize() const;
 
-    private:
         static VkDeviceSize getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment);
+    private:
 
         BananDevice& bananDevice;
         void* mapped = nullptr;
