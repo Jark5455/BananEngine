@@ -24,6 +24,24 @@ namespace Banan {
     }
 
     GameObjectData& BananGameObject::getObjectData(int frameIndex) {
+
+        gameObjectData.modelMatrix = transform.mat4();
+        gameObjectData.normalMatrix = transform.normalMatrix();
+
+        auto it = std::find(gameObjectManager.textures.begin(), gameObjectManager.textures.end(), colorMap);
+        gameObjectData.textureLocation = it != gameObjectManager.textures.end() ? static_cast<int>(it - gameObjectManager.textures.begin()) : -1;
+
+        it = std::find(gameObjectManager.textures.begin(), gameObjectManager.textures.end(), normalMap);
+        gameObjectData.normalLocation = it != gameObjectManager.textures.end() ? static_cast<int>(it - gameObjectManager.textures.begin()) : -1;
+
+        it = std::find(gameObjectManager.textures.begin(), gameObjectManager.textures.end(), heightMap);
+        gameObjectData.heightLocation = it != gameObjectManager.textures.end() ? static_cast<int>(it - gameObjectManager.textures.begin()) : -1;
+
+        gameObjectData.heightscale = parallax.heightscale;
+        gameObjectData.numLayers = parallax.numLayers;
+        gameObjectData.parallaxmode = parallax.parallaxmode;
+        gameObjectData.parallaxBias = parallax.parallaxBias;
+
         return gameObjectData;
     }
 
@@ -104,19 +122,19 @@ namespace Banan {
 
         VkFormat format = stride == 16 ? VK_FORMAT_R16G16B16A16_UNORM : VK_FORMAT_R8G8B8A8_UNORM;
 
-        BananBuffer stagingBuffer{gameObjectManger.bananDevice, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+        BananBuffer stagingBuffer{gameObjectManager.bananDevice, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         stagingBuffer.map();
         stagingBuffer.writeToBuffer((void *) data);
 
-        VkCommandBuffer commandBuffer = gameObjectManger.bananDevice.beginSingleTimeCommands();
+        VkCommandBuffer commandBuffer = gameObjectManager.bananDevice.beginSingleTimeCommands();
 
-        auto image = std::make_shared<BananImage>(gameObjectManger.bananDevice, width, height, mipLevels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        auto image = std::make_shared<BananImage>(gameObjectManager.bananDevice, width, height, mipLevels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         image->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        gameObjectManger.bananDevice.endSingleTimeCommands(commandBuffer);
-        gameObjectManger.bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), image->getImageHandle(), width, height, 1);
-        gameObjectManger.bananDevice.generateMipMaps(image->getImageHandle(), width, height, mipLevels);
+        gameObjectManager.bananDevice.endSingleTimeCommands(commandBuffer);
+        gameObjectManager.bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), image->getImageHandle(), width, height, 1);
+        gameObjectManager.bananDevice.generateMipMaps(image->getImageHandle(), width, height, mipLevels);
 
-        gameObjectManger.textures.emplace_back(std::make_tuple(filepath, name, image));
+        gameObjectManager.addTexture(std::make_tuple(filepath, name, image));
 
         switch(type) {
 
@@ -147,8 +165,8 @@ namespace Banan {
     }
 
     void BananGameObject::loadModel(std::string filepath, std::string name) {
-        auto modelp = BananModel::createModelFromFile(gameObjectManger.bananDevice, filepath);
-        game
+        model = std::make_tuple(filepath, name, BananModel::createModelFromFile(gameObjectManager.bananDevice, filepath));
+        gameObjectManager.addModel(model);
     }
 
     glm::mat4 TransformComponent::mat4() {
@@ -249,8 +267,23 @@ namespace Banan {
     }
 
     void BananGameObjectManager::createUboBuffers(uint32_t objectCount) {
-        for (auto &buffer : uboBuffers) {
-            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), objectCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+        for (auto &buffer : transformBuffer) {
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(TransformComponent), objectCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            buffer->map();
+        }
+
+        for (auto &buffer : parallaxBuffer) {
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(ParallaxComponent), objectCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            buffer->map();
+        }
+
+        for (auto &buffer : pointLightBuffer) {
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(PointLightComponent), objectCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            buffer->map();
+        }
+
+        for (auto &buffer : textureBuffer) {
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(TextureComponent), objectCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
             buffer->map();
         }
     }
@@ -262,5 +295,13 @@ namespace Banan {
         }
 
         return imageInfo;
+    }
+
+    void BananGameObjectManager::addTexture(const std::tuple<std::string, std::string, std::shared_ptr<BananImage>>& tex) {
+        textures.emplace_back(tex);
+    }
+
+    void BananGameObjectManager::addModel(const std::tuple<std::string, std::string, std::shared_ptr<BananModel>>& mod) {
+        models.emplace_back(mod);
     }
 }
