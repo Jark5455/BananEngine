@@ -1,4 +1,5 @@
 include(./.env.cmake OPTIONAL RESULT_VARIABLE LOCAL_ENV)
+include(CMakePrintHelpers)
 
 message(STATUS "Local .env.cmake: ${LOCAL_ENV}")
 
@@ -6,9 +7,20 @@ cmake_minimum_required(VERSION 3.7)
 set(NAME BananEngine)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "-O3")
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -O3 -gdwarf-4")
 
 message(STATUS "using ${CMAKE_GENERATOR}")
+if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
+    if (NOT MINGW_PATH)
+        message(FATAL_ERROR "MINGW_PATH not set in .env.cmake")
+    endif()
+    set(USE_MINGW "True")
+    set(CMAKE_C_COMPILER ${MINGW_PATH}/bin/clang.exe)
+    set(CMAKE_CXX_COMPILER  ${MINGW_PATH}/bin/clang++.exe)
+endif()
 
 project(${NAME} VERSION 0.1)
 
@@ -72,7 +84,7 @@ if (DEFINED OPENEXR_PATH)
     set(OPENEXR_FOUND "True")
 else()
     find_package(OpenEXR REQUIRED)
-    message(STATUS "Found OpenEXR: ${OPENEXR_LIBRARIES}")
+    message(STATUS "Found OpenEXR: ${OpenEXR_LIBRARIES}")
 endif()
 
 if (NOT OpenEXR_FOUND)
@@ -83,12 +95,11 @@ endif()
 
 include_directories(/usr/include/stb)
 
-add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp banan_renderer.cpp banan_camera.cpp banan_buffer.cpp banan_descriptor.cpp banan_image.cpp)
+add_library(BananEngine SHARED banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp banan_renderer.cpp banan_camera.cpp banan_buffer.cpp banan_descriptor.cpp banan_image.cpp banan_entity_manager.cpp banan_entity_manager.cpp)
 add_executable(BananEngineTest Tests/BananEngineTest.cpp Tests/main.cpp Tests/Systems/SimpleRenderSystem.cpp Tests/Systems/PointLightSystem.cpp Tests/KeyboardMovementController.cpp Tests/Systems/ComputeSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.cpp Tests/Systems/ResolveSystem.cpp)
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 
-target_compile_options(BananEngine PRIVATE -Wall -Wextra -Werror -Wno-unused-parameter)
-target_compile_options(BananEngineTest PRIVATE -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter)
+set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build")
 
 if (WIN32)
     message(STATUS "CREATING BUILD FOR WINDOWS")
@@ -112,7 +123,7 @@ elseif (UNIX)
     target_link_libraries(${PROJECT_NAME} Imath OpenEXR ${Vulkan_LIBRARIES} ${ASSIMP_LIBRARIES} ${SDL2_LIBRARIES})
 endif()
 
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/shaders)
+execute_process(COMMAND mkdir ${CMAKE_BINARY_DIR}/shaders)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.frag -o ${CMAKE_BINARY_DIR}/shaders/triangle.frag.spv)
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/triangle.vert -o ${CMAKE_BINARY_DIR}/shaders/triangle.vert.spv)
 
@@ -136,4 +147,5 @@ execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/resolve.vert -o 
 
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/calc_normal_mats.comp -o ${CMAKE_BINARY_DIR}/shaders/calc_normal_mats.comp.spv)
 
-file(COPY ${CMAKE_SOURCE_DIR}/Tests/banan_assets/ DESTINATION ${CMAKE_BINARY_DIR}/banan_assets)
+execute_process(COMMAND cp -r ${CMAKE_SOURCE_DIR}/Tests/banan_assets ${CMAKE_BINARY_DIR})
+

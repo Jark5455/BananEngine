@@ -1,9 +1,6 @@
 #version 450
 
 // TODO also move this to some uniform buffer
-
-#define SMAA_PRESET_ULTRA
-
 #if defined(SMAA_PRESET_LOW)
 #define SMAA_MAX_SEARCH_STEPS 4
 #elif defined(SMAA_PRESET_MEDIUM)

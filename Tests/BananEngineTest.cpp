@@ -431,11 +431,10 @@ namespace Banan{
         searchTex->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         bananDevice.endSingleTimeCommands(commandBuffer);
+        commandBuffer = bananDevice.beginSingleTimeCommands();
 
         bananDevice.copyBufferToImage(areaTexStagingBuffer.getBuffer(), areaTex->getImageHandle(), AREATEX_WIDTH, AREATEX_HEIGHT, 1);
         bananDevice.copyBufferToImage(searchTexStagingBuffer.getBuffer(), searchTex->getImageHandle(), SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT, 1);
-
-        commandBuffer = bananDevice.beginSingleTimeCommands();
 
         areaTex->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         searchTex->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
