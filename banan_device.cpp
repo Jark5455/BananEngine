@@ -8,6 +8,7 @@
 #include <iostream>
 #include <set>
 #include <unordered_set>
+#include <algorithm>
 
 namespace Banan {
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType, [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, [[maybe_unused]] void *pUserData) {
@@ -263,11 +264,11 @@ namespace Banan {
         SDL_Vulkan_GetInstanceExtensions(window.getSDLWindow(), &extensionCount, extensionNames.data());
 
         // maintenance extension
-        extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), (const char *) VK_KHR_MAINTENANCE3_EXTENSION_NAME))
+            extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
-        if (enableValidationLayers) {
+        if (enableValidationLayers)
             extensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
 
         return extensionNames;
     }
