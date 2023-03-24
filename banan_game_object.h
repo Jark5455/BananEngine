@@ -48,12 +48,6 @@ namespace Banan {
         std::unique_ptr<BananCubemap> shadowMap;
     };
 
-    struct TextureComponent {
-        int colorLocation = -1;
-        int normalLocation = -1;
-        int heightLocation = -1;
-    };
-
     struct GameObjectData {
         alignas(16) glm::mat4 modelMatrix{1.f};
         alignas(16) glm::mat4 normalMatrix{1.f};
@@ -102,7 +96,7 @@ namespace Banan {
             BananGameObject(id_t objId, const BananGameObjectManager &manager);
 
             id_t id;
-            BananGameObjectManager &gameObjectManager;
+            const BananGameObjectManager &gameObjectManger;
             GameObjectData gameObjectData{};
 
             friend class BananGameObjectManager;
@@ -123,22 +117,17 @@ namespace Banan {
             std::vector<VkDescriptorImageInfo> getTextureInfo();
 
             void updateBuffer(int frameIndex);
+            void updateTextures();
+            void updateModels();
 
             BananGameObject::Map gameObjects{};
-
-            std::vector<std::shared_ptr<BananBuffer>> transformBuffer{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
-            std::vector<std::shared_ptr<BananBuffer>> parallaxBuffer{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
-            std::vector<std::shared_ptr<BananBuffer>> pointLightBuffer{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
-            std::vector<std::shared_ptr<BananBuffer>> textureBuffer{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
+            std::vector<std::shared_ptr<BananBuffer>> uboBuffers{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
 
             std::vector<std::tuple<std::string, std::string, std::shared_ptr<BananModel>>> models;
             std::vector<std::tuple<std::string, std::string, std::shared_ptr<BananImage>>> textures;
 
         private:
             void createUboBuffers(uint32_t count);
-
-            void addTexture(const std::tuple<std::string, std::string, std::shared_ptr<BananImage>> &t);
-            void addModel(const std::tuple<std::string, std::string, std::shared_ptr<BananModel>> &m);
 
             BananGameObject::id_t currentId = 0;
             BananDevice& bananDevice;
