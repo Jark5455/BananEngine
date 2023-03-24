@@ -110,11 +110,11 @@ namespace Banan {
         bananDevice.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
     }
 
-    std::shared_ptr<BananModel> BananModel::createModelFromFile(BananDevice &device, const std::string &filepath) {
+    std::unique_ptr<BananModel> BananModel::createModelFromFile(BananDevice &device, const std::string &filepath) {
         Builder builder{};
         builder.loadModel(filepath);
         std::cout << "Model Vertex Count: " + std::to_string(builder.misc.size());
-        return std::make_shared<BananModel>(device, builder);
+        return std::make_unique<BananModel>(device, builder);
     }
 
     void BananModel::createTextureImage(const Texture &image) {

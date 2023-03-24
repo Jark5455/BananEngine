@@ -81,7 +81,6 @@ namespace Banan {
             BananDescriptorWriter &writeBuffer(uint32_t binding, VkDescriptorBufferInfo *bufferInfo);
             BananDescriptorWriter &writeImage(uint32_t binding, VkDescriptorImageInfo *imageInfo);
             BananDescriptorWriter &writeImages(uint32_t binding, std::unordered_map<uint32_t, VkDescriptorImageInfo> &imageInfos);
-            BananDescriptorWriter &writeImages(uint32_t binding, std::vector<VkDescriptorImageInfo> &imageInfos);
 
             bool build(VkDescriptorSet &set, std::vector<uint32_t> descriptorCount);
             void overwrite(VkDescriptorSet &set);

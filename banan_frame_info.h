@@ -16,6 +16,7 @@ namespace Banan {
         alignas(16) glm::mat4 view{1.f};
         alignas(16) glm::mat4 inverseView{1.f};
         alignas(16) glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.25f};
+        int numGameObjects;
     };
 
     struct PointLightData {
@@ -29,12 +30,14 @@ namespace Banan {
         float frameTime;
         VkCommandBuffer commandBuffer;
         BananCamera &camera;
-        BananGameObjectManager &gameObjectManager;
         VkDescriptorSet globalDescriptorSet;
         VkDescriptorSet textureDescriptorSet;
+        VkDescriptorSet normalDescriptorSet;
+        VkDescriptorSet heightDescriptorSet;
         VkDescriptorSet procrastinatedDescriptorSet;
         VkDescriptorSet edgeDetectionDescriptorSet;
         VkDescriptorSet blendWeightDescriptorSet;
         VkDescriptorSet resolveDescriptorSet;
+        BananGameObject::Map &gameObjects;
     };
 }

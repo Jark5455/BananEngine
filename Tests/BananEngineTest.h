@@ -36,7 +36,6 @@ namespace Banan{
         BananWindow bananWindow{WIDTH, HEIGHT};
         BananDevice bananDevice{bananWindow};
         BananRenderer bananRenderer{bananWindow, bananDevice};
-        BananGameObjectManager bananGameObjectManager{bananDevice};
 
         std::unique_ptr<BananDescriptorPool> globalPool;
         std::unique_ptr<BananDescriptorPool> texturePool;
@@ -48,6 +47,7 @@ namespace Banan{
         std::unique_ptr<BananDescriptorPool> resolvePool;
 
         std::shared_ptr<BananLogger> bananLogger;
+        BananGameObject::Map gameObjects;
 
         std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsTextureInfo;
         std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsNormalInfo;

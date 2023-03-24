@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "banan_camera.h"
 #include "banan_swap_chain.h"
 #include "banan_model.h"
 
@@ -12,23 +11,14 @@
 
 #include <memory>
 #include <unordered_map>
-#include <tuple>
 
 namespace Banan {
-
-    enum TextureType {
-        BANAN_TEXTURE_TYPE_COLOR,
-        BANAN_TEXTURE_TYPE_NORMAL,
-        BANAN_TEXTURE_TYPE_HEIGHT,
-        BANAN_TEXTURE_TYPE_ROUGHNESS,
-        BANAN_TEXTURE_TYPE_METAL
-    };
 
     struct TransformComponent {
         glm::vec3 translation{};
         glm::vec3 scale{1.f, 1.f, 1.f};
         glm::vec3 rotation{};
-        id_t id;
+        int id;
 
         glm::mat4 mat4();
         glm::mat3 normalMatrix();
@@ -42,10 +32,7 @@ namespace Banan {
     };
 
     struct PointLightComponent {
-        glm::vec3 color{1.f};
         float lightIntensity = 1.0f;
-
-        std::unique_ptr<BananCubemap> shadowMap;
     };
 
     struct GameObjectData {
@@ -59,7 +46,7 @@ namespace Banan {
         float heightscale = 0.1;
         float parallaxBias = -0.02f;
         float numLayers = 48.0f;
-        int parallaxmode = -1;
+        int parallaxmode = 1;
     };
 
     class BananGameObjectManager;
@@ -69,35 +56,34 @@ namespace Banan {
             using id_t = unsigned int;
             using Map = std::unordered_map<id_t, BananGameObject>;
 
+            static BananGameObject createGameObject();
+            static BananGameObject makePointLight(float intensity = 10.0f, float radius = 0.1f, glm::vec3 color = glm::vec3(1.f));
+
             BananGameObject(BananGameObject &&) = default;
             BananGameObject(const BananGameObject &) = delete;
             BananGameObject &operator=(const BananGameObject &) = delete;
             BananGameObject &operator=(BananGameObject &&) = delete;
 
             id_t getId();
-            GameObjectData& getObjectData(int frameIndex);
 
+            GameObjectData getObjectData(int frameIndex);
+
+            glm::vec3 color{};
             TransformComponent transform{};
             ParallaxComponent parallax{};
 
-            void loadTexture(TextureType type, std::string filepath, std::string name);
-            void loadModel(std::string filepath, std::string name);
+            std::shared_ptr<BananImage> texture;
+            std::shared_ptr<BananImage> normal;
+            std::shared_ptr<BananImage> height;
 
-            std::tuple<std::string, std::string, std::shared_ptr<BananImage>> &colorMap;
-            std::tuple<std::string, std::string, std::shared_ptr<BananImage>> &normalMap;
-            std::tuple<std::string, std::string, std::shared_ptr<BananImage>> &heightMap;
-
-            std::tuple<std::string, std::string, std::shared_ptr<BananModel>> &model;
-
-            std::shared_ptr<PointLightComponent> pointLight = nullptr;
-            std::shared_ptr<BananCamera> camera = nullptr;
+            std::shared_ptr<BananModel> model{};
+            std::unique_ptr<PointLightComponent> pointLight = nullptr;
 
         private:
             BananGameObject(id_t objId, const BananGameObjectManager &manager);
 
             id_t id;
             const BananGameObjectManager &gameObjectManger;
-            GameObjectData gameObjectData{};
 
             friend class BananGameObjectManager;
     };
@@ -112,26 +98,14 @@ namespace Banan {
 
             BananGameObject& createGameObject();
             BananGameObject &makePointLight(float intensity = 10.f, float radius = 0.1f, glm::vec3 color = glm::vec3(1.f));
-
-            VkDescriptorBufferInfo getUboBufferInfo(int frameIndex);
-            std::vector<VkDescriptorImageInfo> getTextureInfo();
+            VkDescriptorBufferInfo getUboBufferInfo();
 
             void updateBuffer(int frameIndex);
-            void updateTextures();
-            void updateModels();
 
             BananGameObject::Map gameObjects{};
-            std::vector<std::shared_ptr<BananBuffer>> uboBuffers{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
-
-            std::vector<std::tuple<std::string, std::string, std::shared_ptr<BananModel>>> models;
-            std::vector<std::tuple<std::string, std::string, std::shared_ptr<BananImage>>> textures;
+            std::vector<std::unique_ptr<BananBuffer>> uboBuffers{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
 
         private:
-            void createUboBuffers(uint32_t count);
-
             BananGameObject::id_t currentId = 0;
-            BananDevice& bananDevice;
-
-            friend class BananGameObject;
     };
 }
