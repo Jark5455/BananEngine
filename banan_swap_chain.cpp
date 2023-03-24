@@ -302,7 +302,7 @@ namespace Banan {
         dependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependencies[2].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         dependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependencies[2].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[2].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
         dependencies[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
         // This dependency transitions the input attachment from depth attachment to shader read
@@ -311,7 +311,7 @@ namespace Banan {
         dependencies[3].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
         dependencies[3].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         dependencies[3].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[3].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[3].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
         dependencies[3].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
         // This dependency transitions the depth attachment back to write and read
@@ -319,14 +319,14 @@ namespace Banan {
         dependencies[4].dstSubpass = 2;
         dependencies[4].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         dependencies[4].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[4].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[4].srcAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
         dependencies[4].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependencies[4].dependencyFlags  = VK_DEPENDENCY_BY_REGION_BIT;
 
         dependencies[5].srcSubpass = 2;
         dependencies[5].dstSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[5].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[5].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependencies[5].dstStageMask =  VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
         dependencies[5].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependencies[5].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dependencies[5].dependencyFlags  = VK_DEPENDENCY_BY_REGION_BIT;
@@ -334,7 +334,7 @@ namespace Banan {
         dependencies[6].srcSubpass = 2;
         dependencies[6].dstSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[6].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[6].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependencies[6].dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
         dependencies[6].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         dependencies[6].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dependencies[6].dependencyFlags  = VK_DEPENDENCY_BY_REGION_BIT;
@@ -415,7 +415,7 @@ namespace Banan {
             dependencies[1].srcSubpass = 0;
             dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
             dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            dependencies[1].dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
             dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
             dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
@@ -472,7 +472,7 @@ namespace Banan {
             dependencies[1].srcSubpass = 0;
             dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
             dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            dependencies[1].dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
             dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
             dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;

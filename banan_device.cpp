@@ -65,7 +65,7 @@ namespace Banan {
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "BananEngine";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_1;
+        appInfo.apiVersion = VK_API_VERSION_1_0;
 
         VkInstanceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -205,17 +205,7 @@ namespace Banan {
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-        VkPhysicalDeviceDescriptorIndexingFeatures indexing_features = {};
-        indexing_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
-        indexing_features.pNext = nullptr;
-
-        VkPhysicalDeviceFeatures2 device_features2 = {};
-        device_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        device_features2.pNext = &indexing_features;
-
-        vkGetPhysicalDeviceFeatures2(device, &device_features2);
-
-        return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy && indexing_features.descriptorBindingPartiallyBound && indexing_features.runtimeDescriptorArray;
+        return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
     }
 
     void BananDevice::populateDebugMessengerCreateInfo(
@@ -271,6 +261,9 @@ namespace Banan {
         SDL_Vulkan_GetInstanceExtensions(window.getSDLWindow(), &extensionCount, nullptr);
         std::vector<const char *> extensionNames(extensionCount);
         SDL_Vulkan_GetInstanceExtensions(window.getSDLWindow(), &extensionCount, extensionNames.data());
+
+        // maintenance extension
+        extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
         if (enableValidationLayers) {
             extensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -715,11 +708,10 @@ namespace Banan {
     VkSampleCountFlagBits BananDevice::getMaxUsableSampleCount() {
 
         // for some reason first time queuing properties doesnt have limits idk why lmao
-        VkPhysicalDeviceProperties2 props{};
-        props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        vkGetPhysicalDeviceProperties2(physicalDevice, &props);
+        VkPhysicalDeviceProperties props{};
+        vkGetPhysicalDeviceProperties(physicalDevice, &props);
 
-        VkSampleCountFlags counts = props.properties.limits.framebufferColorSampleCounts & props.properties.limits.framebufferDepthSampleCounts;
+        VkSampleCountFlags counts = props.limits.framebufferColorSampleCounts & props.limits.framebufferDepthSampleCounts;
         if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
         if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
         if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
