@@ -334,7 +334,7 @@ namespace Banan{
                         data.push_back(objectData);
                     } else {
                         GameObjectData pointLightData{glm::vec4(kv.second.transform.translation, 0),
-                                                      glm::vec4(kv.second.color, kv.second.pointLight->lightIntensity),
+                                                      glm::vec4(kv.second.pointLight->color, kv.second.pointLight->lightIntensity),
                                                       glm::vec4(kv.second.transform.scale.x, -1, -1, -1),
                                                       glm::mat4{1.f},
                                                       glm::mat4{1.f},
@@ -500,7 +500,7 @@ namespace Banan{
 
         for (size_t i = 0; i < lightColors.size(); i++) {
             auto pointLight = BananGameObject::makePointLight(0.5f);
-            pointLight.color = lightColors[i];
+            pointLight.pointLight->color = lightColors[i];
             auto rotateLight = glm::rotate(glm::mat4(1.f), (static_cast<float>(i) * glm::two_pi<float>()) / static_cast<float>(lightColors.size()), {0.f, -1.f, 0.f});
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
             pointLight.transform.id = 0;

@@ -12,6 +12,14 @@
 
 namespace Banan {
 
+    enum TextureType {
+        BANAN_TEXTURE_TYPE_COLOR,
+        BANAN_TEXTURE_TYPE_NORMAL,
+        BANAN_TEXTURE_TYPE_HEIGHT,
+        BANAN_TEXTURE_TYPE_ROUGHNESS,
+        BANAN_TEXTURE_TYPE_METAL
+    };
+
     struct TransformComponent {
         glm::vec3 translation{};
         glm::vec3 scale{1.f, 1.f, 1.f};
@@ -31,7 +39,18 @@ namespace Banan {
 
     struct PointLightComponent {
         float lightIntensity = 1.0f;
+        glm::vec3 color{1.f};
     };
+
+    struct BananGameObjectBuilder {
+        std::string modelPath = "";
+
+        std::string albedoPath = "";
+        std::string normalPath = "";
+        std::string heightPath = "";
+    };
+
+    class BananGameObjectManager;
 
     class BananGameObject {
         public:
@@ -44,19 +63,57 @@ namespace Banan {
             BananGameObject(const BananGameObject &) = delete;
             BananGameObject &operator=(const BananGameObject &) = delete;
             BananGameObject(BananGameObject &&) = default;
-            BananGameObject &operator=(BananGameObject &&) = default;
+            BananGameObject &operator=(BananGameObject &&) = delete;
 
             id_t getId();
 
             std::shared_ptr<BananModel> model{};
-            glm::vec3 color{};
             TransformComponent transform{};
             ParallaxComponent parallax{};
+
+            uint64_t albedoRef = 0;
+            uint64_t normalRef = 0;
+            uint64_t heightRef = 0;
 
             std::unique_ptr<PointLightComponent> pointLight = nullptr;
 
         private:
-            BananGameObject(id_t objId) : id{objId} {}
+            BananGameObject(id_t objId, const BananGameObjectManager &manager);
             id_t id;
+
+            const BananGameObjectManager &gameObjectManager;
+            friend class BananGameObjectManager;
+    };
+
+    class BananGameObjectManager {
+        public:
+            BananGameObjectManager(BananDevice &device);
+
+            BananGameObjectManager(const BananGameObjectManager &) = delete;
+            BananGameObjectManager &operator=(const BananGameObjectManager &) = delete;
+            BananGameObjectManager(BananGameObjectManager &&) = default;
+            BananGameObjectManager &operator=(BananGameObjectManager &&) = delete;
+
+            BananGameObject &makeGameObject(BananGameObjectBuilder builder);
+            BananGameObject &getGameObjectAtIndex(id_t index);
+
+            void duplicateGameObject(id_t index);
+
+        private:
+            size_t loadImage(TextureType type, std::string filepath);
+            size_t loadMesh(std::string filepath);
+
+            std::unordered_map<std::string, size_t> texturealias;
+            std::vector<std::shared_ptr<BananImage>> textures;
+            std::unordered_map<std::string, size_t> modelalias;
+            std::vector<std::shared_ptr<BananModel>> models;
+
+            BananGameObject::Map gameObjects;
+            BananGameObject::id_t currentId;
+
+            BananDevice &bananDevice;
+
+
+            friend class BananGameObject;
     };
 }
