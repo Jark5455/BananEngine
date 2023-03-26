@@ -3,9 +3,19 @@
 //
 
 #include "banan_image.h"
+#include "banan_buffer.h"
 
 #include <stdexcept>
 #include <algorithm>
+#include <memory>
+#include <cassert>
+#include <thread>
+
+#include <stb_image.h>
+#include <openexr.h>
+#include <ImathBox.h>
+#include <ImfRgbaFile.h>
+#include <ImfArray.h>
 
 namespace Banan {
     BananImage::BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) : bananDevice{device}, imageFormat{format}, mipLevels{mipLevels} {
@@ -129,6 +139,106 @@ namespace Banan {
 
     VkImageLayout BananImage::getImageLayout() {
         return imageLayout;
+    }
+
+     std::shared_ptr<BananImage> BananImage::makeImageFromFilepath(BananDevice &device, const std::string &filepath) {
+        char *fileName = const_cast<char *>(filepath.c_str());
+        size_t len = strlen(fileName);
+        size_t idx = len-1;
+        for(size_t i = 0; *(fileName+i); i++) {
+            if (*(fileName+i) == '.') {
+                idx = i;
+            } else if (*(fileName + i) == '/' || *(fileName + i) == '\\') {
+                idx = len - 1;
+            }
+        }
+
+        std::string extension = std::string(fileName).substr(idx+1);
+
+        assert(
+                extension == "exr" ||
+                extension == "jpg" ||
+                extension == "jpeg" ||
+                extension == "png" &&
+                "File format not supported");
+
+        uint32_t width = 0;
+        uint32_t height = 0;
+        uint32_t stride = 0;
+        uint32_t levels = 0;
+        void *data;
+
+        if (extension == "exr") {
+            Imf::setGlobalThreadCount((int) std::thread::hardware_concurrency());
+            Imf::Array2D<Imf::Rgba> pixelBuffer = Imf::Array2D<Imf::Rgba>();
+            Imf::Array2D<Imf::Rgba> &pixelBufferRef = pixelBuffer;
+
+            Imf::RgbaInputFile in(filepath.c_str());
+            Imath::Box2i win = in.dataWindow();
+            Imath::V2i dim(win.max.x - win.min.x + 1, win.max.y - win.min.y + 1);
+
+            int dx = win.min.x;
+            int dy = win.min.y;
+
+            pixelBufferRef.resizeErase(dim.x, dim.y);
+
+            in.setFrameBuffer(&pixelBufferRef[0][0] - dx - dy * dim.x, 1, dim.x);
+            in.readPixels(win.min.y, win.max.y);
+
+            width = dim.x;
+            height = dim.y;
+            stride = 16;
+            levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, width)))) + 1;
+
+            std::vector<uint16_t> singleChannelPixelBuffer{};
+            singleChannelPixelBuffer.reserve(dim.y * dim.x);
+
+            int index = 0;
+
+            for (int y1 = 0; y1 < dim.y; y1++) {
+                for (int x1 = 0; x1 < dim.x; x1++) {
+                    singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].r.bits();
+                    singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].g.bits();
+                    singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].b.bits();
+                    singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].a.bits();
+                }
+            }
+
+            data = malloc(dim.x * dim.y * 8);
+            memcpy(data, singleChannelPixelBuffer.data(), dim.y * dim.x * 8);
+
+        } else {
+            void* otherdata = stbi_load(filepath.c_str(), (int *) &width, (int *) &height, nullptr, STBI_rgb_alpha);
+            levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, width)))) + 1;
+            stride = 8;
+
+            data = malloc(width * height * 4);
+            memcpy(data, otherdata, width * height * 4);
+
+            stbi_image_free(otherdata);
+        }
+
+        assert(width != 0 && height != 0 && data != nullptr && "something went wrong when loading textures");
+
+        uint32_t pixelCount = height * width;
+        uint32_t pixelSize = stride / 2; // stride is in bits, pixel size should be in bytes
+
+        VkFormat format = stride == 16 ? VK_FORMAT_R16G16B16A16_UNORM : VK_FORMAT_R8G8B8A8_UNORM;
+
+        BananBuffer stagingBuffer{bananDevice, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+        stagingBuffer.map();
+        stagingBuffer.writeToBuffer((void *) data);
+        free(data);
+
+        VkCommandBuffer commandBuffer = bananDevice.beginSingleTimeCommands();
+
+        auto bananImage = std::make_shared<BananImage>(bananDevice, width, height, levels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        bananImage->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        bananDevice.endSingleTimeCommands(commandBuffer);
+        bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), bananImage->getImageHandle(), width, height, 1);
+        bananDevice.generateMipMaps(bananImage->getImageHandle(), width, height, levels);
+
+        return bananImage;
     }
 
     BananCubemap::BananCubemap(BananDevice &device, uint32_t sideLength, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) : bananDevice{device}, cubemapImageFormat{format}, mipLevels{mipLevels} {

@@ -11,6 +11,9 @@
 namespace Banan {
     class BananImage {
         public:
+
+            static std::shared_ptr<BananImage> makeImageFromFilepath(BananDevice &device, const std::string &filepath);
+
             BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
             ~BananImage();
 

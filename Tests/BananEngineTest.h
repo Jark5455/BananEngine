@@ -36,6 +36,7 @@ namespace Banan{
         BananWindow bananWindow{WIDTH, HEIGHT};
         BananDevice bananDevice{bananWindow};
         BananRenderer bananRenderer{bananWindow, bananDevice};
+        BananGameObjectManager bananGameObjectManager{bananDevice};
 
         std::unique_ptr<BananDescriptorPool> globalPool;
         std::unique_ptr<BananDescriptorPool> texturePool;

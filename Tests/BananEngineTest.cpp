@@ -224,7 +224,7 @@ namespace Banan{
             resolveWriter.build(resolveDescriptorSets[i], std::vector<uint32_t> {});
         }
 
-        auto viewerObject = BananGameObject::createGameObject();
+        auto &viewerObject = bananGameObjectManager.makeVirtualGameObject();
         KeyboardMovementController cameraController{};
 
         auto currentTime = std::chrono::high_resolution_clock::now();
@@ -321,9 +321,9 @@ namespace Banan{
                                                   glm::vec4(kv.second.transform.scale, 0),
                                                   kv.second.transform.mat4(),
                                                   kv.second.transform.normalMatrix(),
-                                                  kv.second.model->isTextureLoaded() ? (int) kv.first : -1,
-                                                  kv.second.model->isNormalsLoaded() ? (int) kv.first : -1,
-                                                  kv.second.model->isHeightmapLoaded() ? (int) kv.first : -1,
+                                                  kv.second.albedoalias.empty() ? (int) kv.first : -1,
+                                                  kv.second.normalalias.empty() ? (int) kv.first : -1,
+                                                  kv.second.heightalias.empty() ? (int) kv.first : -1,
                                                   kv.second.parallax.heightscale,
                                                   kv.second.parallax.parallaxBias,
                                                   kv.second.parallax.numLayers,
@@ -441,38 +441,21 @@ namespace Banan{
 
         bananDevice.endSingleTimeCommands(commandBuffer);
 
-        BananModel::Builder vaseBuilder{};
-        vaseBuilder.loadModel("banan_assets/ceramic_vase_01_4k.blend");
-        vaseBuilder.loadTexture("banan_assets/textures/ceramic_vase_01_diff_4k.jpg");
-        vaseBuilder.loadNormals("banan_assets/textures/ceramic_vase_01_nor_gl_4k.exr");
+        BananGameObject::Builder vaseBuilder{};
+        vaseBuilder.modelPath = "banan_assets/ceramic_vase_01_4k.blend";
+        vaseBuilder.albedoPath = "banan_assets/textures/ceramic_vase_01_diff_4k.jpg";
+        vaseBuilder.normalPath = "banan_assets/textures/ceramic_vase_01_nor_gl_4k.exr";
 
-        std::shared_ptr<BananModel> vaseModel = std::make_shared<BananModel>(bananDevice, vaseBuilder);
-        auto vase = BananGameObject::createGameObject();
-        vase.model = vaseModel;
+        auto &vase = bananGameObjectManager.makeGameObject(vaseBuilder);
         vase.transform.translation = {0.f, .5f, 0.f};
         vase.transform.rotation = {-glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
-        vase.transform.id = (int) vase.getId();
-        gameObjects.emplace(vase.getId(), std::move(vase));
-
-        /*BananModel::Builder otherfloorBuilder{};
-        otherfloorBuilder.loadModel("banan_assets/obamium.blend");
-        otherfloorBuilder.loadTexture("banan_assets/textures/base.png");
-
-        std::shared_ptr<BananModel> otherfloorModel = std::make_shared<BananModel>(bananDevice, otherfloorBuilder);
-        auto otherfloor = BananGameObject::createGameObject();
-        otherfloor.model = otherfloorModel;
-        otherfloor.transform.translation = {0.f, .3f, 0.f};
-        otherfloor.transform.rotation = {glm::pi<float>() / 2.0f, 0.f, 0.f};
-        otherfloor.transform.scale = {1.f, 1.f, 1.f};
-        otherfloor.transform.id = (int) otherfloor.getId();
-        gameObjects.emplace(otherfloor.getId(), std::move(otherfloor));*/
 
         BananModel::Builder floorBuilder{};
         floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.loadTexture("banan_assets/textures/Tiles_046_basecolor.jpg");
-        floorBuilder.loadNormals("banan_assets/textures/Tiles_046_normal.exr");
-        floorBuilder.loadHeightMap("banan_assets/textures/Tiles_046_height.png");
+        floorBuilder.texture = "banan_assets/textures/Tiles_046_basecolor.jpg";
+        floorBuilder.normals = "banan_assets/textures/Tiles_046_normal.exr";
+        floorBuilder.heights = "banan_assets/textures/Tiles_046_height.png";
 
         std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
         auto floor = BananGameObject::createGameObject();

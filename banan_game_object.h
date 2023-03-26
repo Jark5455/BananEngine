@@ -11,15 +11,6 @@
 #include <unordered_map>
 
 namespace Banan {
-
-    enum TextureType {
-        BANAN_TEXTURE_TYPE_COLOR,
-        BANAN_TEXTURE_TYPE_NORMAL,
-        BANAN_TEXTURE_TYPE_HEIGHT,
-        BANAN_TEXTURE_TYPE_ROUGHNESS,
-        BANAN_TEXTURE_TYPE_METAL
-    };
-
     struct TransformComponent {
         glm::vec3 translation{};
         glm::vec3 scale{1.f, 1.f, 1.f};
@@ -42,23 +33,20 @@ namespace Banan {
         glm::vec3 color{1.f};
     };
 
-    struct BananGameObjectBuilder {
-        std::string modelPath = "";
-
-        std::string albedoPath = "";
-        std::string normalPath = "";
-        std::string heightPath = "";
-    };
-
     class BananGameObjectManager;
 
     class BananGameObject {
         public:
+
+            struct Builder {
+                std::string modelPath;
+                std::string albedoPath;
+                std::string normalPath;
+                std::string heightPath;
+            };
+
             using id_t = unsigned int;
             using Map = std::unordered_map<id_t, BananGameObject>;
-
-            static BananGameObject createGameObject();
-            static BananGameObject makePointLight(float intensity = 10.0f, float radius = 0.1f, glm::vec3 color = glm::vec3(1.f));
 
             BananGameObject(const BananGameObject &) = delete;
             BananGameObject &operator=(const BananGameObject &) = delete;
@@ -71,9 +59,9 @@ namespace Banan {
             TransformComponent transform{};
             ParallaxComponent parallax{};
 
-            uint64_t albedoRef = 0;
-            uint64_t normalRef = 0;
-            uint64_t heightRef = 0;
+            std::string albedoalias;
+            std::string normalalias;
+            std::string heightalias;
 
             std::unique_ptr<PointLightComponent> pointLight = nullptr;
 
@@ -94,14 +82,19 @@ namespace Banan {
             BananGameObjectManager(BananGameObjectManager &&) = default;
             BananGameObjectManager &operator=(BananGameObjectManager &&) = delete;
 
-            BananGameObject &makeGameObject(BananGameObjectBuilder builder);
+            BananGameObject &makeVirtualGameObject();
+            BananGameObject &makeGameObject(const BananGameObject::Builder &builder);
+            BananGameObject &makePointLight(float intensity = 10.0f, float radius = 0.1f, glm::vec3 color = glm::vec3(1.f));
+            BananGameObject &duplicateGameObject(id_t index);
+
             BananGameObject &getGameObjectAtIndex(id_t index);
 
-            void duplicateGameObject(id_t index);
+            size_t getImageIndexFromAlias(std::string alias);
+            size_t getModelIndexFromAlias(std::string alias);
 
         private:
-            size_t loadImage(TextureType type, std::string filepath);
-            size_t loadMesh(std::string filepath);
+            std::shared_ptr<BananImage> loadImage(const std::string& filepath);
+            std::shared_ptr<BananModel> loadMesh(const std::string& filepath);
 
             std::unordered_map<std::string, size_t> texturealias;
             std::vector<std::shared_ptr<BananImage>> textures;

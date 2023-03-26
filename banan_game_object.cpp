@@ -4,15 +4,7 @@
 
 #include "banan_game_object.h"
 
-#include <stb_image.h>
-
-#include <openexr.h>
-
-#include <ImathBox.h>
-#include <ImfRgbaFile.h>
-#include <ImfArray.h>
-
-#include <thread>
+#include <algorithm>
 
 namespace Banan {
     BananGameObject::BananGameObject(id_t objId, const BananGameObjectManager &manager) : gameObjectManager{manager} {
@@ -21,15 +13,6 @@ namespace Banan {
 
     BananGameObject::id_t BananGameObject::getId() {
         return id;
-    }
-
-    BananGameObject BananGameObject::makePointLight(float intensity, float radius, glm::vec3 color) {
-        BananGameObject obj = BananGameObject::createGameObject();
-        obj.pointLight->color = color;
-        obj.transform.scale.x = radius;
-        obj.pointLight = std::make_unique<PointLightComponent>();
-        obj.pointLight->lightIntensity = intensity;
-        return obj;
     }
 
     glm::mat4 TransformComponent::mat4() {
@@ -100,110 +83,112 @@ namespace Banan {
 
     }
 
-    BananGameObject &BananGameObjectManager::makeGameObject(BananGameObjectBuilder builder) {
+    BananGameObject &BananGameObjectManager::makeVirtualGameObject() {
         auto gameObject = BananGameObject{currentId++, *this};
         auto gameObjectId = gameObject.getId();
         gameObjects.emplace(gameObjectId, std::move(gameObject));
+
         return gameObjects.at(gameObjectId);
     }
 
-    size_t BananGameObjectManager::loadImage(TextureType type, std::string filepath) {char *fileName = const_cast<char *>(filepath.c_str());
-        size_t len = strlen(fileName);
-        size_t idx = len-1;
-        for(size_t i = 0; *(fileName+i); i++) {
-            if (*(fileName+i) == '.') {
-                idx = i;
-            } else if (*(fileName + i) == '/' || *(fileName + i) == '\\') {
-                idx = len - 1;
-            }
+    BananGameObject &BananGameObjectManager::makeGameObject(const BananGameObject::Builder &builder) {
+        BananGameObject &gameObject = makeVirtualGameObject();
+
+        if (!builder.modelPath.empty()) {
+            gameObject.model = loadMesh(builder.modelPath);
         }
 
-        std::string extension = std::string(fileName).substr(idx+1);
-
-        assert(
-                extension == "exr" ||
-                extension == "jpg" ||
-                extension == "jpeg" ||
-                extension == "png" &&
-                "File format not supported");
-
-        uint32_t width = 0;
-        uint32_t height = 0;
-        uint32_t stride = 0;
-        uint32_t mipLevels = 0;
-        void *data;
-
-        if (extension == "exr") {
-            Imf::setGlobalThreadCount((int) std::thread::hardware_concurrency());
-            Imf::Array2D<Imf::Rgba> pixelBuffer = Imf::Array2D<Imf::Rgba>();
-            Imf::Array2D<Imf::Rgba> &pixelBufferRef = pixelBuffer;
-
-            Imf::RgbaInputFile in(filepath.c_str());
-            Imath::Box2i win = in.dataWindow();
-            Imath::V2i dim(win.max.x - win.min.x + 1, win.max.y - win.min.y + 1);
-
-            int dx = win.min.x;
-            int dy = win.min.y;
-
-            pixelBufferRef.resizeErase(dim.x, dim.y);
-
-            in.setFrameBuffer(&pixelBufferRef[0][0] - dx - dy * dim.x, 1, dim.x);
-            in.readPixels(win.min.y, win.max.y);
-
-            width = dim.x;
-            height = dim.y;
-            stride = 16;
-            mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, width)))) + 1;
-
-            std::vector<uint16_t> singleChannelPixelBuffer{};
-            singleChannelPixelBuffer.reserve(dim.y * dim.x);
-
-            int index = 0;
-
-            for (int y1 = 0; y1 < dim.y; y1++) {
-                for (int x1 = 0; x1 < dim.x; x1++) {
-                    singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].r.bits();
-                    singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].g.bits();
-                    singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].b.bits();
-                    singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].a.bits();
-                }
-            }
-
-            data = malloc(dim.x * dim.y * 8);
-            memcpy(data, singleChannelPixelBuffer.data(), dim.y * dim.x * 8);
-
-        } else {
-            void* otherdata = stbi_load(filepath.c_str(), (int *) &width, (int *) &height, nullptr, STBI_rgb_alpha);
-            mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, width)))) + 1;
-            stride = 8;
-
-            data = malloc(width * height * 4);
-            memcpy(data, otherdata, width * height * 4);
-
-            stbi_image_free(otherdata);
+        if (!builder.albedoPath.empty()) {
+            gameObject.albedoalias = builder.albedoPath;
+            loadImage(builder.albedoPath);
         }
 
-        assert(width != 0 && height != 0 && data != nullptr && "something went wrong when loading textures");
+        if (!builder.normalPath.empty()) {
+            gameObject.normalalias = builder.normalPath;
+            loadImage(builder.normalPath);
+        }
 
-        uint32_t pixelCount = height * width;
-        uint32_t pixelSize = stride / 2; // stride is in bits, pixel size should be in bytes
+        if (!builder.heightPath.empty()) {
+            gameObject.heightalias = builder.heightPath;
+            loadImage(builder.heightPath);
+        }
 
-        VkFormat format = stride == 16 ? VK_FORMAT_R16G16B16A16_UNORM : VK_FORMAT_R8G8B8A8_UNORM;
+        return gameObject;
+    }
 
-        BananBuffer stagingBuffer{bananDevice, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
-        stagingBuffer.map();
-        stagingBuffer.writeToBuffer((void *) data);
-        free(data);
+    BananGameObject &BananGameObjectManager::makePointLight(float intensity, float radius, glm::vec3 color) {
+        auto gameObject = BananGameObject{currentId++, *this};
+        auto gameObjectId = gameObject.getId();
+        gameObjects.emplace(gameObjectId, std::move(gameObject));
 
-        VkCommandBuffer commandBuffer = bananDevice.beginSingleTimeCommands();
+        gameObjects.at(gameObjectId).pointLight = std::make_unique<PointLightComponent>();
+        gameObjects.at(gameObjectId).pointLight->color = color;
+        gameObjects.at(gameObjectId).pointLight->lightIntensity = intensity;
+        gameObjects.at(gameObjectId).transform.scale.x = radius;
+        return gameObjects.at(gameObjectId);
+    }
 
-        auto image = std::make_shared<BananImage>(bananDevice, width, height, mipLevels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        image->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        bananDevice.endSingleTimeCommands(commandBuffer);
-        bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), image->getImageHandle(), width, height, 1);
-        bananDevice.generateMipMaps(image->getImageHandle(), width, height, mipLevels);
+    std::shared_ptr<BananImage> BananGameObjectManager::loadImage(const std::string& filepath) {
+        if (texturealias.find(filepath) != texturealias.end())
+            return textures.at(texturealias.at(filepath));
 
+        auto image = BananImage::makeImageFromFilepath(bananDevice, filepath);
         textures.push_back(image);
-        return textures.size() - 1;
+        texturealias.emplace(filepath, textures.size() - 1);
+
+        return image;
+    }
+
+    std::shared_ptr<BananModel> BananGameObjectManager::loadMesh(const std::string& filepath) {
+        if (modelalias.find(filepath) != modelalias.end())
+            return models.at(modelalias.at(filepath));
+
+        auto model = BananModel::createModelFromFile(bananDevice, filepath);
+        models.push_back(model);
+        modelalias.emplace(filepath, textures.size() - 1);
+
+        return model;
+    }
+
+    BananGameObject &BananGameObjectManager::duplicateGameObject(id_t index) {
+        auto &object = getGameObjectAtIndex(index);
+
+        auto newObject = BananGameObject{currentId++, *this};
+        auto newObjectId = newObject.getId();
+        gameObjects.emplace(newObjectId, std::move(newObject));
+
+        auto &new_object = gameObjects.at(newObjectId);
+
+        if (object.pointLight != nullptr) {
+            new_object.pointLight = std::make_unique<PointLightComponent>();
+            new_object.pointLight->color = object.pointLight->color;
+            new_object.pointLight->lightIntensity = object.pointLight->lightIntensity;
+            new_object.transform.scale.x = object.transform.scale.x;
+
+            return new_object;
+        }
+
+
+        new_object.transform = object.transform;
+        new_object.parallax = object.parallax;
+
+        new_object.albedoalias = object.albedoalias;
+        new_object.normalalias = object.normalalias;
+        new_object.heightalias = object.heightalias;
+
+        new_object.model = object.model;
+        return new_object;
+    }
+
+    BananGameObject &BananGameObjectManager::getGameObjectAtIndex(id_t index) {
+        return gameObjects.at(index);
+    }
+
+    size_t BananGameObjectManager::getImageIndexFromAlias(std::string alias) {
+        return texturealias.at(alias);
+    }
+
+    size_t BananGameObjectManager::getModelIndexFromAlias(std::string alias) {
+        return modelalias.at(alias);
     }
 }
