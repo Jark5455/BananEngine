@@ -64,7 +64,9 @@ namespace Banan {
             BananDescriptorPool(const BananDescriptorPool &) = delete;
             BananDescriptorPool &operator=(const BananDescriptorPool &) = delete;
 
-            bool allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<uint32_t> descriptorCount) const;
+            bool allocateDescriptor(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<uint32_t> descriptorCount);
+            bool allocateDescriptor(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor);
+
             void freeDescriptors(std::vector<VkDescriptorSet> &descriptors) const;
             void resetPool();
 
@@ -78,11 +80,14 @@ namespace Banan {
         public:
             BananDescriptorWriter(BananDescriptorSetLayout &setLayout, BananDescriptorPool &pool);
 
-            BananDescriptorWriter &writeBuffer(uint32_t binding, VkDescriptorBufferInfo *bufferInfo);
-            BananDescriptorWriter &writeImage(uint32_t binding, VkDescriptorImageInfo *imageInfo);
-            BananDescriptorWriter &writeImages(uint32_t binding, std::unordered_map<uint32_t, VkDescriptorImageInfo> &imageInfos);
+            BananDescriptorWriter &writeBuffer(uint32_t binding, VkDescriptorBufferInfo bufferInfo);
+            BananDescriptorWriter &writeImage(uint32_t binding, VkDescriptorImageInfo imageInfo);
+            BananDescriptorWriter &writeImages(uint32_t binding, const std::unordered_map<uint32_t, VkDescriptorImageInfo>& imageInfos);
+            BananDescriptorWriter &writeImages(uint32_t binding, const std::vector<VkDescriptorImageInfo>& imageInfos);
 
             bool build(VkDescriptorSet &set, std::vector<uint32_t> descriptorCount);
+            bool build(VkDescriptorSet &set);
+
             void overwrite(VkDescriptorSet &set);
 
         private:

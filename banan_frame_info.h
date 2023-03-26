@@ -52,12 +52,10 @@ namespace Banan {
         BananCamera &camera;
         VkDescriptorSet globalDescriptorSet;
         VkDescriptorSet textureDescriptorSet;
-        VkDescriptorSet normalDescriptorSet;
-        VkDescriptorSet heightDescriptorSet;
         VkDescriptorSet procrastinatedDescriptorSet;
         VkDescriptorSet edgeDetectionDescriptorSet;
         VkDescriptorSet blendWeightDescriptorSet;
         VkDescriptorSet resolveDescriptorSet;
-        BananGameObject::Map &gameObjects;
+        BananGameObjectManager &gameObjectManager;
     };
 }

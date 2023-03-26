@@ -55,7 +55,6 @@ namespace Banan {
 
             id_t getId();
 
-            std::shared_ptr<BananModel> model{};
             TransformComponent transform{};
             ParallaxComponent parallax{};
 
@@ -63,6 +62,7 @@ namespace Banan {
             std::string normalalias;
             std::string heightalias;
 
+            std::shared_ptr<BananModel> model = nullptr;
             std::unique_ptr<PointLightComponent> pointLight = nullptr;
 
         private:
@@ -88,9 +88,18 @@ namespace Banan {
             BananGameObject &duplicateGameObject(id_t index);
 
             BananGameObject &getGameObjectAtIndex(id_t index);
+            BananGameObject::Map &getGameObjects();
 
             size_t getImageIndexFromAlias(std::string alias);
             size_t getModelIndexFromAlias(std::string alias);
+
+            size_t numTextures();
+            std::vector<VkDescriptorImageInfo> textureInfo();
+
+            BananBuffer &getBufferAtIndex(size_t index);
+
+            void updateBuffer();
+            void createBuffer();
 
         private:
             std::shared_ptr<BananImage> loadImage(const std::string& filepath);
@@ -101,11 +110,15 @@ namespace Banan {
             std::unordered_map<std::string, size_t> modelalias;
             std::vector<std::shared_ptr<BananModel>> models;
 
+            std::vector<BananBuffer> materialBuffers;
+            std::vector<BananBuffer> transformBuffers;
+            std::vector<BananBuffer> parallaxBuffers;
+            std::vector<BananBuffer> pointLightBuffers;
+
             BananGameObject::Map gameObjects;
             BananGameObject::id_t currentId;
 
             BananDevice &bananDevice;
-
 
             friend class BananGameObject;
     };

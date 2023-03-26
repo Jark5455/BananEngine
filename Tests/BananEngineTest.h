@@ -48,13 +48,6 @@ namespace Banan{
         std::unique_ptr<BananDescriptorPool> resolvePool;
 
         std::shared_ptr<BananLogger> bananLogger;
-        BananGameObject::Map gameObjects;
-
-        std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsTextureInfo;
-        std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsNormalInfo;
-        std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsHeightInfo;
-
-        std::unordered_map<uint32_t, glm::mat4> gameObjectModelMatrices;
 
         std::unique_ptr<BananImage> areaTex;
         std::unique_ptr<BananImage> searchTex;

@@ -184,11 +184,28 @@ namespace Banan {
         return gameObjects.at(index);
     }
 
+    BananGameObject::Map &BananGameObjectManager::getGameObjects() {
+        return gameObjects;
+    }
+
     size_t BananGameObjectManager::getImageIndexFromAlias(std::string alias) {
         return texturealias.at(alias);
     }
 
     size_t BananGameObjectManager::getModelIndexFromAlias(std::string alias) {
         return modelalias.at(alias);
+    }
+
+    size_t BananGameObjectManager::numTextures() {
+        return textures.size();
+    }
+
+    std::vector<VkDescriptorImageInfo> BananGameObjectManager::textureInfo() {
+        std::vector<VkDescriptorImageInfo> info{numTextures()};
+        for (size_t i = 0; i < textures.size(); i++) {
+            info[i] = textures[i]->descriptorInfo();
+        }
+
+        return info;
     }
 }

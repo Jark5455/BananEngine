@@ -39,20 +39,7 @@ namespace Banan{
         texturePool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .build();
-
-        normalPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
-                .build();
-
-        heightPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * gameObjects.size())
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * bananGameObjectManager.numTextures())
                 .build();
 
         procrastinatedPool = BananDescriptorPool::Builder(bananDevice)
@@ -60,19 +47,9 @@ namespace Banan{
                 .addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
                 .build();
 
-        edgeDetectionPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .build();
-
-        blendWeightPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
-                .build();
-
         resolvePool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 2)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 6)
                 .build();
     }
 
@@ -86,12 +63,6 @@ namespace Banan{
             uboBuffer->map();
         }
 
-        std::vector<std::unique_ptr<BananBuffer>> storageBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
-        for (auto & storageBuffer : storageBuffers) {
-            storageBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
-            storageBuffer->map();
-        }
-
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, 1)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, 1)
@@ -101,22 +72,7 @@ namespace Banan{
                 .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)
                 .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
                 .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjects.size())
-                //.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-                .build();
-
-        auto normalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)
-                .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
-                .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjects.size())
-                .build();
-
-        auto heightMapSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)
-                .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
-                .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjects.size())
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, bananGameObjectManager.numTextures())
                 .build();
 
         auto procrastinatedSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
@@ -143,15 +99,13 @@ namespace Banan{
         ComputeSystem computeSystem{bananDevice, {globalSetLayout->getDescriptorSetLayout()}};
 
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
-        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
+        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
         ResolveSystem resolveSystem{bananDevice, bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()}};
 
         BananCamera camera{};
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> textureDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
-        std::vector<VkDescriptorSet> normalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
-        std::vector<VkDescriptorSet> heightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> procrastinatedDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> edgeDetectionDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> blendWeightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
@@ -160,68 +114,34 @@ namespace Banan{
         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
 
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
-            auto bufferInfo = uboBuffers[i]->descriptorInfo();
-            writer.writeBuffer(0, &bufferInfo);
-
-            auto storageInfo = storageBuffers[i]->descriptorInfo();
-            writer.writeBuffer(1, &storageInfo);
-
-            writer.build(globalDescriptorSets[i], std::vector<uint32_t> {});
+            writer.writeBuffer(0, uboBuffers[i]->descriptorInfo());
+            writer.writeBuffer(1, bananGameObjectManager.getBufferAtIndex(i).descriptorInfo());
+            writer.build(globalDescriptorSets[i]);
 
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
             textureWriter.writeImages(0, gameObjectsTextureInfo);
-
-            textureWriter.build(textureDescriptorSets[i], std::vector<uint32_t> {static_cast<uint32_t>(gameObjectsTextureInfo.size())});
-
-            BananDescriptorWriter normalWriter = BananDescriptorWriter(*normalSetLayout, *normalPool);
-            normalWriter.writeImages(0, gameObjectsNormalInfo);
-
-            normalWriter.build(normalDescriptorSets[i], std::vector<uint32_t> {static_cast<uint32_t>(gameObjectsNormalInfo.size())});
-
-            BananDescriptorWriter heightWriter = BananDescriptorWriter(*heightMapSetLayout, *heightPool);
-            heightWriter.writeImages(0, gameObjectsHeightInfo);
-
-            heightWriter.build(heightDescriptorSets[i], std::vector<uint32_t> {static_cast<uint32_t>(gameObjectsHeightInfo.size())});
+            textureWriter.build(textureDescriptorSets[i], {(uint32_t) bananGameObjectManager.numTextures()});
 
             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
-
-            auto normalInfo = bananRenderer.getGBufferDescriptorInfo()[0];
-            auto albedoInfo = bananRenderer.getGBufferDescriptorInfo()[1];
-            auto depthInfo = bananRenderer.getGBufferDescriptorInfo()[2];
-
-            procrastinatedWriter.writeImage(0, &normalInfo);
-            procrastinatedWriter.writeImage(1, &albedoInfo);
-            procrastinatedWriter.writeImage(2, &depthInfo);
-
-            procrastinatedWriter.build(procrastinatedDescriptorSets[i], std::vector<uint32_t> {});
+            procrastinatedWriter.writeImage(0, bananRenderer.getGBufferDescriptorInfo()[0]);
+            procrastinatedWriter.writeImage(1, bananRenderer.getGBufferDescriptorInfo()[1]);
+            procrastinatedWriter.writeImage(2, bananRenderer.getGBufferDescriptorInfo()[2]);
+            procrastinatedWriter.build(procrastinatedDescriptorSets[i]);
 
             BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *edgeDetectionPool);
-
-            auto geometryInfo = bananRenderer.getGeometryDescriptorInfo();
-            auto edgeInfo = bananRenderer.getEdgeDescriptorInfo();
-            auto blendInfo = bananRenderer.getBlendWeightDescriptorInfo();
-
-            edgeDetectionWriter.writeImage(0, &geometryInfo);
-
-            edgeDetectionWriter.build(edgeDetectionDescriptorSets[i], std::vector<uint32_t> {});
+            edgeDetectionWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
+            edgeDetectionWriter.build(edgeDetectionDescriptorSets[i]);
 
             BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *blendWeightPool);
-
-            auto areaTexInfo = areaTex->descriptorInfo();
-            auto searchTexInfo = searchTex->descriptorInfo();
-
-            blendWeightWriter.writeImage(0, &edgeInfo);
-            blendWeightWriter.writeImage(1, &areaTexInfo);
-            blendWeightWriter.writeImage(2, &searchTexInfo);
-
-            blendWeightWriter.build(blendWeightDescriptorSets[i], std::vector<uint32_t> {});
+            blendWeightWriter.writeImage(0, bananRenderer.getEdgeDescriptorInfo());
+            blendWeightWriter.writeImage(1, areaTex->descriptorInfo());
+            blendWeightWriter.writeImage(2, searchTex->descriptorInfo());
+            blendWeightWriter.build(blendWeightDescriptorSets[i]);
 
             BananDescriptorWriter resolveWriter(*resolveLayout, *resolvePool);
-
-            resolveWriter.writeImage(0, &geometryInfo);
-            resolveWriter.writeImage(1, &blendInfo);
-
-            resolveWriter.build(resolveDescriptorSets[i], std::vector<uint32_t> {});
+            resolveWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
+            resolveWriter.writeImage(1, bananRenderer.getBlendWeightDescriptorInfo());
+            resolveWriter.build(resolveDescriptorSets[i]);
         }
 
         auto &viewerObject = bananGameObjectManager.makeVirtualGameObject();
@@ -241,49 +161,31 @@ namespace Banan{
                         bananRenderer.recreateSwapChain();
 
                         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
-                            BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout,*procrastinatedPool);
-
-                            auto normalInfo = bananRenderer.getGBufferDescriptorInfo()[0];
-                            auto albedoInfo = bananRenderer.getGBufferDescriptorInfo()[1];
-                            auto depthInfo = bananRenderer.getGBufferDescriptorInfo()[2];
-
-                            procrastinatedWriter.writeImage(0, &normalInfo);
-                            procrastinatedWriter.writeImage(1, &albedoInfo);
-                            procrastinatedWriter.writeImage(2, &depthInfo);
-
+                            BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
+                            procrastinatedWriter.writeImage(0, bananRenderer.getGBufferDescriptorInfo()[0]);
+                            procrastinatedWriter.writeImage(1, bananRenderer.getGBufferDescriptorInfo()[1]);
+                            procrastinatedWriter.writeImage(2, bananRenderer.getGBufferDescriptorInfo()[2]);
                             procrastinatedWriter.overwrite(procrastinatedDescriptorSets[i]);
 
                             BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *edgeDetectionPool);
-
-                            auto geometryInfo = bananRenderer.getGeometryDescriptorInfo();
-                            auto edgeInfo = bananRenderer.getEdgeDescriptorInfo();
-                            auto blendInfo = bananRenderer.getBlendWeightDescriptorInfo();
-
-                            edgeDetectionWriter.writeImage(0, &geometryInfo);
+                            edgeDetectionWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
                             edgeDetectionWriter.overwrite(edgeDetectionDescriptorSets[i]);
 
                             BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *blendWeightPool);
-
-                            auto areaTexInfo = areaTex->descriptorInfo();
-                            auto searchTexInfo = searchTex->descriptorInfo();
-
-                            blendWeightWriter.writeImage(0, &edgeInfo);
-                            blendWeightWriter.writeImage(1, &areaTexInfo);
-                            blendWeightWriter.writeImage(2, &searchTexInfo);
-
+                            blendWeightWriter.writeImage(0, bananRenderer.getEdgeDescriptorInfo());
+                            blendWeightWriter.writeImage(1, areaTex->descriptorInfo());
+                            blendWeightWriter.writeImage(2, searchTex->descriptorInfo());
                             blendWeightWriter.overwrite(blendWeightDescriptorSets[i]);
 
                             BananDescriptorWriter resolveWriter(*resolveLayout, *resolvePool);
-
-                            resolveWriter.writeImage(0, &geometryInfo);
-                            resolveWriter.writeImage(1, &blendInfo);
-
+                            resolveWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
+                            resolveWriter.writeImage(1, bananRenderer.getBlendWeightDescriptorInfo());
                             resolveWriter.overwrite(resolveDescriptorSets[i]);
                         }
 
                         pointLightSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
                         computeSystem.reconstructPipeline({globalSetLayout->getDescriptorSetLayout()});
-                        procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
+                        procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
                         resolveSystem.reconstructPipelines(bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()});
                     }
 
@@ -307,87 +209,20 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], normalDescriptorSets[frameIndex], heightDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], gameObjects};
-
-                // ok heres the plan to fix this, one descriptor has the buffer as a regular storage buffer, another has the buffer as a dynamic storage buffer, we write the buffer to both descriptors
-                // then we calculate the stuff in the comp shader, and finally we apply a execution to guarantee that the shader has finished execution before doing the actual rendering
-
-                std::vector<GameObjectData> data{};
-                data.reserve(gameObjects.size());
-                for (auto &kv : gameObjects) {
-                    if (kv.second.model != nullptr) {
-                        GameObjectData objectData{glm::vec4(kv.second.transform.translation, 0),
-                                                  glm::vec4(kv.second.transform.rotation,0),
-                                                  glm::vec4(kv.second.transform.scale, 0),
-                                                  kv.second.transform.mat4(),
-                                                  kv.second.transform.normalMatrix(),
-                                                  kv.second.albedoalias.empty() ? (int) kv.first : -1,
-                                                  kv.second.normalalias.empty() ? (int) kv.first : -1,
-                                                  kv.second.heightalias.empty() ? (int) kv.first : -1,
-                                                  kv.second.parallax.heightscale,
-                                                  kv.second.parallax.parallaxBias,
-                                                  kv.second.parallax.numLayers,
-                                                  kv.second.parallax.parallaxmode,
-                                                  0
-                        };
-
-                        data.push_back(objectData);
-                    } else {
-                        GameObjectData pointLightData{glm::vec4(kv.second.transform.translation, 0),
-                                                      glm::vec4(kv.second.pointLight->color, kv.second.pointLight->lightIntensity),
-                                                      glm::vec4(kv.second.transform.scale.x, -1, -1, -1),
-                                                      glm::mat4{1.f},
-                                                      glm::mat4{1.f},
-                                                      -1,
-                                                      -1,
-                                                      -1,
-                                                      -1,
-                                                      -1,
-                                                      -1,
-                                                      -1,
-                                                      1
-                        };
-
-                        data.push_back(pointLightData);
-                    }
-                }
-
-                std::reverse(data.begin(), data.end());
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], bananGameObjectManager};
 
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();
                 ubo.view = camera.getView();
                 ubo.inverseView = camera.getInverseView();
                 ubo.inverseProjection = camera.getInverseProjection();
-                ubo.numGameObjects = gameObjects.size();
+                ubo.numGameObjects = (int) bananGameObjectManager.getGameObjects().size();
 
                 pointLightSystem.update(frameInfo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
 
-                storageBuffers[frameIndex]->writeToBuffer(data.data());
-                storageBuffers[frameIndex]->flush();
-
-//                computeSystem.compute(frameInfo);
-
-//                // ensure compute shader finishes work (it isnt working)
-//                VkBufferMemoryBarrier barrier;
-//                barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-//                barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-//                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-//                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-//                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-//                barrier.buffer = storageBuffers[frameIndex]->getBuffer();
-//                barrier.size = storageBuffers[frameIndex]->getBufferSize();
-//                barrier.offset = 0;
-//
-//                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,nullptr, 1, &barrier, 0, nullptr);
-
-                /*for (int i = 0; i < 6; i++) {
-                    bananRenderer.beginShadowRenderPass(commandBuffer);
-                    shadowSystem.render(frameInfo, i);
-                    bananRenderer.endShadowRenderPass(commandBuffer, i);
-                }*/
+                bananGameObjectManager.updateBuffer();
 
                 bananRenderer.beginGeometryRenderPass(commandBuffer);
                 procrastinatedRenderSystem.calculateGBuffer(frameInfo);
@@ -451,15 +286,13 @@ namespace Banan{
         vase.transform.rotation = {-glm::pi<float>() / 2.0f, 0.f, 0.0f};
         vase.transform.scale = {3.f, 3.f, 3.f};
 
-        BananModel::Builder floorBuilder{};
-        floorBuilder.loadModel("banan_assets/quad.obj");
-        floorBuilder.texture = "banan_assets/textures/Tiles_046_basecolor.jpg";
-        floorBuilder.normals = "banan_assets/textures/Tiles_046_normal.exr";
-        floorBuilder.heights = "banan_assets/textures/Tiles_046_height.png";
+        BananGameObject::Builder floorBuilder{};
+        floorBuilder.modelPath = "banan_assets/quad.obj";
+        floorBuilder.albedoPath = "banan_assets/textures/Tiles_046_basecolor.jpg";
+        floorBuilder.normalPath = "banan_assets/textures/Tiles_046_normal.exr";
+        floorBuilder.heightPath = "banan_assets/textures/Tiles_046_height.png";
 
-        std::shared_ptr<BananModel> floorModel = std::make_shared<BananModel>(bananDevice, floorBuilder);
-        auto floor = BananGameObject::createGameObject();
-        floor.model = floorModel;
+        auto &floor = bananGameObjectManager.makeGameObject(floorBuilder);
         floor.transform.translation = {0.f, .5f, 0.f};
         floor.transform.rotation = {0.f, glm::pi<float>(), 0.0f};
         floor.transform.scale = {3.f, 3.f, 3.f};
@@ -469,8 +302,6 @@ namespace Banan{
         floor.parallax.parallaxBias = -0.02f;
         floor.parallax.numLayers = 48.0f;
         floor.parallax.parallaxmode = 1;
-
-        gameObjects.emplace(floor.getId(), std::move(floor));
 
         std::vector<glm::vec3> lightColors{
                 {1.f, .1f, .1f},
@@ -482,7 +313,7 @@ namespace Banan{
         };
 
         for (size_t i = 0; i < lightColors.size(); i++) {
-            auto pointLight = BananGameObject::makePointLight(0.5f);
+            auto &pointLight = bananGameObjectManager.makePointLight();
             pointLight.pointLight->color = lightColors[i];
             auto rotateLight = glm::rotate(glm::mat4(1.f), (static_cast<float>(i) * glm::two_pi<float>()) / static_cast<float>(lightColors.size()), {0.f, -1.f, 0.f});
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
@@ -492,25 +323,6 @@ namespace Banan{
             pointLight.parallax.parallaxBias = -1;
             pointLight.parallax.numLayers = -1;
             pointLight.parallax.parallaxmode = -1;
-
-            gameObjects.emplace(pointLight.getId(), std::move(pointLight));
-        }
-
-        for (auto &kv : gameObjects)
-        {
-            if (kv.second.model != nullptr) {
-                if (kv.second.model->isTextureLoaded()) {
-                    gameObjectsTextureInfo.emplace(kv.first, kv.second.model->getDescriptorTextureImageInfo());
-                }
-
-                if (kv.second.model->isNormalsLoaded()) {
-                    gameObjectsNormalInfo.emplace(kv.first, kv.second.model->getDescriptorNormalImageInfo());
-                }
-
-                if (kv.second.model->isHeightmapLoaded()) {
-                    gameObjectsHeightInfo.emplace(kv.first, kv.second.model->getDescriptorHeightMapInfo());
-                }
-            }
         }
     }
 
