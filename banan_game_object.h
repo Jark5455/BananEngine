@@ -5,6 +5,8 @@
 #pragma once
 
 #include "banan_model.h"
+#include "banan_swap_chain.h"
+#include "banan_descriptor.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
@@ -15,10 +17,14 @@ namespace Banan {
         glm::vec3 translation{};
         glm::vec3 scale{1.f, 1.f, 1.f};
         glm::vec3 rotation{};
-        int id;
 
         glm::mat4 mat4();
         glm::mat3 normalMatrix();
+    };
+
+    struct TransformBuffer {
+        glm::mat4 modelMatrix{1.f};
+        glm::mat4 normalMatrix{1.f};
     };
 
     struct ParallaxComponent {
@@ -31,6 +37,21 @@ namespace Banan {
     struct PointLightComponent {
         float lightIntensity = 1.0f;
         glm::vec3 color{1.f};
+    };
+
+    struct GameObjectData {
+        int albedoTexture = -1;
+        int normalTexture = -1;
+        int heightTexture = -1;
+
+        int transform = 0;
+        uint64_t transformRef = 0;
+
+        int parallax = 0;
+        uint64_t parallaxRef = 0;
+
+        int pointLight = 0;
+        uint64_t pointLightRef = 0;
     };
 
     class BananGameObjectManager;
@@ -57,6 +78,11 @@ namespace Banan {
 
             TransformComponent transform{};
             ParallaxComponent parallax{};
+
+            uint64_t materialBufferRef;
+            uint64_t transformBufferRef;
+            uint64_t parallaxBufferRef;
+            uint64_t pointLightBufferRef;
 
             std::string albedoalias;
             std::string normalalias;
@@ -96,10 +122,15 @@ namespace Banan {
             size_t numTextures();
             std::vector<VkDescriptorImageInfo> textureInfo();
 
-            BananBuffer &getBufferAtIndex(size_t index);
+            VkDescriptorSetLayout getGameObjectSetLayout();
+            VkDescriptorSetLayout getTextureSetLayout();
+
+            VkDescriptorSet getGameObjectDescriptorSet(int frameIndex);
+            VkDescriptorSet getTextureDescriptorSet(int frameIndex);
 
             void updateBuffer();
-            void createBuffer();
+            void createBuffers();
+            void buildDescriptors();
 
         private:
             std::shared_ptr<BananImage> loadImage(const std::string& filepath);
@@ -110,13 +141,21 @@ namespace Banan {
             std::unordered_map<std::string, size_t> modelalias;
             std::vector<std::shared_ptr<BananModel>> models;
 
-            std::vector<BananBuffer> materialBuffers;
-            std::vector<BananBuffer> transformBuffers;
-            std::vector<BananBuffer> parallaxBuffers;
-            std::vector<BananBuffer> pointLightBuffers;
+            std::vector<std::unique_ptr<BananBuffer>> gameObjectDataBuffers{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
+            std::vector<std::unique_ptr<BananBuffer>> transformBuffers{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
+            std::vector<std::unique_ptr<BananBuffer>> parallaxBuffers{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
+            std::vector<std::unique_ptr<BananBuffer>> pointLightBuffers{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
 
             BananGameObject::Map gameObjects;
             BananGameObject::id_t currentId;
+
+            std::unique_ptr<BananDescriptorPool> gameObjectPool;
+
+            std::vector<VkDescriptorSet> gameObjectDataDescriptorSets{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
+            std::vector<VkDescriptorSet> textureDescriptorSets{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
+
+            std::unique_ptr<BananDescriptorSetLayout> gameObjectDataSetLayout = nullptr;
+            std::unique_ptr<BananDescriptorSetLayout> textureSetLayout = nullptr;
 
             BananDevice &bananDevice;
 

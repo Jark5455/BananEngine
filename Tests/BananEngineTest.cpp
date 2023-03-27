@@ -65,7 +65,6 @@ namespace Banan{
 
         auto globalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, 1)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, 1)
                 .build();
 
         auto textureSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
@@ -115,11 +114,10 @@ namespace Banan{
 
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
             writer.writeBuffer(0, uboBuffers[i]->descriptorInfo());
-            writer.writeBuffer(1, bananGameObjectManager.getBufferAtIndex(i).descriptorInfo());
             writer.build(globalDescriptorSets[i]);
 
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
-            textureWriter.writeImages(0, gameObjectsTextureInfo);
+            textureWriter.writeImages(0, bananGameObjectManager.textureInfo());
             textureWriter.build(textureDescriptorSets[i], {(uint32_t) bananGameObjectManager.numTextures()});
 
             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
@@ -296,7 +294,6 @@ namespace Banan{
         floor.transform.translation = {0.f, .5f, 0.f};
         floor.transform.rotation = {0.f, glm::pi<float>(), 0.0f};
         floor.transform.scale = {3.f, 3.f, 3.f};
-        floor.transform.id = (int) floor.getId();
 
         floor.parallax.heightscale = 0.1;
         floor.parallax.parallaxBias = -0.02f;
@@ -317,13 +314,9 @@ namespace Banan{
             pointLight.pointLight->color = lightColors[i];
             auto rotateLight = glm::rotate(glm::mat4(1.f), (static_cast<float>(i) * glm::two_pi<float>()) / static_cast<float>(lightColors.size()), {0.f, -1.f, 0.f});
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
-            pointLight.transform.id = 0;
-
-            pointLight.parallax.heightscale = -1;
-            pointLight.parallax.parallaxBias = -1;
-            pointLight.parallax.numLayers = -1;
-            pointLight.parallax.parallaxmode = -1;
         }
+
+        bananGameObjectManager.buildDescriptors();
     }
 
     std::shared_ptr<BananLogger> BananEngineTest::getLogger() {

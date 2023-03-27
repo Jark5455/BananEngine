@@ -83,6 +83,49 @@ namespace Banan {
 
     }
 
+    void BananGameObjectManager::buildDescriptors() {
+        gameObjectPool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * numTextures())
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
+                .build();
+
+        textureSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, numTextures())
+                .build();
+
+        gameObjectDataSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .build();
+    }
+
+    void BananGameObjectManager::createBuffers() {
+        for (auto& buffer : gameObjectDataBuffers) {
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+        }
+
+        for (auto& buffer : transformBuffers) {
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(TransformBuffer), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+        }
+
+        for (auto& buffer : parallaxBuffers) {
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(ParallaxComponent), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+        }
+
+        for (auto& buffer : pointLightBuffers) {
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(PointLightComponent), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+        }
+    }
+
     BananGameObject &BananGameObjectManager::makeVirtualGameObject() {
         auto gameObject = BananGameObject{currentId++, *this};
         auto gameObjectId = gameObject.getId();
@@ -180,6 +223,15 @@ namespace Banan {
         return new_object;
     }
 
+    std::vector<VkDescriptorImageInfo> BananGameObjectManager::textureInfo() {
+        std::vector<VkDescriptorImageInfo> info{numTextures()};
+        for (size_t i = 0; i < textures.size(); i++) {
+            info[i] = textures[i]->descriptorInfo();
+        }
+
+        return info;
+    }
+
     BananGameObject &BananGameObjectManager::getGameObjectAtIndex(id_t index) {
         return gameObjects.at(index);
     }
@@ -200,12 +252,19 @@ namespace Banan {
         return textures.size();
     }
 
-    std::vector<VkDescriptorImageInfo> BananGameObjectManager::textureInfo() {
-        std::vector<VkDescriptorImageInfo> info{numTextures()};
-        for (size_t i = 0; i < textures.size(); i++) {
-            info[i] = textures[i]->descriptorInfo();
-        }
+    VkDescriptorSetLayout BananGameObjectManager::getGameObjectSetLayout() {
+        return gameObjectDataSetLayout->getDescriptorSetLayout();
+    }
 
-        return info;
+    VkDescriptorSetLayout BananGameObjectManager::getTextureSetLayout() {
+        return textureSetLayout->getDescriptorSetLayout();
+    }
+
+    VkDescriptorSet BananGameObjectManager::getGameObjectDescriptorSet(int frameIndex) {
+        return gameObjectDataDescriptorSets[frameIndex];
+    }
+
+    VkDescriptorSet BananGameObjectManager::getTextureDescriptorSet(int frameIndex) {
+        return textureDescriptorSets[frameIndex];
     }
 }
