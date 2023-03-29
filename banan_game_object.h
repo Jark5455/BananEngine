@@ -23,8 +23,8 @@ namespace Banan {
     };
 
     struct TransformBuffer {
-        glm::mat4 modelMatrix{1.f};
-        glm::mat4 normalMatrix{1.f};
+        alignas(16) glm::mat4 modelMatrix{1.f};
+        alignas(16) glm::mat4 normalMatrix{1.f};
     };
 
     struct ParallaxComponent {
@@ -35,8 +35,8 @@ namespace Banan {
     };
 
     struct PointLightComponent {
+        alignas(16) glm::vec3 color{1.f};
         float lightIntensity = 1.0f;
-        glm::vec3 color{1.f};
     };
 
     struct GameObjectData {
@@ -112,6 +112,7 @@ namespace Banan {
             BananGameObject &makeGameObject(const BananGameObject::Builder &builder);
             BananGameObject &makePointLight(float intensity = 10.0f, float radius = 0.1f, glm::vec3 color = glm::vec3(1.f));
             BananGameObject &duplicateGameObject(id_t index);
+            BananGameObject &copyGameObject(id_t indexOld, id_t indexNew);
 
             BananGameObject &getGameObjectAtIndex(id_t index);
             BananGameObject::Map &getGameObjects();
@@ -125,10 +126,10 @@ namespace Banan {
             VkDescriptorSetLayout getGameObjectSetLayout();
             VkDescriptorSetLayout getTextureSetLayout();
 
-            VkDescriptorSet getGameObjectDescriptorSet(int frameIndex);
-            VkDescriptorSet getTextureDescriptorSet(int frameIndex);
+            VkDescriptorSet &getGameObjectDescriptorSet(int frameIndex);
+            VkDescriptorSet &getTextureDescriptorSet(int frameIndex);
 
-            void updateBuffer();
+            void updateBuffers(size_t frameIndex);
             void createBuffers();
             void buildDescriptors();
 

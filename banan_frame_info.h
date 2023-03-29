@@ -32,6 +32,7 @@ namespace Banan {
         BananCamera &camera;
         VkDescriptorSet globalDescriptorSet;
         VkDescriptorSet textureDescriptorSet;
+        VkDescriptorSet gameObjectDescriptorSet;
         VkDescriptorSet procrastinatedDescriptorSet;
         VkDescriptorSet edgeDetectionDescriptorSet;
         VkDescriptorSet blendWeightDescriptorSet;

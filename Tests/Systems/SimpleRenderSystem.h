@@ -13,11 +13,13 @@
 #include <vector>
 
 namespace Banan{
+
     class SimpleRenderSystem {
         public:
             SimpleRenderSystem(const SimpleRenderSystem &) = delete;
             SimpleRenderSystem &operator=(const SimpleRenderSystem &) = delete;
 
+            [[deprecated("This system is no longer supported due to inefficiency, use procrastinated rendering instead")]]
             SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
             ~SimpleRenderSystem();
 

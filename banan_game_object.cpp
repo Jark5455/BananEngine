@@ -87,9 +87,8 @@ namespace Banan {
         gameObjectPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * numTextures())
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numTextures())
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
                 .build();
 
         textureSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
@@ -100,29 +99,103 @@ namespace Banan {
                 .build();
 
         gameObjectDataSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
-                .addBinding(2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
-                .addBinding(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .build();
     }
 
     void BananGameObjectManager::createBuffers() {
         for (auto& buffer : gameObjectDataBuffers) {
-            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+        }
+
+        //TODO replace this, counts are inefficient
+
+        size_t transformCount = 0;
+        size_t parallaxCount = 0;
+        size_t pointLightCount = 0;
+
+        for (auto &kv : gameObjects) {
+            if (kv.second.model != nullptr) transformCount++;
+            if (kv.second.pointLight != nullptr) pointLightCount++;
+            if (kv.second.parallax.parallaxmode != -1) parallaxCount++;
         }
 
         for (auto& buffer : transformBuffers) {
-            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(TransformBuffer), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(TransformBuffer), transformCount, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+            buffer->map();
         }
 
         for (auto& buffer : parallaxBuffers) {
-            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(ParallaxComponent), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(ParallaxComponent), parallaxCount, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+            buffer->map();
         }
 
         for (auto& buffer : pointLightBuffers) {
-            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(PointLightComponent), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(PointLightComponent), pointLightCount, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+            buffer->map();
+        }
+    }
+
+    void BananGameObjectManager::updateBuffers(size_t frameIndex) {
+        VkBufferDeviceAddressInfo address_info{};
+        address_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+
+        address_info.buffer = transformBuffers[frameIndex]->getBuffer();
+        uint64_t transformBufferAddr = vkGetBufferDeviceAddress(bananDevice.device(), &address_info);
+        size_t transformCount = 0;
+
+        address_info.buffer = parallaxBuffers[frameIndex]->getBuffer();
+        uint64_t parallaxBufferAddr = vkGetBufferDeviceAddress(bananDevice.device(), &address_info);
+        size_t parallaxCount = 0;
+
+        address_info.buffer = pointLightBuffers[frameIndex]->getBuffer();
+        uint64_t pointLightBufferAddr = vkGetBufferDeviceAddress(bananDevice.device(), &address_info);
+        size_t pointLightCount = 0;
+
+        for (auto &kv : gameObjects) {
+            GameObjectData data{};
+
+            if (kv.second.model != nullptr) {
+                data.transform = 1;
+                data.transformRef = transformBufferAddr + (transformCount * sizeof(TransformBuffer));
+
+                TransformBuffer transform{};
+                transform.modelMatrix = kv.second.transform.mat4();
+                transform.normalMatrix = kv.second.transform.normalMatrix();
+
+                assert(transformCount < transformBuffers[frameIndex]->getInstanceCount() && "ubo too small");
+                transformBuffers[frameIndex]->writeToIndex(&transform, transformCount++);
+            }
+
+            if (kv.second.pointLight != nullptr) {
+                data.pointLight = 1;
+                data.pointLightRef = pointLightBufferAddr + (pointLightCount * sizeof(PointLightComponent));
+
+                assert(pointLightCount < pointLightBuffers[frameIndex]->getInstanceCount() && "ubo too small");
+                pointLightBuffers[frameIndex]->writeToIndex(kv.second.pointLight.get(), pointLightCount++);
+            }
+
+            if (kv.second.parallax.parallaxmode != -1) {
+                data.parallax = 1;
+                data.parallaxRef = parallaxBufferAddr + (parallaxCount * sizeof(ParallaxComponent));
+
+                assert(parallaxCount < parallaxBuffers[frameIndex]->getInstanceCount() && "ubo too small");
+                parallaxBuffers[frameIndex]->writeToIndex(&kv.second.parallax, parallaxCount++);
+            }
+
+            if (!kv.second.albedoalias.empty() && texturealias.contains(kv.second.albedoalias)) {
+                data.albedoTexture = (int) texturealias.at(kv.second.albedoalias);
+            }
+
+            if (!kv.second.normalalias.empty() && texturealias.contains(kv.second.normalalias)) {
+                data.normalTexture = (int) texturealias.at(kv.second.normalalias);
+            }
+
+            if (!kv.second.heightalias.empty() && texturealias.contains(kv.second.heightalias)) {
+                data.heightTexture = (int) texturealias.at(kv.second.heightalias);
+            }
+
+            gameObjectDataBuffers[frameIndex]->writeToIndex(&data, kv.first);
         }
     }
 
@@ -130,6 +203,16 @@ namespace Banan {
         auto gameObject = BananGameObject{currentId++, *this};
         auto gameObjectId = gameObject.getId();
         gameObjects.emplace(gameObjectId, std::move(gameObject));
+
+        // recreate buffers if not correct size, use sparingly, very expensive
+        // instead of using this, I would strongly recommend pre allocating a size of "virtual game objects" and assigning values to those virtual game objeect when they are used
+        for (auto &buffer : gameObjectDataBuffers) {
+            if (buffer != nullptr) {
+                if (buffer->getInstanceCount() < gameObjects.size()) {
+                    createBuffers();
+                }
+            }
+        }
 
         return gameObjects.at(gameObjectId);
     }
@@ -193,14 +276,9 @@ namespace Banan {
         return model;
     }
 
-    BananGameObject &BananGameObjectManager::duplicateGameObject(id_t index) {
-        auto &object = getGameObjectAtIndex(index);
-
-        auto newObject = BananGameObject{currentId++, *this};
-        auto newObjectId = newObject.getId();
-        gameObjects.emplace(newObjectId, std::move(newObject));
-
-        auto &new_object = gameObjects.at(newObjectId);
+    BananGameObject &BananGameObjectManager::copyGameObject(id_t indexOld, id_t indexNew) {
+        auto &object = getGameObjectAtIndex(indexOld);
+        auto &new_object = getGameObjectAtIndex(indexNew);
 
         if (object.pointLight != nullptr) {
             new_object.pointLight = std::make_unique<PointLightComponent>();
@@ -221,6 +299,13 @@ namespace Banan {
 
         new_object.model = object.model;
         return new_object;
+    }
+
+    BananGameObject &BananGameObjectManager::duplicateGameObject(id_t index) {
+        auto &object = getGameObjectAtIndex(index);
+        auto &new_object = makeVirtualGameObject();
+
+        copyGameObject(index, new_object.getId());
     }
 
     std::vector<VkDescriptorImageInfo> BananGameObjectManager::textureInfo() {
@@ -260,11 +345,11 @@ namespace Banan {
         return textureSetLayout->getDescriptorSetLayout();
     }
 
-    VkDescriptorSet BananGameObjectManager::getGameObjectDescriptorSet(int frameIndex) {
+    VkDescriptorSet &BananGameObjectManager::getGameObjectDescriptorSet(int frameIndex) {
         return gameObjectDataDescriptorSets[frameIndex];
     }
 
-    VkDescriptorSet BananGameObjectManager::getTextureDescriptorSet(int frameIndex) {
+    VkDescriptorSet &BananGameObjectManager::getTextureDescriptorSet(int frameIndex) {
         return textureDescriptorSets[frameIndex];
     }
 }

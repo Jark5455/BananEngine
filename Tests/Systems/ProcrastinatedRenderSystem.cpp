@@ -22,15 +22,13 @@ namespace Banan {
 
     void ProcrastinatedRenderSystem::calculateGBuffer(BananFrameInfo &frameInfo) {
         GBufferPipeline->bind(frameInfo.commandBuffer);
-        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.textureDescriptorSet, frameInfo.normalDescriptorSet, frameInfo.heightDescriptorSet};
+        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet, frameInfo.textureDescriptorSet};
 
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,GBufferPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
 
-        for (auto &kv : frameInfo.gameObjects) {
+        for (auto &kv : frameInfo.gameObjectManager.getGameObjects()) {
             auto &obj = kv.second;
             if (obj.model == nullptr) continue;
-
-            vkCmdPushConstants(frameInfo.commandBuffer, GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(BananGameObject::id_t), &kv.first);
 
             obj.model->bindAll(frameInfo.commandBuffer);
             obj.model->draw(frameInfo.commandBuffer);
@@ -106,8 +104,8 @@ namespace Banan {
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
         pipelineLayoutInfo.pSetLayouts = layouts.data();
-        pipelineLayoutInfo.pushConstantRangeCount = 1;
-        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+        pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineLayoutInfo.pPushConstantRanges = nullptr;
         if (vkCreatePipelineLayout(bananDevice.device(), &pipelineLayoutInfo, nullptr, &GBufferPipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }

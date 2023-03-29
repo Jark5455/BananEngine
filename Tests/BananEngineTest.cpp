@@ -104,7 +104,6 @@ namespace Banan{
         BananCamera camera{};
 
         std::vector<VkDescriptorSet> globalDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
-        std::vector<VkDescriptorSet> textureDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> procrastinatedDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> edgeDetectionDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> blendWeightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
@@ -118,7 +117,7 @@ namespace Banan{
 
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
             textureWriter.writeImages(0, bananGameObjectManager.textureInfo());
-            textureWriter.build(textureDescriptorSets[i], {(uint32_t) bananGameObjectManager.numTextures()});
+            textureWriter.build(bananGameObjectManager.getTextureDescriptorSet(i), {(uint32_t) bananGameObjectManager.numTextures()});
 
             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
             procrastinatedWriter.writeImage(0, bananRenderer.getGBufferDescriptorInfo()[0]);
@@ -207,7 +206,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], textureDescriptorSets[frameIndex], procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], bananGameObjectManager};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], bananGameObjectManager.getTextureDescriptorSet(frameIndex), bananGameObjectManager.getGameObjectDescriptorSet(frameIndex), procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], bananGameObjectManager};
 
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();
@@ -220,7 +219,7 @@ namespace Banan{
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);
                 uboBuffers[frameIndex]->flush();
 
-                bananGameObjectManager.updateBuffer();
+                bananGameObjectManager.updateBuffers(frameIndex);
 
                 bananRenderer.beginGeometryRenderPass(commandBuffer);
                 procrastinatedRenderSystem.calculateGBuffer(frameInfo);
@@ -317,6 +316,7 @@ namespace Banan{
         }
 
         bananGameObjectManager.buildDescriptors();
+        bananGameObjectManager.createBuffers();
     }
 
     std::shared_ptr<BananLogger> BananEngineTest::getLogger() {

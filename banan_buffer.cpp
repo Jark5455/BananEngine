@@ -75,19 +75,19 @@ namespace Banan {
         return VkDescriptorBufferInfo{buffer, offset,size};
     }
 
-    void BananBuffer::writeToIndex(void *data, int index) {
+    void BananBuffer::writeToIndex(void *data, size_t index) {
         writeToBuffer(data, instanceSize, index * alignmentSize);
     }
 
-    VkResult BananBuffer::flushIndex(int index) {
+    VkResult BananBuffer::flushIndex(size_t index) {
         return flush(alignmentSize, index * alignmentSize);
     }
 
-    VkDescriptorBufferInfo BananBuffer::descriptorInfoForIndex(int index) {
+    VkDescriptorBufferInfo BananBuffer::descriptorInfoForIndex(size_t index) {
         return descriptorInfo(alignmentSize, index * alignmentSize);
     }
 
-    VkResult BananBuffer::invalidateIndex(int index) {
+    VkResult BananBuffer::invalidateIndex(size_t index) {
         return invalidate(alignmentSize, index * alignmentSize);
     }
 
@@ -121,5 +121,9 @@ namespace Banan {
 
     VkDeviceSize BananBuffer::getBufferSize() const {
         return bufferSize;
+    }
+
+    VkDescriptorBufferInfo BananBuffer::descriptorInfoForIndex(size_t index) {
+        return VkDescriptorBufferInfo();
     }
 }
