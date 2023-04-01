@@ -12,6 +12,7 @@
 #include <array>
 #include <cassert>
 #include <map>
+#include <ranges>
 #include <stdexcept>
 
 namespace Banan{
@@ -64,11 +65,10 @@ namespace Banan{
         }
 
         bananPipeline->bind(frameInfo.commandBuffer);
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &frameInfo.globalDescriptorSet, 0, nullptr);
 
-        std::vector<VkDescriptorSet> sets{frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet};
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,sets.size(),sets.data(),0,nullptr);
-
-        for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
+        for (auto &it : std::ranges::reverse_view(sorted)) {
+            vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &frameInfo.gameObjectDescriptorSet, 1, &it.second);
             vkCmdDraw(frameInfo.commandBuffer, 6, 1, 0, 0);
         }
 
@@ -83,6 +83,7 @@ namespace Banan{
 
             auto rotateLight = glm::rotate(glm::mat4(1.f), frameInfo.frameTime, {0.f, -1.f, 0.f});
             obj.transform.translation = glm::vec3(rotateLight * glm::vec4(obj.transform.translation, 1.f));
+            obj.pointLight->position = glm::vec4{obj.transform.translation, 1.0f};
         }
     }
 

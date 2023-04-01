@@ -36,12 +36,6 @@ namespace Banan{
                 .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .build();
 
-        texturePool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * bananGameObjectManager.numTextures())
-                .build();
-
         procrastinatedPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
@@ -67,13 +61,6 @@ namespace Banan{
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, 1)
                 .build();
 
-        auto textureSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)
-                .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
-                .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, bananGameObjectManager.numTextures())
-                .build();
-
         auto procrastinatedSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .addBinding(1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
@@ -96,9 +83,8 @@ namespace Banan{
                 .build();
 
         ComputeSystem computeSystem{bananDevice, {globalSetLayout->getDescriptorSetLayout()}};
-
-        PointLightSystem pointLightSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
-        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
+        PointLightSystem pointLightSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout()}};
+        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout(), bananGameObjectManager.getTextureSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
         ResolveSystem resolveSystem{bananDevice, bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()}};
 
         BananCamera camera{};
@@ -114,10 +100,6 @@ namespace Banan{
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
             writer.writeBuffer(0, uboBuffers[i]->descriptorInfo());
             writer.build(globalDescriptorSets[i]);
-
-            BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *texturePool);
-            textureWriter.writeImages(0, bananGameObjectManager.textureInfo());
-            textureWriter.build(bananGameObjectManager.getTextureDescriptorSet(i), {(uint32_t) bananGameObjectManager.numTextures()});
 
             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
             procrastinatedWriter.writeImage(0, bananRenderer.getGBufferDescriptorInfo()[0]);
@@ -180,9 +162,9 @@ namespace Banan{
                             resolveWriter.overwrite(resolveDescriptorSets[i]);
                         }
 
-                        pointLightSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout()});
                         computeSystem.reconstructPipeline({globalSetLayout->getDescriptorSetLayout()});
-                        procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
+                        pointLightSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout()});
+                        procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout(), bananGameObjectManager.getTextureSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
                         resolveSystem.reconstructPipelines(bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()});
                     }
 
@@ -299,13 +281,13 @@ namespace Banan{
         floor.parallax.numLayers = 48.0f;
         floor.parallax.parallaxmode = 1;
 
-        std::vector<glm::vec3> lightColors{
-                {1.f, .1f, .1f},
-                {.1f, .1f, 1.f},
-                {.1f, 1.f, .1f},
-                {1.f, 1.f, .1f},
-                {.1f, 1.f, 1.f},
-                {1.f, 1.f, 1.f}
+        std::vector<glm::vec4> lightColors{
+                {1.f, .1f, .1f, 1.f},
+                {.1f, .1f, 1.f, 1.f},
+                {.1f, 1.f, .1f, 1.f},
+                {1.f, 1.f, .1f, 1.f},
+                {.1f, 1.f, 1.f, 1.f},
+                {1.f, 1.f, 1.f, 1.f}
         };
 
         for (size_t i = 0; i < lightColors.size(); i++) {
@@ -315,8 +297,8 @@ namespace Banan{
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
         }
 
-        bananGameObjectManager.buildDescriptors();
         bananGameObjectManager.createBuffers();
+        bananGameObjectManager.buildDescriptors();
     }
 
     std::shared_ptr<BananLogger> BananEngineTest::getLogger() {

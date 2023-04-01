@@ -213,7 +213,6 @@ namespace Banan {
                     }
 
                     max_uv_x += min_uv_x * -1.0f;
-                    min_uv_x = 0.0f;
                 }
 
                 if (min_uv_y < 0.0f) {
@@ -222,7 +221,6 @@ namespace Banan {
                     }
 
                     max_uv_y += min_uv_y * -1.0f;
-                    min_uv_y = 0.0f;
                 }
 
                 for (Vertex &v : misc) {

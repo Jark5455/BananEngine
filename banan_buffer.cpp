@@ -122,8 +122,4 @@ namespace Banan {
     VkDeviceSize BananBuffer::getBufferSize() const {
         return bufferSize;
     }
-
-    VkDescriptorBufferInfo BananBuffer::descriptorInfoForIndex(size_t index) {
-        return VkDescriptorBufferInfo();
-    }
 }

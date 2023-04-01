@@ -99,8 +99,20 @@ namespace Banan {
                 .build();
 
         gameObjectDataSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_ALL_GRAPHICS)
                 .build();
+
+        for (auto &set : textureDescriptorSets) {
+            BananDescriptorWriter textureWriter = BananDescriptorWriter(*textureSetLayout, *gameObjectPool);
+            textureWriter.writeImages(0, textureInfo());
+            textureWriter.build(set, {(uint32_t) numTextures()});
+        }
+
+        for (size_t i = 0; i < gameObjectDataDescriptorSets.size(); i++) {
+            BananDescriptorWriter textureWriter = BananDescriptorWriter(*gameObjectDataSetLayout, *gameObjectPool);
+            textureWriter.writeBuffer(0, gameObjectDataBuffers[i]->descriptorInfo());
+            textureWriter.build(gameObjectDataDescriptorSets[i], {(uint32_t) numTextures()});
+        }
     }
 
     void BananGameObjectManager::createBuffers() {
@@ -197,6 +209,11 @@ namespace Banan {
 
             gameObjectDataBuffers[frameIndex]->writeToIndex(&data, kv.first);
         }
+
+        gameObjectDataBuffers[frameIndex]->flush();
+        transformBuffers[frameIndex]->flush();
+        parallaxBuffers[frameIndex]->flush();
+        pointLightBuffers[frameIndex]->flush();
     }
 
     BananGameObject &BananGameObjectManager::makeVirtualGameObject() {
@@ -242,7 +259,7 @@ namespace Banan {
         return gameObject;
     }
 
-    BananGameObject &BananGameObjectManager::makePointLight(float intensity, float radius, glm::vec3 color) {
+    BananGameObject &BananGameObjectManager::makePointLight(float intensity, float radius, glm::vec4 color) {
         auto gameObject = BananGameObject{currentId++, *this};
         auto gameObjectId = gameObject.getId();
         gameObjects.emplace(gameObjectId, std::move(gameObject));

@@ -14,24 +14,22 @@ layout (location = 5) in vec3 fragTangent;
 layout (location = 0) out vec4 outNormal;
 layout (location = 1) out vec4 outAlbedo;
 
-struct GameObject {
-    vec4 position;
-    vec4 rotation; // color for point lights
-    vec4 scale; // radius for point lights
-
+layout(buffer_reference, std430) buffer transform {
     mat4 modelMatrix;
     mat4 normalMatrix;
+};
 
-    int hasTexture;
-    int hasNormal;
-
-    int hasHeight;
+layout(buffer_reference, std430) buffer parallax {
     float heightscale;
     float parallaxBias;
     float numLayers;
     int parallaxmode;
+};
 
-    int isPointLight;
+layout(buffer_reference, std430) buffer pointLight {
+    vec4 position;
+    vec4 color;
+    float intensity;
 };
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
@@ -43,31 +41,35 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     int numGameObjects;
 } ubo;
 
-layout(set = 0, binding = 1) readonly buffer GameObjects {
-    GameObject objects[];
-} ssbo;
+layout(set = 2, binding = 0) uniform GameObjects {
+    int albedoTexture;
+    int normalTexture;
+    int heightTexture;
 
-layout(push_constant) uniform Push {
-    int objectId;
-} push;
+    int transform;
+    transform transformRef;
+
+    int parallax;
+    parallax parallaxRef;
+
+    int pointLight;
+    pointLight pointLightRef;
+} objectData;
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler[];
-//layout(set = 1, binding = 1) uniform samplerCube shadowCubeMap;
-layout(set = 2, binding = 0) uniform sampler2D normalSampler[];
-layout(set = 3, binding = 0) uniform sampler2D heightSampler[];
 
 vec2 RayMarch(vec2 st0_in, vec2 st1_in)
 {
-    float lod_base = textureQueryLod(heightSampler[push.objectId], st0_in).y;
-    vec2 dims = textureSize(heightSampler[push.objectId], 0);
+    float lod_base = textureQueryLod(texSampler[objectData.heightTexture], st0_in).y;
+    vec2 dims = textureSize(texSampler[objectData.heightTexture], 0);
     float distInPix = length(dims * (st1_in-st0_in));
 
     const int iterations = 3;
     vec3 st0 = vec3(st0_in, 0.0);
     vec3 st1 = vec3(st1_in, -1.0);
 
-    float nrStepsAlongRay = ssbo.objects[push.objectId].numLayers;			// very brute-force
-    float scale = ssbo.objects[push.objectId].heightscale;
+    float nrStepsAlongRay = objectData.parallaxRef.numLayers;			// very brute-force
+    float scale = objectData.parallaxRef.heightscale;
 
     float nrInnerIts = (nrStepsAlongRay + 7) / 8;
 
@@ -88,14 +90,14 @@ vec2 RayMarch(vec2 st0_in, vec2 st1_in)
             float T7 = mix(t0, t1, clamp((j*8+7)*scale, 0.0, 1.0) );
             float T8 = mix(t0, t1, clamp((j*8+8)*scale, 0.0, 1.0) );
 
-            float h1 = textureLod(heightSampler[push.objectId], mix(st0, st1, T1).xy, lod_base).r - 1.0;
-            float h2 = textureLod(heightSampler[push.objectId], mix(st0, st1, T2).xy, lod_base).r - 1.0;
-            float h3 = textureLod(heightSampler[push.objectId], mix(st0, st1, T3).xy, lod_base).r - 1.0;
-            float h4 = textureLod(heightSampler[push.objectId], mix(st0, st1, T4).xy, lod_base).r - 1.0;
-            float h5 = textureLod(heightSampler[push.objectId], mix(st0, st1, T5).xy, lod_base).r - 1.0;
-            float h6 = textureLod(heightSampler[push.objectId], mix(st0, st1, T6).xy, lod_base).r - 1.0;
-            float h7 = textureLod(heightSampler[push.objectId], mix(st0, st1, T7).xy, lod_base).r - 1.0;
-            float h8 = textureLod(heightSampler[push.objectId], mix(st0, st1, T8).xy, lod_base).r - 1.0;
+            float h1 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T1).xy, lod_base).r - 1.0;
+            float h2 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T2).xy, lod_base).r - 1.0;
+            float h3 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T3).xy, lod_base).r - 1.0;
+            float h4 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T4).xy, lod_base).r - 1.0;
+            float h5 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T5).xy, lod_base).r - 1.0;
+            float h6 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T6).xy, lod_base).r - 1.0;
+            float h7 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T7).xy, lod_base).r - 1.0;
+            float h8 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T8).xy, lod_base).r - 1.0;
 
             float t_s = t0, t_e = t1;
 
@@ -122,8 +124,8 @@ vec2 RayMarch(vec2 st0_in, vec2 st1_in)
         ++i;
     }
 
-    float h0 = textureLod(heightSampler[push.objectId], mix(st0, st1, t0).xy, lod_base).r - 1.0;
-    float h1 = textureLod(heightSampler[push.objectId], mix(st0, st1, t1).xy, lod_base).r - 1.0;
+    float h0 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, t0).xy, lod_base).r - 1.0;
+    float h1 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, t1).xy, lod_base).r - 1.0;
     float ray_h0 = mix(st0, st1, t0).z;
     float ray_h1 = mix(st0, st1, t1).z;
 
@@ -170,7 +172,7 @@ vec3 getFinalNormal(vec2 inUV, vec3 nrmBaseNormal)
     vec3 vB = cross(nrmBaseNormal, vT);
 
     // tangent space normal
-    vec3 vM = textureLod(normalSampler[push.objectId], inUV, 0.0).rgb * 2.0 - 1.0;
+    vec3 vM = textureLod(texSampler[objectData.normalTexture], inUV, 0.0).rgb * 2.0 - 1.0;
 
     vec3 vMa = abs(vM);
     float z_ma = max(vMa.z, max(vMa.x, vMa.y));
@@ -183,7 +185,7 @@ vec3 getFinalNormal(vec2 inUV, vec3 nrmBaseNormal)
 
 vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
-    vec2 projV = projectVecToTextureSpace(viewDir, uv, ssbo.objects[index].heightscale, true, dPdx, dPdy, nrmBaseNormal);
+    vec2 projV = projectVecToTextureSpace(viewDir, uv, objectData.parallaxRef.heightscale, true, dPdx, dPdy, nrmBaseNormal);
     float height = textureLod(heightSampler[index], uv, 0.0).r - 0.5;
     vec2 p = height * projV;
     return uv + p;
@@ -191,35 +193,35 @@ vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec
 
 vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
-    vec2 projV = projectVecToTextureSpace(viewDir, uv, ssbo.objects[index].heightscale, false, dPdx, dPdy, nrmBaseNormal);
+    vec2 projV = projectVecToTextureSpace(viewDir, uv, objectData.parallaxRef.heightscale, false, dPdx, dPdy, nrmBaseNormal);
     float height = textureLod(heightSampler[index], uv, 0.0).r - 1.0;
     vec2 p = RayMarch(uv, uv + projV);
     return uv + p;
 }
 
 void main() {
-    vec3 nrmBaseNormal = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
+    vec3 nrmBaseNormal = normalize(mat3(objectData.transformRef.normalMatrix) * fragNormal);
     vec3 dPdx = dFdxFine(fragPosWorld.xyz);
     vec3 dPdy = dFdyFine(fragPosWorld.xyz);
 
     vec3 viewDirection = normalize(ubo.inverseView[3].xyz - fragPosWorld.xyz);
 
     vec2 uv = fragTexCoord;
-    if (ssbo.objects[push.objectId].parallaxmode != 0) {
-        if (ssbo.objects[push.objectId].parallaxmode == 1) {
+    if (objectData.parallax == 1) {
+        if (objectData.parallaxRef.parallaxmode == 1) {
             uv = parallaxMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy, nrmBaseNormal);
-        } else if (ssbo.objects[push.objectId].parallaxmode == 2) {
+        } else if (objectData.parallaxRef.parallaxmode == 2) {
             uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy, nrmBaseNormal);
         }
     }
 
     vec3 color = fragColor;
-    if (textureQueryLevels(texSampler[push.objectId]) > 0) {
-        color = texture(texSampler[push.objectId], uv).rgb;
+    if (objectData.albedoTexture != -1) {
+        color = texture(texSampler[objectData.albedoTexture], uv).rgb;
     }
 
-    vec3 normalHeightMapLod = normalize(mat3(ssbo.objects[push.objectId].normalMatrix) * fragNormal);
-    if (textureQueryLevels(normalSampler[push.objectId]) > 0) {
+    vec3 normalHeightMapLod = normalize(mat3(objectData.transformRef.normalMatrix) * fragNormal);
+    if (objectData.normalTexture != -1) {
         normalHeightMapLod = getFinalNormal(uv, nrmBaseNormal);
     }
 

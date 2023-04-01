@@ -2,26 +2,6 @@
 
 layout(location = 0) in vec2 inUV;
 
-struct GameObject {
-    vec4 position;
-    vec4 rotation; // color for point lights
-    vec4 scale; // radius for point lights
-
-    mat4 modelMatrix;
-    mat4 normalMatrix;
-
-    int hasTexture;
-    int hasNormal;
-
-    int hasHeight;
-    float heightscale;
-    float parallaxBias;
-    float numLayers;
-    int parallaxmode;
-
-    int isPointLight;
-};
-
 layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 projection;
     mat4 inverseProjection;
@@ -31,9 +11,38 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     int numGameObjects;
 } ubo;
 
-layout(set = 0, binding = 1) readonly buffer GameObjects {
-    GameObject objects[];
-} ssbo;
+layout(buffer_reference, std430) buffer transform {
+    mat4 modelMatrix;
+    mat4 normalMatrix;
+};
+
+layout(buffer_reference, std430) buffer parallax {
+    float heightscale;
+    float parallaxBias;
+    float numLayers;
+    int parallaxmode;
+};
+
+layout(buffer_reference, std430) buffer pointLight {
+    vec4 position;
+    vec4 color;
+    float intensity;
+};
+
+layout(set = 2, binding = 0) uniform GameObjects {
+    int albedoTexture;
+    int normalTexture;
+    int heightTexture;
+
+    int transform;
+    transform transformRef;
+
+    int parallax;
+    parallax parallaxRef;
+
+    int pointLight;
+    pointLight pointLightRef;
+} objectData;
 
 layout(set = 1, input_attachment_index = 0, binding = 0) uniform subpassInput depth;
 layout(set = 1, input_attachment_index = 1, binding = 1) uniform subpassInput normals;

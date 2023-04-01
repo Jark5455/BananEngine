@@ -14,29 +14,22 @@ layout (location = 3) out vec3 fragNormal;
 layout (location = 4) out vec4 fragPosWorld;
 layout (location = 5) out vec3 fragTangent;
 
-struct PointLight {
-    vec4 position;
-    vec4 color;
-};
-
-struct GameObject {
-    vec4 position;
-    vec4 rotation; // color for point lights
-    vec4 scale; // radius for point lights
-
+layout(buffer_reference, std430) buffer transform {
     mat4 modelMatrix;
     mat4 normalMatrix;
+};
 
-    int hasTexture;
-    int hasNormal;
-
-    int hasHeight;
+layout(buffer_reference, std430) buffer parallax {
     float heightscale;
     float parallaxBias;
     float numLayers;
     int parallaxmode;
+};
 
-    int isPointLight;
+layout(buffer_reference, std430) buffer pointLight {
+    vec4 position;
+    vec4 color;
+    float intensity;
 };
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
@@ -45,18 +38,26 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 view;
     mat4 inverseView;
     vec4 ambientLightColor;
+    int numGameObjects;
 } ubo;
 
-layout(set = 0, binding = 1) readonly buffer GameObjects {
-    GameObject objects[];
-} ssbo;
+layout(set = 2, binding = 0) uniform GameObjects {
+    int albedoTexture;
+    int normalTexture;
+    int heightTexture;
 
-layout(push_constant) uniform Push {
-    int objectId;
-} push;
+    int transform;
+    transform transformRef;
+
+    int parallax;
+    parallax parallaxRef;
+
+    int pointLight;
+    pointLight pointLightRef;
+} objectData;
 
 void main() {
-    fragPosWorld = ssbo.objects[push.objectId].modelMatrix * vec4(position, 1.0);
+    fragPosWorld = objectData.transformRef.modelMatrix * vec4(position, 1.0);
     gl_Position = ubo.projection * ubo.view * fragPosWorld;
 
     fragTexCoord = uv;

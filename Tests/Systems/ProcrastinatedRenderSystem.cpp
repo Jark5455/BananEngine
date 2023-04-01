@@ -22,13 +22,15 @@ namespace Banan {
 
     void ProcrastinatedRenderSystem::calculateGBuffer(BananFrameInfo &frameInfo) {
         GBufferPipeline->bind(frameInfo.commandBuffer);
-        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet, frameInfo.textureDescriptorSet};
+        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.textureDescriptorSet};
 
         vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,GBufferPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
 
         for (auto &kv : frameInfo.gameObjectManager.getGameObjects()) {
             auto &obj = kv.second;
             if (obj.model == nullptr) continue;
+
+            vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, GBufferPipelineLayout, sets.size(), 1, &frameInfo.gameObjectDescriptorSet, 1, &kv.first);
 
             obj.model->bindAll(frameInfo.commandBuffer);
             obj.model->draw(frameInfo.commandBuffer);

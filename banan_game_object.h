@@ -35,7 +35,9 @@ namespace Banan {
     };
 
     struct PointLightComponent {
-        alignas(16) glm::vec3 color{1.f};
+        // TODO, fix position, make part of transform component or something
+        alignas(16) glm::vec4 position{1.f};
+        alignas(16) glm::vec4 color{1.f};
         float lightIntensity = 1.0f;
     };
 
@@ -110,7 +112,7 @@ namespace Banan {
 
             BananGameObject &makeVirtualGameObject();
             BananGameObject &makeGameObject(const BananGameObject::Builder &builder);
-            BananGameObject &makePointLight(float intensity = 10.0f, float radius = 0.1f, glm::vec3 color = glm::vec3(1.f));
+            BananGameObject &makePointLight(float intensity = 10.0f, float radius = 0.1f, glm::vec4 color = glm::vec4(1.f));
             BananGameObject &duplicateGameObject(id_t index);
             BananGameObject &copyGameObject(id_t indexOld, id_t indexNew);
 

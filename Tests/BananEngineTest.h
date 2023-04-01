@@ -39,7 +39,6 @@ namespace Banan{
         BananGameObjectManager bananGameObjectManager{bananDevice};
 
         std::unique_ptr<BananDescriptorPool> globalPool;
-        std::unique_ptr<BananDescriptorPool> texturePool;
         std::unique_ptr<BananDescriptorPool> procrastinatedPool;
         std::unique_ptr<BananDescriptorPool> edgeDetectionPool;
         std::unique_ptr<BananDescriptorPool> blendWeightPool;
