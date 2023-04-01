@@ -196,6 +196,8 @@ namespace Banan{
                 ubo.inverseView = camera.getInverseView();
                 ubo.inverseProjection = camera.getInverseProjection();
                 ubo.numGameObjects = (int) bananGameObjectManager.getGameObjects().size();
+                ubo.numPointLights = (int) bananGameObjectManager.numPointLights(frameIndex);
+                ubo.pointLightBaseRef = bananGameObjectManager.getPointLightBaseRef(frameIndex);
 
                 pointLightSystem.update(frameInfo);
                 uboBuffers[frameIndex]->writeToBuffer(&ubo);

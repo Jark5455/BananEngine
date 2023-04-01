@@ -34,11 +34,20 @@ namespace Banan {
         int parallaxmode  = -1;
     };
 
-    struct PointLightComponent {
-        // TODO, fix position, make part of transform component or something
+    struct PointLightBuffer {
+        // TODO, fix position and radius, make part of transform component or something
         alignas(16) glm::vec4 position{1.f};
         alignas(16) glm::vec4 color{1.f};
+        float radius = 1.0f;
         float lightIntensity = 1.0f;
+
+        int hasNext = 0;
+        uint64_t next = 0;
+    };
+
+    struct PointLightComponent {
+        glm::vec3 color{1.f};
+        float intensity = 1.0f;
     };
 
     struct GameObjectData {
@@ -97,7 +106,6 @@ namespace Banan {
             BananGameObject(id_t objId, const BananGameObjectManager &manager);
             id_t id;
 
-            const BananGameObjectManager &gameObjectManager;
             friend class BananGameObjectManager;
     };
 
@@ -124,6 +132,9 @@ namespace Banan {
 
             size_t numTextures();
             std::vector<VkDescriptorImageInfo> textureInfo();
+
+            size_t numPointLights(int frameIndex);
+            uint64_t getPointLightBaseRef(int frameIndex);
 
             VkDescriptorSetLayout getGameObjectSetLayout();
             VkDescriptorSetLayout getTextureSetLayout();

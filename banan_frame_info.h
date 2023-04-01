@@ -17,6 +17,9 @@ namespace Banan {
         alignas(16) glm::mat4 inverseView{1.f};
         alignas(16) glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.25f};
         int numGameObjects;
+
+        int numPointLights;
+        uint64_t pointLightBaseRef;
     };
 
     struct PointLightData {

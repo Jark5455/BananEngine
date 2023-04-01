@@ -142,24 +142,14 @@ namespace Banan {
     }
 
      std::shared_ptr<BananImage> BananImage::makeImageFromFilepath(BananDevice &device, const std::string &filepath) {
-        char *fileName = const_cast<char *>(filepath.c_str());
-        size_t len = strlen(fileName);
-        size_t idx = len-1;
-        for(size_t i = 0; *(fileName+i); i++) {
-            if (*(fileName+i) == '.') {
-                idx = i;
-            } else if (*(fileName + i) == '/' || *(fileName + i) == '\\') {
-                idx = len - 1;
-            }
-        }
-
-        std::string extension = std::string(fileName).substr(idx+1);
+        size_t pos = filepath.rfind('.');
+        std::string extension = filepath.substr(pos, filepath.length() - 1);
 
         assert(
-                extension == "exr" ||
-                extension == "jpg" ||
-                extension == "jpeg" ||
-                extension == "png" &&
+                extension == ".exr" ||
+                extension == ".jpg" ||
+                extension == ".jpeg" ||
+                extension == ".png" &&
                 "File format not supported");
 
         uint32_t width = 0;
@@ -168,7 +158,7 @@ namespace Banan {
         uint32_t levels = 0;
         void *data;
 
-        if (extension == "exr") {
+        if (extension == ".exr") {
             Imf::setGlobalThreadCount((int) std::thread::hardware_concurrency());
             Imf::Array2D<Imf::Rgba> pixelBuffer = Imf::Array2D<Imf::Rgba>();
             Imf::Array2D<Imf::Rgba> &pixelBufferRef = pixelBuffer;
@@ -191,7 +181,7 @@ namespace Banan {
             levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, width)))) + 1;
 
             std::vector<uint16_t> singleChannelPixelBuffer{};
-            singleChannelPixelBuffer.reserve(dim.y * dim.x);
+            singleChannelPixelBuffer.reserve(dim.y * dim.x * 4);
 
             int index = 0;
 
@@ -204,7 +194,7 @@ namespace Banan {
                 }
             }
 
-            data = malloc(dim.x * dim.y * 8);
+            data = calloc(dim.x * dim.y, 8);
             memcpy(data, singleChannelPixelBuffer.data(), dim.y * dim.x * 8);
 
         } else {
@@ -225,18 +215,18 @@ namespace Banan {
 
         VkFormat format = stride == 16 ? VK_FORMAT_R16G16B16A16_UNORM : VK_FORMAT_R8G8B8A8_UNORM;
 
-        BananBuffer stagingBuffer{bananDevice, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+        BananBuffer stagingBuffer{device, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         stagingBuffer.map();
         stagingBuffer.writeToBuffer((void *) data);
         free(data);
 
-        VkCommandBuffer commandBuffer = bananDevice.beginSingleTimeCommands();
+        VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
 
-        auto bananImage = std::make_shared<BananImage>(bananDevice, width, height, levels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        auto bananImage = std::make_shared<BananImage>(device, width, height, levels, format, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         bananImage->transitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        bananDevice.endSingleTimeCommands(commandBuffer);
-        bananDevice.copyBufferToImage(stagingBuffer.getBuffer(), bananImage->getImageHandle(), width, height, 1);
-        bananDevice.generateMipMaps(bananImage->getImageHandle(), width, height, levels);
+        device.endSingleTimeCommands(commandBuffer);
+        device.copyBufferToImage(stagingBuffer.getBuffer(), bananImage->getImageHandle(), width, height, 1);
+        device.generateMipMaps(bananImage->getImageHandle(), width, height, levels);
 
         return bananImage;
     }

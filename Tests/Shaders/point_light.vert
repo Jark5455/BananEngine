@@ -1,4 +1,13 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_buffer_reference : require
+
+struct PointLightType {
+    vec4 position;
+    vec4 color;
+    float radius;
+    float intensity;
+};
 
 const vec2 OFFSETS[6] = vec2[](
     vec2(-1.0, -1.0),
@@ -23,10 +32,15 @@ layout(buffer_reference, std430) buffer parallax {
     int parallaxmode;
 };
 
+layout(buffer_reference) buffer pointLight;
 layout(buffer_reference, std430) buffer pointLight {
     vec4 position;
     vec4 color;
+    float radius;
     float intensity;
+
+    int hasNext;
+    pointLight next;
 };
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
@@ -36,6 +50,8 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 inverseView;
     vec4 ambientLightColor;
     int numGameObjects;
+    int numPointLights;
+    pointLight basePointLightRef;
 } ubo;
 
 layout(set = 1, binding = 0) uniform GameObjects {
@@ -58,6 +74,6 @@ void main() {
     vec3 cameraRightWorld = {ubo.view[0][0], ubo.view[1][0], ubo.view[2][0]};
     vec3 cameraUpWorld = {ubo.view[0][1], ubo.view[1][1], ubo.view[2][1]};
 
-    vec3 positionWorld = ssbo.objects[push.objectId].position.xyz + ssbo.objects[push.objectId].scale.r * fragOffset.x * cameraRightWorld + ssbo.objects[push.objectId].scale.r * fragOffset.y * cameraUpWorld;
+    vec3 positionWorld = objectData.pointLightRef.position.xyz + objectData.pointLightRef.radius * fragOffset.x * cameraRightWorld + objectData.pointLightRef.radius * fragOffset.y * cameraUpWorld;
     gl_Position = ubo.projection * ubo.view * vec4(positionWorld, 1.0);
 }

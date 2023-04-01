@@ -38,7 +38,7 @@ namespace Banan {
         for (auto pipeline : bananPipelines) {
             pipeline->bind(frameInfo.commandBuffer);
             vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_COMPUTE,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
-            vkCmdDispatch(frameInfo.commandBuffer, (frameInfo.gameObjects.size() / 256) + 1, 1, 1);
+            vkCmdDispatch(frameInfo.commandBuffer, (frameInfo.gameObjectManager.getGameObjects().size() / 256) + 1, 1, 1);
         }
     }
 

@@ -4,6 +4,8 @@
 
 #include "ResolveSystem.h"
 
+#include <stdexcept>
+
 namespace Banan {
 
     ResolveSystem::ResolveSystem(BananDevice &device, VkRenderPass edgeDetectionRenderPass, VkRenderPass blendWeightRenderPass, VkRenderPass resolveRenderPass, std::vector<VkDescriptorSetLayout> edgeDetectionLayouts, std::vector<VkDescriptorSetLayout> blendWeightLayouts, std::vector<VkDescriptorSetLayout> resolveLayouts) : bananDevice{device} {

@@ -1,4 +1,6 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_buffer_reference : require
 
 layout (local_size_x = 256) in;
 
@@ -29,6 +31,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 inverseView;
     vec4 ambientLightColor;
     int numGameObjects;
+    int numPointLights;
 } ubo;
 
 layout(set = 0, binding = 1) buffer GameObjects {

@@ -1,4 +1,6 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_buffer_reference : require
 
 // TODO also move this to some uniform buffer
 #if defined(SMAA_PRESET_LOW)

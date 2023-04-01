@@ -6,6 +6,8 @@
 
 #include "banan_device.h"
 
+#include <memory>
+
 #define STB_IMAGE_IMPLEMENTATION
 
 namespace Banan {

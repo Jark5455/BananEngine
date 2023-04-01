@@ -1,43 +1,58 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_buffer_reference : require
 
 layout (location = 0) in vec2 fragOffset;
 layout (location = 0) out vec4 outColor;
 
-struct GameObject {
-    vec4 position;
-    vec4 rotation; // color for point lights
-    vec4 scale; // radius for point lights
-
+layout(buffer_reference, std430) buffer transform {
     mat4 modelMatrix;
     mat4 normalMatrix;
+};
 
-    int hasTexture;
-    int hasNormal;
-
-    int hasHeight;
+layout(buffer_reference, std430) buffer parallax {
     float heightscale;
     float parallaxBias;
     float numLayers;
     int parallaxmode;
+};
 
-    int isPointLight;
+layout(buffer_reference) buffer pointLight;
+layout(buffer_reference, std430) buffer pointLight {
+    vec4 position;
+    vec4 color;
+    float radius;
+    float intensity;
+
+    int hasNext;
+    pointLight next;
 };
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 projection;
     mat4 inverseProjection;
     mat4 view;
+    mat4 inverseView;
     vec4 ambientLightColor;
     int numGameObjects;
+    int numPointLights;
+    pointLight basePointLightRef;
 } ubo;
 
-layout(set = 0, binding = 1) readonly buffer GameObjects {
-    GameObject objects[];
-} ssbo;
+layout(set = 1, binding = 0) uniform GameObjects {
+    int albedoTexture;
+    int normalTexture;
+    int heightTexture;
 
-layout(push_constant) uniform Push {
-    int objectId;
-} push;
+    int transform;
+    transform transformRef;
+
+    int parallax;
+    parallax parallaxRef;
+
+    int pointLight;
+    pointLight pointLightRef;
+} objectData;
 
 const float PI = 3.1415926535897932384626433832795;
 
@@ -49,5 +64,5 @@ void main() {
     }
 
     float cosDis = 0.5 * (cos(dis * PI) + 1.0);
-    outColor = vec4(ssbo.objects[push.objectId].rotation.xyz + cosDis, cosDis);
+    outColor = vec4(objectData.pointLightRef.color.xyz + cosDis, cosDis);
 }

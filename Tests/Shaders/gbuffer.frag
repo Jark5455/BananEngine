@@ -1,5 +1,6 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_buffer_reference : require
 
 #define EPSILON 0.15
 #define SHADOW_OPACITY 0.5
@@ -26,10 +27,15 @@ layout(buffer_reference, std430) buffer parallax {
     int parallaxmode;
 };
 
+layout(buffer_reference) buffer pointLight;
 layout(buffer_reference, std430) buffer pointLight {
     vec4 position;
     vec4 color;
+    float radius;
     float intensity;
+
+    int hasNext;
+    pointLight next;
 };
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
@@ -39,6 +45,8 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 inverseView;
     vec4 ambientLightColor;
     int numGameObjects;
+    int numPointLights;
+    pointLight basePointLightRef;
 } ubo;
 
 layout(set = 2, binding = 0) uniform GameObjects {
@@ -186,7 +194,7 @@ vec3 getFinalNormal(vec2 inUV, vec3 nrmBaseNormal)
 vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
     vec2 projV = projectVecToTextureSpace(viewDir, uv, objectData.parallaxRef.heightscale, true, dPdx, dPdy, nrmBaseNormal);
-    float height = textureLod(heightSampler[index], uv, 0.0).r - 0.5;
+    float height = textureLod(texSampler[index], uv, 0.0).r - 0.5;
     vec2 p = height * projV;
     return uv + p;
 }
@@ -194,7 +202,7 @@ vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec
 vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
     vec2 projV = projectVecToTextureSpace(viewDir, uv, objectData.parallaxRef.heightscale, false, dPdx, dPdy, nrmBaseNormal);
-    float height = textureLod(heightSampler[index], uv, 0.0).r - 1.0;
+    float height = textureLod(texSampler[index], uv, 0.0).r - 1.0;
     vec2 p = RayMarch(uv, uv + projV);
     return uv + p;
 }
@@ -209,9 +217,9 @@ void main() {
     vec2 uv = fragTexCoord;
     if (objectData.parallax == 1) {
         if (objectData.parallaxRef.parallaxmode == 1) {
-            uv = parallaxMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy, nrmBaseNormal);
+            uv = parallaxMapping(fragTexCoord, viewDirection, objectData.heightTexture, dPdx, dPdy, nrmBaseNormal);
         } else if (objectData.parallaxRef.parallaxmode == 2) {
-            uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, push.objectId, dPdx, dPdy, nrmBaseNormal);
+            uv = parallaxOcclusionMapping(fragTexCoord, viewDirection, objectData.heightTexture, dPdx, dPdy, nrmBaseNormal);
         }
     }
 

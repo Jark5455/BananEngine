@@ -1,5 +1,7 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_buffer_reference : require
+
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 color;
@@ -26,10 +28,15 @@ layout(buffer_reference, std430) buffer parallax {
     int parallaxmode;
 };
 
+layout(buffer_reference) buffer pointLight;
 layout(buffer_reference, std430) buffer pointLight {
     vec4 position;
     vec4 color;
+    float radius;
     float intensity;
+
+    int hasNext;
+    pointLight next;
 };
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
@@ -39,6 +46,8 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 inverseView;
     vec4 ambientLightColor;
     int numGameObjects;
+    int numPointLights;
+    pointLight basePointLightRef;
 } ubo;
 
 layout(set = 2, binding = 0) uniform GameObjects {

@@ -7,7 +7,7 @@
 #include <algorithm>
 
 namespace Banan {
-    BananGameObject::BananGameObject(id_t objId, const BananGameObjectManager &manager) : gameObjectManager{manager} {
+    BananGameObject::BananGameObject(id_t objId, const BananGameObjectManager &manager) {
         id = objId;
     }
 
@@ -111,7 +111,7 @@ namespace Banan {
         for (size_t i = 0; i < gameObjectDataDescriptorSets.size(); i++) {
             BananDescriptorWriter textureWriter = BananDescriptorWriter(*gameObjectDataSetLayout, *gameObjectPool);
             textureWriter.writeBuffer(0, gameObjectDataBuffers[i]->descriptorInfo());
-            textureWriter.build(gameObjectDataDescriptorSets[i], {(uint32_t) numTextures()});
+            textureWriter.build(gameObjectDataDescriptorSets[i]);
         }
     }
 
@@ -143,9 +143,11 @@ namespace Banan {
         }
 
         for (auto& buffer : pointLightBuffers) {
-            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(PointLightComponent), pointLightCount, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(PointLightBuffer), pointLightCount, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             buffer->map();
         }
+
+        // TODO reconstruct pipelines if this is a resizing of buffers
     }
 
     void BananGameObjectManager::updateBuffers(size_t frameIndex) {
@@ -181,9 +183,19 @@ namespace Banan {
 
             if (kv.second.pointLight != nullptr) {
                 data.pointLight = 1;
-                data.pointLightRef = pointLightBufferAddr + (pointLightCount * sizeof(PointLightComponent));
+                data.pointLightRef = pointLightBufferAddr + (pointLightCount * sizeof(PointLightBuffer));
 
                 assert(pointLightCount < pointLightBuffers[frameIndex]->getInstanceCount() && "ubo too small");
+
+                PointLightBuffer pointlight{};
+                pointlight.position = glm::vec4{kv.second.transform.translation, 1.f};
+                pointlight.radius = kv.second.transform.scale.x;
+                pointlight.color = glm::vec4{kv.second.pointLight->color, 1.f};
+                pointlight.lightIntensity = kv.second.pointLight->intensity;
+
+                pointlight.hasNext = 1;
+                pointlight.next = data.pointLightRef + sizeof(PointLightBuffer);
+
                 pointLightBuffers[frameIndex]->writeToIndex(kv.second.pointLight.get(), pointLightCount++);
             }
 
@@ -195,15 +207,15 @@ namespace Banan {
                 parallaxBuffers[frameIndex]->writeToIndex(&kv.second.parallax, parallaxCount++);
             }
 
-            if (!kv.second.albedoalias.empty() && texturealias.contains(kv.second.albedoalias)) {
+            if (!kv.second.albedoalias.empty() && texturealias.find(kv.second.albedoalias) != texturealias.end()) {
                 data.albedoTexture = (int) texturealias.at(kv.second.albedoalias);
             }
 
-            if (!kv.second.normalalias.empty() && texturealias.contains(kv.second.normalalias)) {
+            if (!kv.second.normalalias.empty() && texturealias.find(kv.second.normalalias) != texturealias.end()) {
                 data.normalTexture = (int) texturealias.at(kv.second.normalalias);
             }
 
-            if (!kv.second.heightalias.empty() && texturealias.contains(kv.second.heightalias)) {
+            if (!kv.second.heightalias.empty() && texturealias.find(kv.second.heightalias) != texturealias.end()) {
                 data.heightTexture = (int) texturealias.at(kv.second.heightalias);
             }
 
@@ -266,7 +278,7 @@ namespace Banan {
 
         gameObjects.at(gameObjectId).pointLight = std::make_unique<PointLightComponent>();
         gameObjects.at(gameObjectId).pointLight->color = color;
-        gameObjects.at(gameObjectId).pointLight->lightIntensity = intensity;
+        gameObjects.at(gameObjectId).pointLight->intensity = intensity;
         gameObjects.at(gameObjectId).transform.scale.x = radius;
         return gameObjects.at(gameObjectId);
     }
@@ -300,9 +312,9 @@ namespace Banan {
         if (object.pointLight != nullptr) {
             new_object.pointLight = std::make_unique<PointLightComponent>();
             new_object.pointLight->color = object.pointLight->color;
-            new_object.pointLight->lightIntensity = object.pointLight->lightIntensity;
-            new_object.transform.scale.x = object.transform.scale.x;
+            new_object.pointLight->intensity = object.pointLight->intensity;
 
+            new_object.transform = object.transform;
             return new_object;
         }
 
@@ -319,10 +331,9 @@ namespace Banan {
     }
 
     BananGameObject &BananGameObjectManager::duplicateGameObject(id_t index) {
-        auto &object = getGameObjectAtIndex(index);
         auto &new_object = makeVirtualGameObject();
-
         copyGameObject(index, new_object.getId());
+        return new_object;
     }
 
     std::vector<VkDescriptorImageInfo> BananGameObjectManager::textureInfo() {
@@ -368,5 +379,17 @@ namespace Banan {
 
     VkDescriptorSet &BananGameObjectManager::getTextureDescriptorSet(int frameIndex) {
         return textureDescriptorSets[frameIndex];
+    }
+
+    size_t BananGameObjectManager::numPointLights(int frameIndex) {
+        return pointLightBuffers[frameIndex]->getInstanceCount();
+    }
+
+    uint64_t BananGameObjectManager::getPointLightBaseRef(int frameIndex) {
+        VkBufferDeviceAddressInfo address_info{};
+        address_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        address_info.buffer = pointLightBuffers[frameIndex]->getBuffer();
+
+        return vkGetBufferDeviceAddress(bananDevice.device(), &address_info);
     }
 }
