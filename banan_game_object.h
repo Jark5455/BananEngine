@@ -90,11 +90,6 @@ namespace Banan {
             TransformComponent transform{};
             ParallaxComponent parallax{};
 
-            uint64_t materialBufferRef;
-            uint64_t transformBufferRef;
-            uint64_t parallaxBufferRef;
-            uint64_t pointLightBufferRef;
-
             std::string albedoalias;
             std::string normalalias;
             std::string heightalias;
@@ -126,6 +121,7 @@ namespace Banan {
 
             BananGameObject &getGameObjectAtIndex(id_t index);
             BananGameObject::Map &getGameObjects();
+            size_t getGameObjectBufferAlignmentSize(int frameIndex);
 
             size_t getImageIndexFromAlias(std::string alias);
             size_t getModelIndexFromAlias(std::string alias);

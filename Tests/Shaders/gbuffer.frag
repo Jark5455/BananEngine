@@ -49,7 +49,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     pointLight basePointLightRef;
 } ubo;
 
-layout(set = 2, binding = 0) uniform GameObjects {
+layout(set = 1, binding = 0) uniform GameObjects {
     int albedoTexture;
     int normalTexture;
     int heightTexture;
@@ -64,7 +64,7 @@ layout(set = 2, binding = 0) uniform GameObjects {
     pointLight pointLightRef;
 } objectData;
 
-layout(set = 1, binding = 0) uniform sampler2D texSampler[];
+layout(set = 2, binding = 0) uniform sampler2D texSampler[];
 
 vec2 RayMarch(vec2 st0_in, vec2 st1_in)
 {

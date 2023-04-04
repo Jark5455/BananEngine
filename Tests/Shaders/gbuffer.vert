@@ -50,7 +50,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     pointLight basePointLightRef;
 } ubo;
 
-layout(set = 2, binding = 0) uniform GameObjects {
+layout(set = 1, binding = 0) uniform GameObjects {
     int albedoTexture;
     int normalTexture;
     int heightTexture;

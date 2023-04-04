@@ -137,13 +137,20 @@ namespace Banan {
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
+        VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
         indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
         indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
         indexingFeatures.runtimeDescriptorArray = VK_TRUE;
         indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
         indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
         indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+
+        VkPhysicalDeviceBufferDeviceAddressFeatures deviceAddressFeatures{};
+        deviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+        deviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+        deviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_TRUE;
+        deviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_TRUE;
+        deviceAddressFeatures.pNext = &indexingFeatures;
 
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -157,7 +164,7 @@ namespace Banan {
         createInfo.pEnabledFeatures = &deviceFeatures;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-        createInfo.pNext = &indexingFeatures;
+        createInfo.pNext = &deviceAddressFeatures;
 
         // might not really be necessary anymore because device specific validation layers
         // have been deprecated
@@ -266,6 +273,10 @@ namespace Banan {
         // maintenance extension
         if (std::count(deviceExtensions.begin(), deviceExtensions.end(), (const char *) VK_KHR_MAINTENANCE3_EXTENSION_NAME))
             extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+
+        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), (const char *) VK_KHR_DEVICE_GROUP_EXTENSION_NAME))
+            extensionNames.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
 
         if (enableValidationLayers)
             extensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -419,6 +430,14 @@ namespace Banan {
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
+
+        VkMemoryAllocateFlagsInfo flags{};
+        flags.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+
+        if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+            flags.flags |= VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+            allocInfo.pNext = &flags;
+        }
 
         if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate vertex buffer memory!");

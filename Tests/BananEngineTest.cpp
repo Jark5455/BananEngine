@@ -42,7 +42,7 @@ namespace Banan{
                 .build();
 
         resolvePool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 6)
                 .build();
     }
@@ -82,7 +82,7 @@ namespace Banan{
                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
                 .build();
 
-        ComputeSystem computeSystem{bananDevice, {globalSetLayout->getDescriptorSetLayout()}};
+        // ComputeSystem computeSystem{bananDevice, {globalSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout()}};
         ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout(), bananGameObjectManager.getTextureSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
         ResolveSystem resolveSystem{bananDevice, bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()}};
@@ -107,11 +107,11 @@ namespace Banan{
             procrastinatedWriter.writeImage(2, bananRenderer.getGBufferDescriptorInfo()[2]);
             procrastinatedWriter.build(procrastinatedDescriptorSets[i]);
 
-            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *edgeDetectionPool);
+            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *resolvePool);
             edgeDetectionWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
             edgeDetectionWriter.build(edgeDetectionDescriptorSets[i]);
 
-            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *blendWeightPool);
+            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *resolvePool);
             blendWeightWriter.writeImage(0, bananRenderer.getEdgeDescriptorInfo());
             blendWeightWriter.writeImage(1, areaTex->descriptorInfo());
             blendWeightWriter.writeImage(2, searchTex->descriptorInfo());
@@ -146,11 +146,11 @@ namespace Banan{
                             procrastinatedWriter.writeImage(2, bananRenderer.getGBufferDescriptorInfo()[2]);
                             procrastinatedWriter.overwrite(procrastinatedDescriptorSets[i]);
 
-                            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *edgeDetectionPool);
+                            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *resolvePool);
                             edgeDetectionWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
                             edgeDetectionWriter.overwrite(edgeDetectionDescriptorSets[i]);
 
-                            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *blendWeightPool);
+                            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *resolvePool);
                             blendWeightWriter.writeImage(0, bananRenderer.getEdgeDescriptorInfo());
                             blendWeightWriter.writeImage(1, areaTex->descriptorInfo());
                             blendWeightWriter.writeImage(2, searchTex->descriptorInfo());
@@ -162,7 +162,7 @@ namespace Banan{
                             resolveWriter.overwrite(resolveDescriptorSets[i]);
                         }
 
-                        computeSystem.reconstructPipeline({globalSetLayout->getDescriptorSetLayout()});
+                        // computeSystem.reconstructPipeline({globalSetLayout->getDescriptorSetLayout()});
                         pointLightSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout()});
                         procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout(), bananGameObjectManager.getTextureSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
                         resolveSystem.reconstructPipelines(bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()});
@@ -189,6 +189,14 @@ namespace Banan{
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
                 BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], bananGameObjectManager.getTextureDescriptorSet(frameIndex), bananGameObjectManager.getGameObjectDescriptorSet(frameIndex), procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], bananGameObjectManager};
+
+                printf("Global Descriptor Set: %p \n", frameInfo.globalDescriptorSet);
+                printf("Texture Descriptor Set: %p \n", frameInfo.textureDescriptorSet);
+                printf("GameObject Descriptor Set: %p \n", frameInfo.gameObjectDescriptorSet);
+                printf("Procrastinated Descriptor Set: %p \n", frameInfo.procrastinatedDescriptorSet);
+                printf("Edge Descriptor Set: %p \n", frameInfo.edgeDetectionDescriptorSet);
+                printf("Blend Descriptor Set: %p \n", frameInfo.blendWeightDescriptorSet);
+                printf("Resolve Descriptor Set: %p \n", frameInfo.resolveDescriptorSet);
 
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();

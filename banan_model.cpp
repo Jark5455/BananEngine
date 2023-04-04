@@ -99,7 +99,6 @@ namespace Banan {
     std::shared_ptr<BananModel> BananModel::createModelFromFile(BananDevice &device, const std::string &filepath) {
         Builder builder{};
         builder.loadModel(filepath);
-        std::cout << "Model Vertex Count: " + std::to_string(builder.misc.size());
         return std::make_shared<BananModel>(device, builder);
     }
 

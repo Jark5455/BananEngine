@@ -40,8 +40,6 @@ namespace Banan{
 
         std::unique_ptr<BananDescriptorPool> globalPool;
         std::unique_ptr<BananDescriptorPool> procrastinatedPool;
-        std::unique_ptr<BananDescriptorPool> edgeDetectionPool;
-        std::unique_ptr<BananDescriptorPool> blendWeightPool;
         std::unique_ptr<BananDescriptorPool> resolvePool;
 
         std::shared_ptr<BananLogger> bananLogger;

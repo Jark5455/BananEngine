@@ -28,7 +28,7 @@ namespace Banan {
             if (obj.model == nullptr) continue;
 
             std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet, frameInfo.textureDescriptorSet};
-            std::vector<uint32_t> offsets = {0, kv.first, 0};
+            std::vector<uint32_t> offsets = {kv.first * (unsigned int) frameInfo.gameObjectManager.getGameObjectBufferAlignmentSize(frameInfo.frameIndex)};
             vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,GBufferPipelineLayout,0,sets.size(),sets.data(),offsets.size(),offsets.data());
 
             obj.model->bindAll(frameInfo.commandBuffer);

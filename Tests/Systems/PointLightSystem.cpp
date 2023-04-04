@@ -69,7 +69,7 @@ namespace Banan{
         for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
 
             std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet};
-            std::vector<uint32_t> offsets = {0, it->second};
+            std::vector<uint32_t> offsets = {it->second * (unsigned int) frameInfo.gameObjectManager.getGameObjectBufferAlignmentSize(frameInfo.frameIndex)};
             vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, sets.size(), sets.data(), offsets.size(), offsets.data());
 
 

@@ -9,7 +9,7 @@ set(NAME BananEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_COMPILER clang)
 set(CMAKE_CXX_COMPILER clang++)
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -Wno-unused-parameter -O3")
+set(CMAKE_CXX_FLAGS "-g")
 
 message(STATUS "using ${CMAKE_GENERATOR}")
 if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles")

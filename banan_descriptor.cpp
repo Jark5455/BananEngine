@@ -196,12 +196,19 @@ namespace Banan {
     }
 
     BananDescriptorWriter &BananDescriptorWriter::writeImages(uint32_t binding, const std::vector<VkDescriptorImageInfo>& imageInfos) {
-        std::unordered_map<uint32_t, VkDescriptorImageInfo> info{};
-        for (size_t i = 0; i < imageInfos.size(); i++) {
-            info.emplace(i, imageInfos[i]);
-        }
+        auto &bindingDescription = setLayout.bindings[binding];
 
-        return writeImages(binding, info);
+        VkWriteDescriptorSet write{};
+        write.sType = write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.descriptorType = bindingDescription.descriptorType;
+        write.dstBinding = binding;
+        write.dstArrayElement = 0;
+        write.pImageInfo = imageInfos.data();
+        write.descriptorCount = imageInfos.size();
+
+        writes.push_back(write);
+
+        return *this;
     }
 
     bool BananDescriptorWriter::build(VkDescriptorSet &set, std::vector<uint32_t> descriptorCount) {
