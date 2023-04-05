@@ -190,14 +190,6 @@ namespace Banan{
                 int frameIndex = bananRenderer.getFrameIndex();
                 BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], bananGameObjectManager.getTextureDescriptorSet(frameIndex), bananGameObjectManager.getGameObjectDescriptorSet(frameIndex), procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], bananGameObjectManager};
 
-                printf("Global Descriptor Set: %p \n", frameInfo.globalDescriptorSet);
-                printf("Texture Descriptor Set: %p \n", frameInfo.textureDescriptorSet);
-                printf("GameObject Descriptor Set: %p \n", frameInfo.gameObjectDescriptorSet);
-                printf("Procrastinated Descriptor Set: %p \n", frameInfo.procrastinatedDescriptorSet);
-                printf("Edge Descriptor Set: %p \n", frameInfo.edgeDetectionDescriptorSet);
-                printf("Blend Descriptor Set: %p \n", frameInfo.blendWeightDescriptorSet);
-                printf("Resolve Descriptor Set: %p \n", frameInfo.resolveDescriptorSet);
-
                 GlobalUbo ubo{};
                 ubo.projection = camera.getProjection();
                 ubo.view = camera.getView();
@@ -307,7 +299,7 @@ namespace Banan{
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
         }
 
-        bananGameObjectManager.createBuffers();
+        bananGameObjectManager.createBuffers(1);
         bananGameObjectManager.buildDescriptors();
     }
 

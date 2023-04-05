@@ -139,7 +139,7 @@ namespace Banan {
             VkDescriptorSet &getTextureDescriptorSet(int frameIndex);
 
             void updateBuffers(size_t frameIndex);
-            void createBuffers();
+            void createBuffers(size_t preAllocatedGameObjects);
             void buildDescriptors();
 
         private:

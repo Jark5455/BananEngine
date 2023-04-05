@@ -117,12 +117,10 @@ namespace Banan {
         }
     }
 
-    void BananGameObjectManager::createBuffers() {
+    void BananGameObjectManager::createBuffers(size_t preAllocatedGameObjects) {
         for (auto& buffer : gameObjectDataBuffers) {
-            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size() + preAllocatedGameObjects, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
             buffer->map();
-
-            printf("Gameobject Buffer @ %p \n", buffer->getBuffer());
         }
 
         //TODO replace this, counts are inefficient
@@ -137,29 +135,19 @@ namespace Banan {
             if (kv.second.parallax.parallaxmode != -1) parallaxCount++;
         }
 
-        std::cout << "Transform Count: " << transformCount << std::endl;
-        std::cout << "Parallax Count: " << parallaxCount << std::endl;
-        std::cout << "Point Light Count: " << pointLightCount << std::endl;
-
         for (auto& buffer : transformBuffers) {
             buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(TransformBuffer), transformCount, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             buffer->map();
-
-            printf("Transform Buffer @ %p \n", buffer->getBuffer());
         }
 
         for (auto& buffer : parallaxBuffers) {
             buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(ParallaxComponent), parallaxCount, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             buffer->map();
-
-            printf("Parallax Buffer @ %p \n", buffer->getBuffer());
         }
 
         for (auto& buffer : pointLightBuffers) {
             buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(PointLightBuffer), pointLightCount, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0);
             buffer->map();
-
-            printf("Point Light Buffer @ %p \n", buffer->getBuffer());
         }
 
         // TODO reconstruct pipelines if this is a resizing of buffers
@@ -185,7 +173,6 @@ namespace Banan {
         size_t pointLightCount = 0;
 
         for (auto &kv : gameObjects) {
-            std::cout << kv.first << std::endl;
             GameObjectData data{};
 
             if (kv.second.model != nullptr) {
