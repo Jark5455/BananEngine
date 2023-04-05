@@ -99,7 +99,7 @@ void main() {
             directionToLight = normalize(directionToLight);
 
             float cosAngIncidence = max(dot(surfaceNormal, normalize(directionToLight)), 0);
-            vec3 intensity = object.color.xyz * object.color.w * attenuation;
+            vec3 intensity = object.color.xyz * object.intensity * attenuation;
             diffuseLight += intensity * cosAngIncidence;
 
             vec3 halfAngle = normalize(directionToLight + viewDirection);

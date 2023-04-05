@@ -112,7 +112,8 @@ namespace Banan {
 
         for (size_t i = 0; i < gameObjectDataDescriptorSets.size(); i++) {
             BananDescriptorWriter writer = BananDescriptorWriter(*gameObjectDataSetLayout, *gameObjectPool);
-            writer.writeBuffer(0, gameObjectDataBuffers[i]->descriptorInfo(gameObjectDataBuffers[i]->getInstanceSize()));
+            auto info = gameObjectDataBuffers[i]->descriptorInfo(gameObjectDataBuffers[i]->getInstanceSize());
+            writer.writeBuffer(0, info);
             writer.build(gameObjectDataDescriptorSets[i]);
         }
     }
@@ -203,7 +204,7 @@ namespace Banan {
                 pointlight.hasNext = 1;
                 pointlight.next = data.pointLightRef + pointLightBuffers[frameIndex]->getAlignmentSize();
 
-                pointLightBuffers[frameIndex]->writeToIndex(kv.second.pointLight.get(), pointLightCount);
+                pointLightBuffers[frameIndex]->writeToIndex(&pointlight, pointLightCount);
                 pointLightBuffers[frameIndex]->flushIndex(pointLightCount++);
             }
 

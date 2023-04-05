@@ -28,21 +28,21 @@ namespace Banan {
     };
 
     struct ParallaxComponent {
-        float heightscale = -1.f;
-        float parallaxBias = -1.f;
-        float numLayers = -1.f;
-        int parallaxmode  = -1;
+        alignas(4) float heightscale = -1.f;
+        alignas(4) float parallaxBias = -1.f;
+        alignas(4) float numLayers = -1.f;
+        alignas(4) int parallaxmode  = -1;
     };
 
     struct PointLightBuffer {
         // TODO, fix position and radius, make part of transform component or something
         alignas(16) glm::vec4 position{1.f};
         alignas(16) glm::vec4 color{1.f};
-        float radius = 1.0f;
-        float lightIntensity = 1.0f;
+        alignas(4) float radius = 1.0f;
+        alignas(4) float lightIntensity = 1.0f;
 
-        int hasNext = 0;
-        uint64_t next = 0;
+        alignas(4) int hasNext = 0;
+        alignas(8) uint64_t next = 0;
     };
 
     struct PointLightComponent {
@@ -51,18 +51,18 @@ namespace Banan {
     };
 
     struct GameObjectData {
-        int albedoTexture = -1;
-        int normalTexture = -1;
-        int heightTexture = -1;
+        alignas(4) int albedoTexture = -1;
+        alignas(4) int normalTexture = -1;
+        alignas(4) int heightTexture = -1;
 
-        int transform = 0;
-        uint64_t transformRef = 0;
+        alignas(4) int transform = 0;
+        alignas(8) uint64_t transformRef = 0;
 
-        int parallax = 0;
-        uint64_t parallaxRef = 0;
+        alignas(4) int parallax = 0;
+        alignas(8) uint64_t parallaxRef = 0;
 
-        int pointLight = 0;
-        uint64_t pointLightRef = 0;
+        alignas(4) int pointLight = 0;
+        alignas(8) uint64_t pointLightRef = 0;
     };
 
     class BananGameObjectManager;

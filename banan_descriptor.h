@@ -80,8 +80,8 @@ namespace Banan {
         public:
             BananDescriptorWriter(BananDescriptorSetLayout &setLayout, BananDescriptorPool &pool);
 
-            BananDescriptorWriter &writeBuffer(uint32_t binding, VkDescriptorBufferInfo bufferInfo);
-            BananDescriptorWriter &writeImage(uint32_t binding, VkDescriptorImageInfo imageInfo);
+            BananDescriptorWriter &writeBuffer(uint32_t binding, VkDescriptorBufferInfo &bufferInfo);
+            BananDescriptorWriter &writeImage(uint32_t binding, VkDescriptorImageInfo &imageInfo);
             BananDescriptorWriter &writeImages(uint32_t binding, const std::unordered_map<uint32_t, VkDescriptorImageInfo>& imageInfos);
             BananDescriptorWriter &writeImages(uint32_t binding, const std::vector<VkDescriptorImageInfo>& imageInfos);
 

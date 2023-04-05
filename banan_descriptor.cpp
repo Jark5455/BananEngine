@@ -146,7 +146,7 @@ namespace Banan {
 
     BananDescriptorWriter::BananDescriptorWriter(BananDescriptorSetLayout &setLayout, BananDescriptorPool &pool) : setLayout{setLayout}, pool{pool} {}
 
-    BananDescriptorWriter &BananDescriptorWriter::writeBuffer(uint32_t binding, VkDescriptorBufferInfo bufferInfo) {
+    BananDescriptorWriter &BananDescriptorWriter::writeBuffer(uint32_t binding, VkDescriptorBufferInfo &bufferInfo) {
         assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
         auto &bindingDescription = setLayout.bindings[binding];
         assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
@@ -162,7 +162,7 @@ namespace Banan {
         return *this;
     }
 
-    BananDescriptorWriter &BananDescriptorWriter::writeImage(uint32_t binding, VkDescriptorImageInfo imageInfo) {
+    BananDescriptorWriter &BananDescriptorWriter::writeImage(uint32_t binding, VkDescriptorImageInfo &imageInfo) {
         assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
         auto &bindingDescription = setLayout.bindings[binding];
         assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");

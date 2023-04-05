@@ -152,10 +152,10 @@ namespace Banan {
                 extension == ".png" &&
                 "File format not supported");
 
-        uint32_t width = 0;
-        uint32_t height = 0;
-        uint32_t stride = 0;
-        uint32_t levels = 0;
+        uint32_t width;
+        uint32_t height;
+        uint32_t stride;
+        uint32_t levels;
         void *data;
 
         if (extension == ".exr") {
@@ -175,16 +175,16 @@ namespace Banan {
             in.setFrameBuffer(&pixelBufferRef[0][0] - dx - dy * dim.x, 1, dim.x);
             in.readPixels(win.min.y, win.max.y);
 
+            data = malloc(dim.y * dim.y * 8);
             width = dim.x;
             height = dim.y;
             stride = 16;
             levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, width)))) + 1;
 
             std::vector<uint16_t> singleChannelPixelBuffer{};
-            singleChannelPixelBuffer.reserve(dim.y * dim.x * 4);
+            singleChannelPixelBuffer.reserve(dim.x * dim.y * 4);
 
-            int index = 0;
-
+            uint32_t index = 0;
             for (int y1 = 0; y1 < dim.y; y1++) {
                 for (int x1 = 0; x1 < dim.x; x1++) {
                     singleChannelPixelBuffer[index++] = pixelBufferRef[y1][x1].r.bits();
@@ -194,18 +194,11 @@ namespace Banan {
                 }
             }
 
-            data = calloc(dim.x * dim.y, 8);
-            memcpy(data, singleChannelPixelBuffer.data(), dim.y * dim.x * 8);
-
+            memcpy(data, singleChannelPixelBuffer.data(), dim.x * dim.y * 8);
         } else {
-            void* otherdata = stbi_load(filepath.c_str(), (int *) &width, (int *) &height, nullptr, STBI_rgb_alpha);
+            data = stbi_load(filepath.c_str(), (int *) &width, (int *) &height, nullptr, STBI_rgb_alpha);
             levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, width)))) + 1;
             stride = 8;
-
-            data = malloc(width * height * 4);
-            memcpy(data, otherdata, width * height * 4);
-
-            stbi_image_free(otherdata);
         }
 
         assert(width != 0 && height != 0 && data != nullptr && "something went wrong when loading textures");
@@ -213,11 +206,12 @@ namespace Banan {
         uint32_t pixelCount = height * width;
         uint32_t pixelSize = stride / 2; // stride is in bits, pixel size should be in bytes
 
-        VkFormat format = stride == 16 ? VK_FORMAT_R16G16B16A16_UNORM : VK_FORMAT_R8G8B8A8_UNORM;
+        VkFormat format = stride == 16 ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_SRGB;
 
         BananBuffer stagingBuffer{device, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         stagingBuffer.map();
         stagingBuffer.writeToBuffer((void *) data);
+
         free(data);
 
         VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();

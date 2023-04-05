@@ -98,28 +98,39 @@ namespace Banan{
         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
 
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
-            writer.writeBuffer(0, uboBuffers[i]->descriptorInfo());
+            auto bufferInfo = uboBuffers[i]->descriptorInfo();
+            writer.writeBuffer(0, bufferInfo);
             writer.build(globalDescriptorSets[i]);
 
             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
-            procrastinatedWriter.writeImage(0, bananRenderer.getGBufferDescriptorInfo()[0]);
-            procrastinatedWriter.writeImage(1, bananRenderer.getGBufferDescriptorInfo()[1]);
-            procrastinatedWriter.writeImage(2, bananRenderer.getGBufferDescriptorInfo()[2]);
+            auto gbufferInfo = bananRenderer.getGBufferDescriptorInfo();
+            auto albedo = gbufferInfo[0];
+            auto normal = gbufferInfo[1];
+            auto depth = gbufferInfo[2];
+
+            procrastinatedWriter.writeImage(0, albedo);
+            procrastinatedWriter.writeImage(1, normal);
+            procrastinatedWriter.writeImage(2, depth);
             procrastinatedWriter.build(procrastinatedDescriptorSets[i]);
 
             BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *resolvePool);
-            edgeDetectionWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
+            auto geomInfo = bananRenderer.getGeometryDescriptorInfo();
+            edgeDetectionWriter.writeImage(0, geomInfo);
             edgeDetectionWriter.build(edgeDetectionDescriptorSets[i]);
 
             BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *resolvePool);
-            blendWeightWriter.writeImage(0, bananRenderer.getEdgeDescriptorInfo());
-            blendWeightWriter.writeImage(1, areaTex->descriptorInfo());
-            blendWeightWriter.writeImage(2, searchTex->descriptorInfo());
+            auto edgeInfo = bananRenderer.getEdgeDescriptorInfo();
+            auto areaTexInfo = areaTex->descriptorInfo();
+            auto searchTexInfo = searchTex->descriptorInfo();
+            blendWeightWriter.writeImage(0, edgeInfo);
+            blendWeightWriter.writeImage(1, areaTexInfo);
+            blendWeightWriter.writeImage(2, searchTexInfo);
             blendWeightWriter.build(blendWeightDescriptorSets[i]);
 
             BananDescriptorWriter resolveWriter(*resolveLayout, *resolvePool);
-            resolveWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
-            resolveWriter.writeImage(1, bananRenderer.getBlendWeightDescriptorInfo());
+            auto blendInfo = bananRenderer.getBlendWeightDescriptorInfo();
+            resolveWriter.writeImage(0, geomInfo);
+            resolveWriter.writeImage(1, blendInfo);
             resolveWriter.build(resolveDescriptorSets[i]);
         }
 
@@ -141,25 +152,35 @@ namespace Banan{
 
                         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
                             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
-                            procrastinatedWriter.writeImage(0, bananRenderer.getGBufferDescriptorInfo()[0]);
-                            procrastinatedWriter.writeImage(1, bananRenderer.getGBufferDescriptorInfo()[1]);
-                            procrastinatedWriter.writeImage(2, bananRenderer.getGBufferDescriptorInfo()[2]);
-                            procrastinatedWriter.overwrite(procrastinatedDescriptorSets[i]);
+                            auto gbufferInfo = bananRenderer.getGBufferDescriptorInfo();
+                            auto albedo = gbufferInfo[0];
+                            auto normal = gbufferInfo[1];
+                            auto depth = gbufferInfo[2];
+
+                            procrastinatedWriter.writeImage(0, albedo);
+                            procrastinatedWriter.writeImage(1, normal);
+                            procrastinatedWriter.writeImage(2, depth);
+                            procrastinatedWriter.build(procrastinatedDescriptorSets[i]);
 
                             BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *resolvePool);
-                            edgeDetectionWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
-                            edgeDetectionWriter.overwrite(edgeDetectionDescriptorSets[i]);
+                            auto geomInfo = bananRenderer.getGeometryDescriptorInfo();
+                            edgeDetectionWriter.writeImage(0, geomInfo);
+                            edgeDetectionWriter.build(edgeDetectionDescriptorSets[i]);
 
                             BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *resolvePool);
-                            blendWeightWriter.writeImage(0, bananRenderer.getEdgeDescriptorInfo());
-                            blendWeightWriter.writeImage(1, areaTex->descriptorInfo());
-                            blendWeightWriter.writeImage(2, searchTex->descriptorInfo());
-                            blendWeightWriter.overwrite(blendWeightDescriptorSets[i]);
+                            auto edgeInfo = bananRenderer.getEdgeDescriptorInfo();
+                            auto areaTexInfo = areaTex->descriptorInfo();
+                            auto searchTexInfo = searchTex->descriptorInfo();
+                            blendWeightWriter.writeImage(0, edgeInfo);
+                            blendWeightWriter.writeImage(1, areaTexInfo);
+                            blendWeightWriter.writeImage(2, searchTexInfo);
+                            blendWeightWriter.build(blendWeightDescriptorSets[i]);
 
                             BananDescriptorWriter resolveWriter(*resolveLayout, *resolvePool);
-                            resolveWriter.writeImage(0, bananRenderer.getGeometryDescriptorInfo());
-                            resolveWriter.writeImage(1, bananRenderer.getBlendWeightDescriptorInfo());
-                            resolveWriter.overwrite(resolveDescriptorSets[i]);
+                            auto blendInfo = bananRenderer.getBlendWeightDescriptorInfo();
+                            resolveWriter.writeImage(0, geomInfo);
+                            resolveWriter.writeImage(1, blendInfo);
+                            resolveWriter.build(resolveDescriptorSets[i]);
                         }
 
                         // computeSystem.reconstructPipeline({globalSetLayout->getDescriptorSetLayout()});
@@ -293,7 +314,7 @@ namespace Banan{
         };
 
         for (size_t i = 0; i < lightColors.size(); i++) {
-            auto &pointLight = bananGameObjectManager.makePointLight();
+            auto &pointLight = bananGameObjectManager.makePointLight(0.5f);
             pointLight.pointLight->color = lightColors[i];
             auto rotateLight = glm::rotate(glm::mat4(1.f), (static_cast<float>(i) * glm::two_pi<float>()) / static_cast<float>(lightColors.size()), {0.f, -1.f, 0.f});
             pointLight.transform.translation = glm::vec3(rotateLight * glm::vec4(-1.f, -1.f, -1.f, 1.f));
