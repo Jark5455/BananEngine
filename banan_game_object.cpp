@@ -232,6 +232,13 @@ namespace Banan {
             gameObjectDataBuffers[frameIndex]->writeToIndex(&data, kv.first);
             gameObjectDataBuffers[frameIndex]->flushIndex(kv.first);
         }
+
+        // TODO unsafe pointer arithmetic, fix later
+        if (pointLightCount > 0) {
+            auto *data = (PointLightBuffer *) pointLightBuffers[frameIndex]->readIndex(pointLightCount - 1);
+            data->hasNext = 0;
+            data->next = 0;
+        }
     }
 
     BananGameObject &BananGameObjectManager::makeVirtualGameObject() {

@@ -109,7 +109,6 @@ void main() {
             specularLight += object.color.xyz * attenuation * blinnTerm;
 
             object = object.next;
-
         } while (object.hasNext == 1);
     }
 

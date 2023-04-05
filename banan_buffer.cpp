@@ -91,6 +91,14 @@ namespace Banan {
         return invalidate(alignmentSize, index * alignmentSize);
     }
 
+    // TODO unsafe pointer arithmetic, fix later
+    void *BananBuffer::readIndex(size_t index) {
+        size_t offset = index * alignmentSize;
+        char *mem = (char *) mapped;
+        mem += offset;
+        return (void *) mem;
+    }
+
     VkBuffer BananBuffer::getBuffer() {
         return buffer;
     }
