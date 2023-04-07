@@ -2,14 +2,20 @@
 // Created by yashr on 4/5/23.
 //
 
+#include <banan_camera.h>
+
 #include <stdexcept>
+
 #include "PointShadowSystem.h"
 
 namespace Banan {
 
-    PointShadowSystem::PointShadowSystem(Banan::BananDevice &device, Banan::BananGameObjectManager &manager) : bananDevice{device}, bananGameObjectManager{manager} {
+    PointShadowSystem::PointShadowSystem(Banan::BananDevice &device, Banan::BananGameObjectManager &manager, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device}, bananGameObjectManager{manager} {
         createRenderpass();
         createFramebuffers();
+
+        createPipelineLayout(layouts);
+        createPipeline();
     }
 
     PointShadowSystem::~PointShadowSystem() {
@@ -25,7 +31,7 @@ namespace Banan {
 
         std::vector<VkAttachmentDescription> attachments{2};
         attachments[0].format = VK_FORMAT_R16G16B16A16_USCALED;
-        attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -34,7 +40,7 @@ namespace Banan {
         attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
         attachments[1].format = depthFormat;
-        attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[1].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -116,8 +122,8 @@ namespace Banan {
     void PointShadowSystem::createFramebuffers() {
         for (auto &kv : bananGameObjectManager.getGameObjects()) {
             if (kv.second.pointLight != nullptr && kv.second.pointLight->castsShadows) {
-                std::shared_ptr<BananCubemap> cubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, VK_FORMAT_R16G16B16A16_USCALED, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-                std::shared_ptr<BananCubemap> depthCubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananCubemap> cubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, VK_FORMAT_R16G16B16A16_USCALED, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananCubemap> depthCubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
                 auto view = cubemap->descriptorInfo().imageView;
 
                 VkFramebuffer framebuffer;
@@ -134,8 +140,11 @@ namespace Banan {
                     throw std::runtime_error("failed to create shadow framebuffer!");
                 }
 
-                cubemaps.emplace(kv.first, cubemap);
-                depthcubemaps.emplace(kv.first, depthCubemap);
+                cubemapalias.emplace(kv.first, cubemaps.size());
+                cubemaps.push_back(cubemap);
+                depthcubemapalias.emplace(kv.first, depthcubemaps.size());
+                depthcubemaps.push_back(depthCubemap);
+
                 framebuffers.emplace(kv.first, framebuffer);
             }
         }
@@ -149,11 +158,99 @@ namespace Banan {
         pipelineLayoutInfo.pushConstantRangeCount = 0;
         pipelineLayoutInfo.pPushConstantRanges = nullptr;
         if (vkCreatePipelineLayout(bananDevice.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create pipeline layout!");
+            throw std::runtime_error("failed to create shadow pipeline layout!");
         }
     }
 
     void PointShadowSystem::createPipeline() {
+        assert(pipelineLayout != nullptr && "pipelineLayout must be created before pipeline");
 
+        // why not use the existing variables HEIGHT or WIDTH? - On high pixel density displays such as apples "retina" display these values are incorrect, but the swap chain corrects these values
+        PipelineConfigInfo pipelineConfig{};
+        BananPipeline::defaultPipelineConfigInfo(pipelineConfig);
+        pipelineConfig.attributeDescriptions.clear();
+        pipelineConfig.bindingDescriptions.clear();
+        BananPipeline::shadowPipelineConfigInfo(pipelineConfig);
+        pipelineConfig.renderPass = shadowRenderpass;
+        pipelineConfig.pipelineLayout = pipelineLayout;
+        pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+        pipelineConfig.subpass = 0;
+
+        bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/shadow.vert.spv", "shaders/shadow.frag.spv", pipelineConfig);
+    }
+
+    void PointShadowSystem::beginShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index) {
+        VkClearValue clearValues[2];
+        clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+        clearValues[1].depthStencil = { 1.0f, 0 };
+
+        VkRenderPassBeginInfo renderPassBeginInfo{};
+        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        // Reuse render pass from example pass
+        renderPassBeginInfo.renderPass = shadowRenderpass;
+        renderPassBeginInfo.framebuffer = framebuffers.at(index);
+        renderPassBeginInfo.renderArea.extent.width = 1024;
+        renderPassBeginInfo.renderArea.extent.height = 1024;
+        renderPassBeginInfo.clearValueCount = 2;
+        renderPassBeginInfo.pClearValues = clearValues;
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        VkViewport viewport{};
+        viewport.x = 0;
+        viewport.y = 1024;
+        viewport.width = 1024;
+        viewport.height = -1024;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.extent.width = 1024;
+        scissor.extent.height = 1024;
+        scissor.offset.x = 0;
+        scissor.offset.y = 0;
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    }
+
+    void PointShadowSystem::endShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index) {
+        vkCmdEndRenderPass(commandBuffer);
+    }
+
+    void PointShadowSystem::render(BananFrameInfo info) {
+        BananCamera shadowCamera{};
+
+        for (auto &kv : bananGameObjectManager.getGameObjects()) {
+
+            if (kv.second.pointLight == nullptr || !kv.second.pointLight->castsShadows) continue;
+
+            for (int faceindex = 0; faceindex < 6; faceindex++) {
+                switch (faceindex)
+                {
+                    case 0: // POSITIVE_X
+                        shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(180.f), glm::radians(270.f), 0.f});
+                        break;
+                    case 1:	// NEGATIVE_X
+                        shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(180.f), glm::radians(90.f), 0.f});
+                        break;
+                    case 2:	// POSITIVE_Y
+                        shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(270.f), 0.f, glm::radians(180.f)});
+                        break;
+                    case 3:	// NEGATIVE_Y
+                        shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(90.f), 0.f, glm::radians(180.f)});
+                        break;
+                    case 4:	// POSITIVE_Z
+                        shadowCamera.setViewYXZ(kv.second.transform.translation, {0.f, 0.f, glm::radians(180.f)});
+                        break;
+                    case 5:	// NEGATIVE_Z
+                        shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(180.f), 0.f, 0.f});
+                        break;
+
+                    default:
+                        throw std::runtime_error("invalid faceindex");
+                }
+            }
+        }
     }
 }
