@@ -89,7 +89,7 @@ void main() {
     if (ubo.numPointLights > 0) {
         pointLight object = ubo.basePointLightRef;
 
-        do {
+        while (true) {
             vec3 lightPos = object.position.xyz;
 
             vec3 directionToLight = lightPos - position;
@@ -108,8 +108,11 @@ void main() {
             blinnTerm = pow(blinnTerm, 512.0f);
             specularLight += object.color.xyz * attenuation * blinnTerm;
 
-            object = object.next;
-        } while (object.hasNext == 1);
+            if (object.hasNext == 1)
+                object = object.next;
+            else
+                break;
+        }
     }
 
     outColor = vec4(diffuseLight + specularLight, 1.0);
