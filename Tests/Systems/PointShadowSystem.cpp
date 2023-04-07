@@ -128,7 +128,7 @@ namespace Banan {
                 framebufferInfo.pAttachments = &view;
                 framebufferInfo.width = 1024;
                 framebufferInfo.height = 1024;
-                framebufferInfo.layers = 1;
+                framebufferInfo.layers = 6;
 
                 if (vkCreateFramebuffer(bananDevice.device(), &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
                     throw std::runtime_error("failed to create shadow framebuffer!");
@@ -139,5 +139,21 @@ namespace Banan {
                 framebuffers.emplace(kv.first, framebuffer);
             }
         }
+    }
+
+    void PointShadowSystem::createPipelineLayout(std::vector<VkDescriptorSetLayout> layouts) {
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+        pipelineLayoutInfo.pSetLayouts = layouts.data();
+        pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineLayoutInfo.pPushConstantRanges = nullptr;
+        if (vkCreatePipelineLayout(bananDevice.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create pipeline layout!");
+        }
+    }
+
+    void PointShadowSystem::createPipeline() {
+
     }
 }
