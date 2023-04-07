@@ -150,6 +150,9 @@ namespace Banan{
                     if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
                         bananRenderer.recreateSwapChain();
 
+                        procrastinatedPool->resetPool();
+                        resolvePool->resetPool();
+
                         for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
                             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
                             auto gbufferInfo = bananRenderer.getGBufferDescriptorInfo();

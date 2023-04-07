@@ -48,6 +48,8 @@ namespace Banan {
     struct PointLightComponent {
         glm::vec3 color{1.f};
         float intensity = 1.0f;
+
+        bool castsShadows = true;
     };
 
     struct GameObjectData {

@@ -148,8 +148,8 @@ namespace Banan {
         VkPhysicalDeviceBufferDeviceAddressFeatures deviceAddressFeatures{};
         deviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
         deviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
-        deviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_TRUE;
-        deviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_TRUE;
+        deviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_FALSE;
+        deviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_FALSE;
         deviceAddressFeatures.pNext = &indexingFeatures;
 
         VkPhysicalDeviceFeatures deviceFeatures = {};
