@@ -131,7 +131,7 @@ namespace Banan {
             size_t numTextures();
             std::vector<VkDescriptorImageInfo> textureInfo();
 
-            size_t numPointLights(int frameIndex);
+            size_t numPointLights();
             uint64_t getPointLightBaseRef(int frameIndex);
 
             VkDescriptorSetLayout getGameObjectSetLayout();

@@ -18,13 +18,7 @@ namespace Banan {
 
             struct ShadowCubemapMatrices {
                 alignas(16) glm::mat4 projectionMatrix{1.f};
-
-                alignas(16) glm::mat4 viewMat0{1.f};
-                alignas(16) glm::mat4 viewMat1{1.f};
-                alignas(16) glm::mat4 viewMat2{1.f};
-                alignas(16) glm::mat4 viewMat3{1.f};
-                alignas(16) glm::mat4 viewMat4{1.f};
-                alignas(16) glm::mat4 viewMat5{1.f};
+                alignas(16) glm::mat4 viewMatrices[6];
             };
 
             PointShadowSystem(BananDevice &device, BananGameObjectManager &manager, std::vector<VkDescriptorSetLayout> layouts);
@@ -33,8 +27,8 @@ namespace Banan {
             PointShadowSystem(const PointShadowSystem &) = delete;
             PointShadowSystem &operator=(const PointShadowSystem &) = delete;
 
-            void render(BananFrameInfo info);
-            void generateMatrices()
+            void render(BananFrameInfo frameInfo);
+            void generateMatrices(BananFrameInfo frameInfo);
 
         private:
             void createRenderpass();
@@ -44,7 +38,10 @@ namespace Banan {
             void createPipeline();
 
             void beginShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index);
-            void endShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index);
+            void endShadowRenderpass(VkCommandBuffer commandBuffer);
+
+            void createMatrixBuffers();
+            void createDescriptors();
 
             BananDevice &bananDevice;
             BananGameObjectManager &bananGameObjectManager;
@@ -57,12 +54,14 @@ namespace Banan {
 
             std::unordered_map<BananGameObject::id_t, VkFramebuffer> framebuffers;
 
-            // shader read
             std::unordered_map<BananGameObject::id_t, size_t> cubemapalias;
             std::vector<std::shared_ptr<BananCubemap>> cubemaps;
-
-            // no shader read
-            std::unordered_map<BananGameObject::id_t, size_t> depthcubemapalias;
             std::vector<std::shared_ptr<BananCubemap>> depthcubemaps;
+
+            std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
+
+            std::unique_ptr<BananDescriptorPool> shadowPool;
+            std::unique_ptr<BananDescriptorSetLayout> shadowMatrixSetLayout;
+            std::vector<VkDescriptorSet> shadowMatrixDescriptorSets;
     };
 }

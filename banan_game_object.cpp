@@ -386,8 +386,14 @@ namespace Banan {
         return textureDescriptorSets[frameIndex];
     }
 
-    size_t BananGameObjectManager::numPointLights(int frameIndex) {
-        return pointLightBuffers[frameIndex]->getInstanceCount();
+    size_t BananGameObjectManager::numPointLights() {
+        size_t count = 0;
+        for (auto &kv : gameObjects) {
+            if (kv.second.pointLight != nullptr)
+                count++;
+        }
+
+        return count;
     }
 
     uint64_t BananGameObjectManager::getPointLightBaseRef(int frameIndex) {

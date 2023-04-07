@@ -152,6 +152,13 @@ namespace Banan {
         deviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_FALSE;
         deviceAddressFeatures.pNext = &indexingFeatures;
 
+        VkPhysicalDeviceMultiviewFeaturesKHR multiviewFeatures{};
+        multiviewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR;
+        multiviewFeatures.multiview = VK_TRUE;
+        multiviewFeatures.multiviewGeometryShader = VK_FALSE;
+        multiviewFeatures.multiviewTessellationShader = VK_FALSE;
+        multiviewFeatures.pNext = &deviceAddressFeatures;
+
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
@@ -164,7 +171,7 @@ namespace Banan {
         createInfo.pEnabledFeatures = &deviceFeatures;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-        createInfo.pNext = &deviceAddressFeatures;
+        createInfo.pNext = &multiviewFeatures;
 
         // might not really be necessary anymore because device specific validation layers
         // have been deprecated
