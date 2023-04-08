@@ -1,8 +1,10 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_buffer_reference : require
+#extension GL_EXT_multiview : require
 
 layout (location = 0) in vec3 position;
+layout (location = 0) out vec4 fragPosWorld;
 
 layout(buffer_reference, std430) buffer transform {
     mat4 modelMatrix;
@@ -53,7 +55,13 @@ layout(set = 1, binding = 0) uniform GameObjects {
     pointLight pointLightRef;
 } objectData;
 
+layout(set = 2, binding = 0) uniform ShadowViews {
+    mat4 projectionMatrix;
+    mat4 viewMatrices[6];
+    mat4 invViewMatrices[6];
+} mats;
+
 void main() {
-    vec4 fragPosWorld = objectData.transformRef.modelMatrix * vec4(position, 1.0);
-    gl_Position = ubo.projection * ubo.view * fragPosWorld;
+    fragPosWorld = objectData.transformRef.modelMatrix * vec4(position, 1.0);
+    gl_Position = mats.projectionMatrix * mats.viewMatrices[gl_ViewIndex] * fragPosWorld;
 }

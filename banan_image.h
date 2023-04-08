@@ -57,17 +57,21 @@ namespace Banan {
             BananCubemap(const BananCubemap&) = delete;
             BananCubemap& operator=(const BananCubemap&) = delete;
 
-            VkDescriptorImageInfo descriptorInfo();
+            VkDescriptorImageInfo cubemapDescriptorInfo();
+            VkDescriptorImageInfo arrayDescriptorInfo();
+
             VkImage getImageHandle();
 
         private:
-            void createTextureImageView();
+            void createTextureCubemapImageView();
+            void createTextureArrayImageView();
             void createTextureSampler();
 
             BananDevice &bananDevice;
             VkFormat cubemapImageFormat;
             VkImage cubemapImage;
             VkImageView cubemapImageView;
+            VkImageView arrayImageView;
             VkSampler cubemapImageSampler;
             VkDeviceMemory memory;
             uint32_t mipLevels;

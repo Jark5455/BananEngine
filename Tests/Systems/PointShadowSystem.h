@@ -19,6 +19,7 @@ namespace Banan {
             struct ShadowCubemapMatrices {
                 alignas(16) glm::mat4 projectionMatrix{1.f};
                 alignas(16) glm::mat4 viewMatrices[6];
+                alignas(16) glm::mat4 invViewMatrices[6];
             };
 
             PointShadowSystem(BananDevice &device, BananGameObjectManager &manager, std::vector<VkDescriptorSetLayout> layouts);

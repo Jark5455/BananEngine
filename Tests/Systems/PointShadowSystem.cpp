@@ -33,8 +33,8 @@ namespace Banan {
         depthFormat = bananDevice.findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},VK_IMAGE_TILING_OPTIMAL,VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         std::vector<VkAttachmentDescription> attachments{2};
-        attachments[0].format = VK_FORMAT_R16G16B16A16_UINT;
-        attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].format = VK_FORMAT_R16G16B16A16_UNORM;
+        attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -43,7 +43,7 @@ namespace Banan {
         attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
         attachments[1].format = depthFormat;
-        attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[1].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -124,10 +124,10 @@ namespace Banan {
     void PointShadowSystem::createFramebuffers() {
         for (auto &kv : bananGameObjectManager.getGameObjects()) {
             if (kv.second.pointLight != nullptr && kv.second.pointLight->castsShadows) {
-                std::shared_ptr<BananCubemap> cubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-                std::shared_ptr<BananCubemap> depthCubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananCubemap> cubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananCubemap> depthCubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-                std::vector<VkImageView> attachments = {cubemap->descriptorInfo().imageView, depthCubemap->descriptorInfo().imageView};
+                std::vector<VkImageView> attachments = {cubemap->arrayDescriptorInfo().imageView, depthCubemap->arrayDescriptorInfo().imageView};
 
                 VkFramebuffer framebuffer;
                 VkFramebufferCreateInfo framebufferInfo = {};
@@ -258,26 +258,32 @@ namespace Banan {
             // POSITIVE_X
             shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(180.f), glm::radians(270.f), 0.f});
             mat.viewMatrices[0] = shadowCamera.getView();
+            mat.invViewMatrices[0] = shadowCamera.getInverseView();
 
             // NEGATIVE_X
             shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(180.f), glm::radians(90.f), 0.f});
             mat.viewMatrices[1] = shadowCamera.getView();
+            mat.invViewMatrices[1] = shadowCamera.getInverseView();
 
             // POSITIVE_Y
             shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(270.f), 0.f, glm::radians(180.f)});
             mat.viewMatrices[2] = shadowCamera.getView();
+            mat.invViewMatrices[2] = shadowCamera.getInverseView();
 
             // NEGATIVE_Y
             shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(90.f), 0.f, glm::radians(180.f)});
             mat.viewMatrices[3] = shadowCamera.getView();
+            mat.invViewMatrices[3] = shadowCamera.getInverseView();
 
             // POSITIVE_Z
             shadowCamera.setViewYXZ(kv.second.transform.translation, {0.f, 0.f, glm::radians(180.f)});
             mat.viewMatrices[4] = shadowCamera.getView();
+            mat.invViewMatrices[4] = shadowCamera.getInverseView();
 
             // NEGATIVE_Z
             shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(180.f), 0.f, 0.f});
             mat.viewMatrices[5] = shadowCamera.getView();
+            mat.invViewMatrices[5] = shadowCamera.getInverseView();
 
             matriceBuffers[frameInfo.frameIndex]->writeToIndex(&mat, cubemapalias.at(kv.first));
             matriceBuffers[frameInfo.frameIndex]->flushIndex(cubemapalias.at(kv.first));

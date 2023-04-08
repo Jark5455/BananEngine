@@ -1,7 +1,9 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_buffer_reference : require
+#extension GL_EXT_multiview : require
 
+layout (location = 0) in vec4 fragPosWorld;
 layout (location = 0) out vec4 outColor;
 
 layout(buffer_reference, std430) buffer transform {
@@ -53,17 +55,13 @@ layout(set = 1, binding = 0) uniform GameObjects {
     pointLight pointLightRef;
 } objectData;
 
+layout(set = 2, binding = 0) uniform ShadowViews {
+    mat4 projectionMatrix;
+    mat4 viewMatrices[6];
+    mat4 invViewMatrices[6];
+} mats;
+
 void main() {
-
-    const mat4 m = mat4(
-        1.5, 0.0, -2.0, 0.0,
-        0.0, 4.0, 0.0, -4.0,
-        sqrt(3) * (1.0 / 2.0), 0, -sqrt(12) * (1.0 / 9.0), 0,
-        0, 0.5, 0, 0.5
-    );
-
-    vec4 z = vec4(gl_FragCoord.z, pow(gl_FragCoord.z, 2), pow(gl_FragCoord.z, 3), pow(gl_FragCoord.z, 4));
-    vec4 a = vec4(0.0, 0.5, 0.0, 0.5);
-
-    outColor = m * z + a;
+    float z = length(fragPosWorld.xyz - mats.invViewMatrices[gl_ViewIndex][3].xyz);
+    outColor = vec4(z, pow(z, 2), pow(z, 3), pow(z, 4));
 }
