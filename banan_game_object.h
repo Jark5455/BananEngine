@@ -147,6 +147,7 @@ namespace Banan {
         private:
             std::shared_ptr<BananImage> loadImage(const std::string& filepath);
             std::shared_ptr<BananModel> loadMesh(const std::string& filepath);
+            PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR;
 
             std::unordered_map<std::string, size_t> texturealias;
             std::vector<std::shared_ptr<BananImage>> textures;

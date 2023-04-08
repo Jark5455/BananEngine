@@ -81,6 +81,7 @@ namespace Banan {
     }
 
     BananGameObjectManager::BananGameObjectManager(BananDevice &device) : bananDevice{device} {
+        vkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(bananDevice.device(), "vkGetBufferDeviceAddressKHR");
         currentId = 0;
     }
 
@@ -155,9 +156,6 @@ namespace Banan {
     }
 
     void BananGameObjectManager::updateBuffers(size_t frameIndex) {
-        // TODO make this static
-        auto vkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(bananDevice.device(), "vkGetBufferDeviceAddressKHR");
-
         VkBufferDeviceAddressInfo address_info{};
         address_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 
@@ -401,7 +399,6 @@ namespace Banan {
         address_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
         address_info.buffer = pointLightBuffers[frameIndex]->getBuffer();
 
-        auto vkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(bananDevice.device(), "vkGetBufferDeviceAddressKHR");
         return vkGetBufferDeviceAddressKHR(bananDevice.device(), &address_info);
     }
 

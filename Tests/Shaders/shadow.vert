@@ -4,7 +4,6 @@
 #extension GL_EXT_multiview : require
 
 layout (location = 0) in vec3 position;
-layout (location = 0) out vec4 fragPosWorld;
 
 layout(buffer_reference, std430) buffer transform {
     mat4 modelMatrix;
@@ -62,6 +61,5 @@ layout(set = 2, binding = 0) uniform ShadowViews {
 } mats;
 
 void main() {
-    fragPosWorld = objectData.transformRef.modelMatrix * vec4(position, 1.0);
-    gl_Position = mats.projectionMatrix * mats.viewMatrices[gl_ViewIndex] * fragPosWorld;
+    gl_Position = mats.viewMatrices[gl_ViewIndex] * objectData.transformRef.modelMatrix * vec4(position, 1.0);
 }

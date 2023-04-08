@@ -35,8 +35,11 @@ namespace Banan {
             void createRenderpass();
             void createFramebuffers();
 
-            void createPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
-            void createPipeline();
+            void createDepthPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
+            void createDepthPipeline();
+
+            void createQuantPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
+            void createQuantPipeline();
 
             void beginShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index);
             void endShadowRenderpass(VkCommandBuffer commandBuffer);
@@ -44,28 +47,35 @@ namespace Banan {
             void createMatrixBuffers();
             void createDescriptors();
 
+            PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR;
+
             BananDevice &bananDevice;
             BananGameObjectManager &bananGameObjectManager;
 
             VkRenderPass shadowRenderpass;
-            VkFormat depthFormat;
 
-            std::unique_ptr<BananPipeline> bananPipeline;
-            VkPipelineLayout pipelineLayout;
+            std::unique_ptr<BananPipeline> depthPipeline;
+            VkPipelineLayout depthPipelineLayout;
+
+            std::unique_ptr<BananPipeline> quantPipeline;
+            VkPipelineLayout quantPipelineLayout;
 
             std::unordered_map<BananGameObject::id_t, VkFramebuffer> framebuffers;
 
             std::unordered_map<BananGameObject::id_t, size_t> cubemapalias;
-            std::vector<std::shared_ptr<BananImageArray>> framebufferImages;
             std::vector<std::shared_ptr<BananImageArray>> depthFramebufferImages;
             std::vector<std::shared_ptr<BananCubemap>> framebufferResolveCubemaps;
-
-            std::vector<std::shared_ptr<BananCubemap>> MSMcubemaps;
+            std::vector<std::shared_ptr<BananCubemap>> quantCubemaps;
 
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
 
             std::unique_ptr<BananDescriptorPool> shadowPool;
+            std::unique_ptr<BananDescriptorPool> quantPool;
+
             std::unique_ptr<BananDescriptorSetLayout> shadowMatrixSetLayout;
             std::vector<VkDescriptorSet> shadowMatrixDescriptorSets;
+
+            std::unique_ptr<BananDescriptorSetLayout> quantizationSetLayout;
+            std::unordered_map<BananGameObject::id_t, std::vector<VkDescriptorSet>> quantizationDescriptorSets;
     };
 }
