@@ -56,8 +56,11 @@ namespace Banan {
             std::unordered_map<BananGameObject::id_t, VkFramebuffer> framebuffers;
 
             std::unordered_map<BananGameObject::id_t, size_t> cubemapalias;
-            std::vector<std::shared_ptr<BananCubemap>> cubemaps;
-            std::vector<std::shared_ptr<BananCubemap>> depthcubemaps;
+            std::vector<std::shared_ptr<BananImageArray>> framebufferImages;
+            std::vector<std::shared_ptr<BananImageArray>> depthFramebufferImages;
+            std::vector<std::shared_ptr<BananCubemap>> framebufferResolveCubemaps;
+
+            std::vector<std::shared_ptr<BananCubemap>> MSMcubemaps;
 
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
 

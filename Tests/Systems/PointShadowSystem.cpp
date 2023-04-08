@@ -22,6 +22,8 @@ namespace Banan {
     }
 
     PointShadowSystem::~PointShadowSystem() {
+        vkDestroyPipelineLayout(bananDevice.device(), pipelineLayout, nullptr);
+
         for (auto &kv : framebuffers) {
             vkDestroyFramebuffer(bananDevice.device(), kv.second, nullptr);
         }
@@ -32,7 +34,7 @@ namespace Banan {
     void Banan::PointShadowSystem::createRenderpass() {
         depthFormat = bananDevice.findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},VK_IMAGE_TILING_OPTIMAL,VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-        std::vector<VkAttachmentDescription> attachments{2};
+        std::vector<VkAttachmentDescription> attachments{3};
         attachments[0].format = VK_FORMAT_R16G16B16A16_UNORM;
         attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -40,7 +42,7 @@ namespace Banan {
         attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         attachments[1].format = depthFormat;
         attachments[1].samples = VK_SAMPLE_COUNT_4_BIT;
@@ -51,6 +53,15 @@ namespace Banan {
         attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+        attachments[2].format = VK_FORMAT_R16G16B16A16_UNORM;
+        attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[2].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
         VkAttachmentReference attachmentReference{};
         attachmentReference.attachment = 0;
         attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -59,11 +70,16 @@ namespace Banan {
         depthAttachmentReference.attachment = 1;
         depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+        VkAttachmentReference resolveAttachmentReference{};
+        resolveAttachmentReference.attachment = 2;
+        resolveAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &attachmentReference;
         subpass.pDepthStencilAttachment = &depthAttachmentReference;
+        subpass.pResolveAttachments = &resolveAttachmentReference;
 
         std::vector<VkSubpassDependency> dependencies{3};
 
@@ -124,10 +140,11 @@ namespace Banan {
     void PointShadowSystem::createFramebuffers() {
         for (auto &kv : bananGameObjectManager.getGameObjects()) {
             if (kv.second.pointLight != nullptr && kv.second.pointLight->castsShadows) {
-                std::shared_ptr<BananCubemap> cubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-                std::shared_ptr<BananCubemap> depthCubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananImageArray> cubemap = std::make_shared<BananImageArray>(bananDevice, 1024, 1024, 6, 1, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananImageArray> depthCubemap = std::make_shared<BananImageArray>(bananDevice, 1024, 1024, 6, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananCubemap> resolveCubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-                std::vector<VkImageView> attachments = {cubemap->arrayDescriptorInfo().imageView, depthCubemap->arrayDescriptorInfo().imageView};
+                std::vector<VkImageView> attachments = {cubemap->descriptorInfo().imageView, depthCubemap->descriptorInfo().imageView, resolveCubemap->cubemapDescriptorInfo().imageView};
 
                 VkFramebuffer framebuffer;
                 VkFramebufferCreateInfo framebufferInfo = {};
@@ -143,10 +160,13 @@ namespace Banan {
                     throw std::runtime_error("failed to create shadow framebuffer!");
                 }
 
-                assert(cubemaps.size() == depthcubemaps.size() && "number of depth buffers differ from number of color buffers");
-                cubemapalias.emplace(kv.first, cubemaps.size());
-                cubemaps.push_back(cubemap);
-                depthcubemaps.push_back(depthCubemap);
+                assert(framebufferImages.size() == framebufferResolveCubemaps.size() && "number of resolve buffers differ from number of color buffers");
+                assert(framebufferImages.size() == depthFramebufferImages.size() && "number of depth buffers differ from number of color buffers");
+
+                cubemapalias.emplace(kv.first, framebufferImages.size());
+                framebufferImages.push_back(cubemap);
+                depthFramebufferImages.push_back(depthCubemap);
+                framebufferResolveCubemaps.push_back(resolveCubemap);
 
                 framebuffers.emplace(kv.first, framebuffer);
             }
@@ -179,16 +199,17 @@ namespace Banan {
         BananPipeline::shadowPipelineConfigInfo(pipelineConfig);
         pipelineConfig.renderPass = shadowRenderpass;
         pipelineConfig.pipelineLayout = pipelineLayout;
-        pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
         pipelineConfig.subpass = 0;
 
         bananPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/shadow.vert.spv", "shaders/shadow.frag.spv", pipelineConfig);
     }
 
     void PointShadowSystem::beginShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index) {
-        VkClearValue clearValues[2];
+        VkClearValue clearValues[3];
         clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
         clearValues[1].depthStencil = { 1.0f, 0 };
+        clearValues[2].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 
         VkRenderPassBeginInfo renderPassBeginInfo{};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -197,7 +218,7 @@ namespace Banan {
         renderPassBeginInfo.framebuffer = framebuffers.at(index);
         renderPassBeginInfo.renderArea.extent.width = 1024;
         renderPassBeginInfo.renderArea.extent.height = 1024;
-        renderPassBeginInfo.clearValueCount = 2;
+        renderPassBeginInfo.clearValueCount = 3;
         renderPassBeginInfo.pClearValues = clearValues;
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -227,10 +248,11 @@ namespace Banan {
     void PointShadowSystem::render(BananFrameInfo frameInfo) {
         for (auto &kv : framebuffers) {
             beginShadowRenderpass(frameInfo.commandBuffer, kv.first);
-
             bananPipeline->bind(frameInfo.commandBuffer);
 
             for (auto &objectkv : bananGameObjectManager.getGameObjects()) {
+                if (objectkv.second.model == nullptr) continue;
+
                 std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet, shadowMatrixDescriptorSets[frameInfo.frameIndex]};
                 std::vector<uint32_t> offsets = {objectkv.first * (unsigned int) frameInfo.gameObjectManager.getGameObjectBufferAlignmentSize(frameInfo.frameIndex),
                                                  (unsigned int) cubemapalias.at(kv.first) * (unsigned int) matriceBuffers[frameInfo.frameIndex]->getAlignmentSize()};
@@ -305,12 +327,13 @@ namespace Banan {
                 .build();
 
         shadowMatrixSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_ALL_GRAPHICS)
                 .build();
 
+        shadowMatrixDescriptorSets.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (size_t i = 0; i < shadowMatrixDescriptorSets.size(); i++) {
             BananDescriptorWriter shadowWriter(*shadowMatrixSetLayout, *shadowPool);
-            auto bufferInfo = matriceBuffers[i]->descriptorInfo();
+            auto bufferInfo = matriceBuffers[i]->descriptorInfo(matriceBuffers[i]->getInstanceSize());
             shadowWriter.writeBuffer(0, bufferInfo);
             shadowWriter.build(shadowMatrixDescriptorSets[i]);
         }

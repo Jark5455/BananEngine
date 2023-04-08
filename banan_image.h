@@ -34,18 +34,30 @@ namespace Banan {
             void generateMipMaps(uint32_t mipLevels);
 
         private:
-
             void createTextureImageView();
-            void createTextureSampler();
-
-            BananDevice &bananDevice;
-            VkImage image;
-            VkFormat imageFormat;
-            VkImageView imageView;
             VkSampler imageSampler;
+
+        protected:
+            BananImage(BananDevice &device, VkFormat format);
+
+            VkImage image;
             VkDeviceMemory memory;
             VkExtent2D imageExtent;
             VkImageLayout imageLayout;
+            BananDevice &bananDevice;
+            VkFormat imageFormat;
+            uint32_t mipLevels;
+            VkImageView imageView;
+
+            void createTextureSampler();
+    };
+
+    class BananImageArray : public BananImage {
+        public:
+            BananImageArray(BananDevice &device, uint32_t width, uint32_t height, uint32_t arrayLevels, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+        private:
+            void createTextureImageView();
+            uint32_t arrayLevels;
             uint32_t mipLevels;
     };
 
