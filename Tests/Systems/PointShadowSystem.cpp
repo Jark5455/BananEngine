@@ -27,7 +27,6 @@ namespace Banan {
     }
 
     PointShadowSystem::~PointShadowSystem() {
-
         vkDestroyPipelineLayout(bananDevice.device(), quantPipelineLayout, nullptr);
         vkDestroyPipelineLayout(bananDevice.device(), depthPipelineLayout, nullptr);
 
@@ -89,11 +88,11 @@ namespace Banan {
         resolveAttachmentReference.pNext = nullptr;
 
         VkAttachmentReference2KHR quantAttachmentReference{};
-        resolveAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
-        resolveAttachmentReference.attachment = 2;
-        resolveAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        resolveAttachmentReference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        resolveAttachmentReference.pNext = nullptr;
+        quantAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
+        quantAttachmentReference.attachment = 2;
+        quantAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        quantAttachmentReference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        quantAttachmentReference.pNext = nullptr;
 
         VkSubpassDescriptionDepthStencilResolveKHR depthStencilResolveAttachment{};
         depthStencilResolveAttachment.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE_KHR;
@@ -117,7 +116,7 @@ namespace Banan {
         subpasses[0].pColorAttachments = nullptr;
         subpasses[0].preserveAttachmentCount = 0;
         subpasses[0].pPreserveAttachments = nullptr;
-        subpasses[0].pResolveAttachments = nullptr;
+        subpasses[0].pResolveAttachments = &resolveAttachmentReference;
         subpasses[0].viewMask = viewMask;
         subpasses[0].flags = 0;
         subpasses[0].pNext = &depthStencilResolveAttachment;
@@ -185,13 +184,6 @@ namespace Banan {
         dependencies[3].pNext = nullptr;
         dependencies[3].viewOffset = 0;
 
-        VkRenderPassMultiviewCreateInfoKHR multi{};
-        multi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO_KHR;
-        multi.subpassCount = 1;
-        multi.pViewMasks = &viewMask;
-        multi.correlationMaskCount = 1;
-        multi.pCorrelationMasks = &correlationMask;
-
         VkRenderPassCreateInfo2KHR renderPassCreateInfo{};
         renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR;
         renderPassCreateInfo.attachmentCount = attachments.size();
@@ -200,7 +192,8 @@ namespace Banan {
         renderPassCreateInfo.pSubpasses = subpasses.data();
         renderPassCreateInfo.dependencyCount = dependencies.size();
         renderPassCreateInfo.pDependencies = dependencies.data();
-        renderPassCreateInfo.pNext = &multi;
+        renderPassCreateInfo.correlatedViewMaskCount = 1;
+        renderPassCreateInfo.pCorrelatedViewMasks = &correlationMask;
 
         if (vkCreateRenderPass2KHR(bananDevice.device(), &renderPassCreateInfo, nullptr, &shadowRenderpass) != VK_SUCCESS) {
             throw std::runtime_error("Unable to create shadow renderpass");
@@ -237,7 +230,6 @@ namespace Banan {
                 depthFramebufferImages.push_back(depthCubemap);
                 framebufferResolveCubemaps.push_back(resolveCubemap);
                 quantCubemaps.push_back(quantCubemap);
-
                 framebuffers.emplace(kv.first, framebuffer);
             }
         }
@@ -297,7 +289,7 @@ namespace Banan {
         pipelineConfig.attributeDescriptions.clear();
         pipelineConfig.bindingDescriptions.clear();
         pipelineConfig.renderPass = shadowRenderpass;
-        pipelineConfig.pipelineLayout = depthPipelineLayout;
+        pipelineConfig.pipelineLayout = quantPipelineLayout;
         pipelineConfig.subpass = 1;
 
         quantPipeline = std::make_unique<BananPipeline>(bananDevice, "shaders/quant.vert.spv", "shaders/quant.frag.spv", pipelineConfig);
@@ -454,15 +446,19 @@ namespace Banan {
         }
 
         for (auto &kv : bananGameObjectManager.getGameObjects()) {
-            std::vector<VkDescriptorSet> &sets = quantizationDescriptorSets.at(kv.first);
+            if (kv.second.pointLight == nullptr) continue;
+
+            std::vector<VkDescriptorSet> sets{};
             sets.resize(2);
 
-            for (size_t i = 0; i < sets.size(); i++) {
+            for (auto &set : sets) {
                 BananDescriptorWriter writer(*quantizationSetLayout, *quantPool);
                 auto imageInfo = framebufferResolveCubemaps[cubemapalias.at(kv.first)]->cubemapDescriptorInfo();
                 writer.writeImage(0, imageInfo);
-                writer.build(quantizationDescriptorSets.at(kv.first).at(i));
+                writer.build(set);
             }
+
+            quantizationDescriptorSets.emplace(kv.first, sets);
         }
     }
 }
