@@ -299,13 +299,11 @@ namespace Banan {
 
         createTextureSampler();
         createTextureCubemapImageView();
-        createTextureArrayImageView();
     }
 
     BananCubemap::~BananCubemap() {
         vkDestroySampler(bananDevice.device(), cubemapImageSampler, nullptr);
         vkDestroyImageView(bananDevice.device(), cubemapImageView, nullptr);
-        vkDestroyImageView(bananDevice.device(), arrayImageView, nullptr);
         vkDestroyImage(bananDevice.device(), cubemapImage, nullptr);
         vkFreeMemory(bananDevice.device(), memory, nullptr);
     }
@@ -327,27 +325,6 @@ namespace Banan {
         }
 
         if (vkCreateImageView(bananDevice.device(), &imageViewCreateInfo, nullptr, &cubemapImageView) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create cubemap image view");
-        }
-    }
-
-    void BananCubemap::createTextureArrayImageView() {
-        VkImageViewCreateInfo imageViewCreateInfo{};
-        imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        imageViewCreateInfo.format = cubemapImageFormat;
-        imageViewCreateInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY };
-        imageViewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 6 };
-        imageViewCreateInfo.image = cubemapImage;
-
-        VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
-        if (std::find(std::begin(depthFormats), std::end(depthFormats), cubemapImageFormat) != std::end(depthFormats)) {
-            imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        } else {
-            imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        }
-
-        if (vkCreateImageView(bananDevice.device(), &imageViewCreateInfo, nullptr, &arrayImageView) != VK_SUCCESS) {
             throw std::runtime_error("failed to create cubemap image view");
         }
     }
@@ -376,14 +353,6 @@ namespace Banan {
     VkDescriptorImageInfo BananCubemap::cubemapDescriptorInfo() {
         VkDescriptorImageInfo info{};
         info.imageView = cubemapImageView;
-        info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        info.sampler = cubemapImageSampler;
-        return info;
-    }
-
-    VkDescriptorImageInfo BananCubemap::arrayDescriptorInfo() {
-        VkDescriptorImageInfo info{};
-        info.imageView = arrayImageView;
         info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         info.sampler = cubemapImageSampler;
         return info;

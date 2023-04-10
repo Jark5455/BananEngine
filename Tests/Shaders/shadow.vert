@@ -61,5 +61,5 @@ layout(set = 2, binding = 0) uniform ShadowViews {
 } mats;
 
 void main() {
-    gl_Position = mats.viewMatrices[gl_ViewIndex] * objectData.transformRef.modelMatrix * vec4(position, 1.0);
+    gl_Position = mats.projectionMatrix * mats.viewMatrices[gl_ViewIndex] * objectData.transformRef.modelMatrix * vec4(position, 1.0);
 }
