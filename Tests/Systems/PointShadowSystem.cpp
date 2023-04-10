@@ -56,8 +56,8 @@ namespace Banan {
         attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         attachments[1].pNext = nullptr;
@@ -67,8 +67,8 @@ namespace Banan {
         attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[2].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         attachments[2].pNext = nullptr;
@@ -86,6 +86,13 @@ namespace Banan {
         resolveAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         resolveAttachmentReference.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         resolveAttachmentReference.pNext = nullptr;
+
+        VkAttachmentReference2KHR resolveInputAttachmentReference{};
+        resolveInputAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
+        resolveInputAttachmentReference.attachment = 1;
+        resolveInputAttachmentReference.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        resolveInputAttachmentReference.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        resolveInputAttachmentReference.pNext = nullptr;
 
         VkAttachmentReference2KHR quantAttachmentReference{};
         quantAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
@@ -125,7 +132,7 @@ namespace Banan {
         subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpasses[1].pDepthStencilAttachment = nullptr;
         subpasses[1].inputAttachmentCount = 1;
-        subpasses[1].pInputAttachments = &resolveAttachmentReference;
+        subpasses[1].pInputAttachments = &resolveInputAttachmentReference;
         subpasses[1].colorAttachmentCount = 1;
         subpasses[1].pColorAttachments = &quantAttachmentReference;
         subpasses[1].preserveAttachmentCount = 0;
@@ -297,8 +304,8 @@ namespace Banan {
 
     void PointShadowSystem::beginShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index) {
         std::array<VkClearValue, 4> clearValues{};
-        clearValues[0].depthStencil = { 2.0f, 0 };
-        clearValues[1].depthStencil = { 2.0f, 0 };
+        clearValues[0].depthStencil = { 10.0f, 0 };
+        clearValues[1].depthStencil = { 10.0f, 0 };
         clearValues[3].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 
         VkRenderPassBeginInfo renderPassBeginInfo{};
@@ -318,7 +325,7 @@ namespace Banan {
         viewport.width = 1024;
         viewport.height = -1024;
         viewport.minDepth = 0.0f;
-        viewport.maxDepth = 2.0f;
+        viewport.maxDepth = 10.0f;
 
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
@@ -358,6 +365,7 @@ namespace Banan {
             quantPipeline->bind(frameInfo.commandBuffer);
 
             std::vector<VkDescriptorSet> sets = {quantizationDescriptorSets.at(kv.first).at(frameInfo.frameIndex)};
+
             vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, quantPipelineLayout, 0, sets.size(), sets.data(), 0, nullptr);
             vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
 
@@ -367,7 +375,7 @@ namespace Banan {
 
     void PointShadowSystem::generateMatrices(BananFrameInfo frameInfo) {
         BananCamera shadowCamera{};
-        shadowCamera.setOrthographicProjection(-1.f, 1.f, -1.f, 1.f, -1.f, 2.f);
+        shadowCamera.setOrthographicProjection(-5.f, 5.f, -5.f, 5.f, -5.f, 10.f);
 
         for (auto &kv : bananGameObjectManager.getGameObjects()) {
             if (kv.second.pointLight == nullptr || !kv.second.pointLight->castsShadows) continue;
