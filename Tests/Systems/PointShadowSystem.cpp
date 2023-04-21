@@ -56,6 +56,15 @@ namespace Banan {
         attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
+        attachments[2].format = VK_FORMAT_R16_SFLOAT;
+        attachments[2].samples = VK_SAMPLE_COUNT_4_BIT;
+        attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[2].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
         VkAttachmentReference depthAttachmentReference{};
         depthAttachmentReference.attachment = 0;
         depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -67,6 +76,10 @@ namespace Banan {
         VkAttachmentReference quantAttachmentReference{};
         quantAttachmentReference.attachment = 1;
         quantAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference colorAttachmentReference{};
+        colorAttachmentReference.attachment = 2;
+        colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         // write to 6 layers
         const uint32_t viewMask = 0b00111111;
@@ -80,8 +93,8 @@ namespace Banan {
         subpasses[0].pResolveAttachments = nullptr;
         subpasses[0].inputAttachmentCount = 0;
         subpasses[0].pInputAttachments = nullptr;
-        subpasses[0].colorAttachmentCount = 0;
-        subpasses[0].pColorAttachments = nullptr;
+        subpasses[0].colorAttachmentCount = 1;
+        subpasses[0].pColorAttachments = &colorAttachmentReference;
         subpasses[0].preserveAttachmentCount = 0;
         subpasses[0].pPreserveAttachments = nullptr;
         subpasses[0].flags = 0;
@@ -143,9 +156,10 @@ namespace Banan {
         for (auto &kv : bananGameObjectManager.getGameObjects()) {
             if (kv.second.pointLight != nullptr && kv.second.pointLight->castsShadows) {
                 std::shared_ptr<BananImageArray> depthCubemap = std::make_shared<BananImageArray>(bananDevice, 1024, 1024, 6, 1, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananImageArray> colorCubemap = std::make_shared<BananImageArray>(bananDevice, 1024, 1024, 6, 1, VK_FORMAT_R16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
                 std::shared_ptr<BananCubemap> quantCubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-                std::vector<VkImageView> attachments = {depthCubemap->descriptorInfo().imageView, quantCubemap->cubemapDescriptorInfo().imageView};
+                std::vector<VkImageView> attachments = {depthCubemap->descriptorInfo().imageView, quantCubemap->cubemapDescriptorInfo().imageView, colorCubemap->descriptorInfo().imageView};
 
                 VkFramebuffer framebuffer;
                 VkFramebufferCreateInfo framebufferInfo = {};
@@ -165,6 +179,7 @@ namespace Banan {
 
                 cubemapalias.emplace(kv.first, depthFramebufferImages.size());
                 depthFramebufferImages.push_back(depthCubemap);
+                colorFrameBufferImages.push_back(colorCubemap);
                 quantCubemaps.push_back(quantCubemap);
                 framebuffers.emplace(kv.first, framebuffer);
             }
@@ -232,10 +247,10 @@ namespace Banan {
     }
 
     void PointShadowSystem::beginShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index) {
-        std::array<VkClearValue, 4> clearValues{};
+        std::array<VkClearValue, 3> clearValues{};
         clearValues[0].depthStencil = { 1.f, 0 };
-        clearValues[1].depthStencil = { 1.f, 0 };
-        clearValues[3].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[1].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[2].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 
         VkRenderPassBeginInfo renderPassBeginInfo{};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -367,7 +382,7 @@ namespace Banan {
                 .build();
 
         shadowMatrixSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_ALL_GRAPHICS)
                 .build();
 
         quantizationSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
