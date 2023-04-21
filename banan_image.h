@@ -33,23 +33,21 @@ namespace Banan {
             void transitionLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout);
             void generateMipMaps(uint32_t mipLevels);
 
-        private:
-            void createTextureImageView();
-            VkSampler imageSampler;
-
         protected:
             BananImage(BananDevice &device, VkFormat format);
 
+            void createTextureImageView();
+            void createTextureSampler();
+
+            BananDevice &bananDevice;
             VkImage image;
+            VkFormat imageFormat;
+            VkImageView imageView;
+            VkSampler imageSampler;
             VkDeviceMemory memory;
+            uint32_t mipLevels;
             VkExtent2D imageExtent;
             VkImageLayout imageLayout;
-            BananDevice &bananDevice;
-            VkFormat imageFormat;
-            uint32_t mipLevels;
-            VkImageView imageView;
-
-            void createTextureSampler();
     };
 
     class BananImageArray : public BananImage {

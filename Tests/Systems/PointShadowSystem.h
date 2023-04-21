@@ -47,8 +47,6 @@ namespace Banan {
             void createMatrixBuffers();
             void createDescriptors();
 
-            PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR;
-
             BananDevice &bananDevice;
             BananGameObjectManager &bananGameObjectManager;
 
@@ -64,7 +62,6 @@ namespace Banan {
 
             std::unordered_map<BananGameObject::id_t, size_t> cubemapalias;
             std::vector<std::shared_ptr<BananImageArray>> depthFramebufferImages;
-            std::vector<std::shared_ptr<BananCubemap>> framebufferResolveCubemaps;
             std::vector<std::shared_ptr<BananCubemap>> quantCubemaps;
 
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
