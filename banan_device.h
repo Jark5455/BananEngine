@@ -94,9 +94,11 @@ namespace Banan {
         const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
         const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                                                             VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+                                                            VK_KHR_MAINTENANCE2_EXTENSION_NAME,
                                                             VK_KHR_MAINTENANCE3_EXTENSION_NAME,
                                                             VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
                                                             VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+                                                            VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
                                                             VK_KHR_MULTIVIEW_EXTENSION_NAME,
                                                             VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
     };

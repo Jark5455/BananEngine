@@ -11,6 +11,8 @@
 namespace Banan {
 
     PointShadowSystem::PointShadowSystem(Banan::BananDevice &device, Banan::BananGameObjectManager &manager, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device}, bananGameObjectManager{manager} {
+        vkCreateRenderPass2Khr = (PFN_vkCreateRenderPass2KHR) vkGetDeviceProcAddr(bananDevice.device(), "vkCreateRenderPass2KHR");
+
         createRenderpass();
         createFramebuffers();
 
@@ -36,8 +38,9 @@ namespace Banan {
     }
 
     void Banan::PointShadowSystem::createRenderpass() {
-        std::vector<VkAttachmentDescription> attachments{2};
+        std::vector<VkAttachmentDescription2KHR> attachments{2};
 
+        attachments[0].sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
         attachments[0].format = VK_FORMAT_D32_SFLOAT;
         attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -45,8 +48,10 @@ namespace Banan {
         attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[0].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachments[0].pNext = nullptr;
 
+        attachments[1].sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
         attachments[1].format = VK_FORMAT_R16G16B16A16_UNORM;
         attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -55,18 +60,28 @@ namespace Banan {
         attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachments[1].pNext = nullptr;
 
-        VkAttachmentReference depthAttachmentReference{};
+        VkAttachmentReference2KHR depthAttachmentReference{};
+        depthAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
         depthAttachmentReference.attachment = 0;
         depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthAttachmentReference.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        depthAttachmentReference.pNext = nullptr;
 
-        VkAttachmentReference depthInputAttachmentReference{};
+        VkAttachmentReference2KHR depthInputAttachmentReference{};
+        depthInputAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
         depthInputAttachmentReference.attachment = 0;
         depthInputAttachmentReference.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        depthInputAttachmentReference.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        depthInputAttachmentReference.pNext = nullptr;
 
-        VkAttachmentReference quantAttachmentReference{};
+        VkAttachmentReference2KHR quantAttachmentReference{};
+        quantAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
         quantAttachmentReference.attachment = 1;
         quantAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        quantAttachmentReference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        quantAttachmentReference.pNext = nullptr;
 
         // write to 6 layers
         const uint32_t viewMask = 0b00111111;
@@ -74,41 +89,38 @@ namespace Banan {
         // none of the views overlap, therefore null
         const uint32_t correlationMask = 0;
 
-        std::vector<VkSubpassDescription> subpasses{2};
-        subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpasses[0].pDepthStencilAttachment = &depthAttachmentReference;
-        subpasses[0].pResolveAttachments = nullptr;
-        subpasses[0].inputAttachmentCount = 0;
-        subpasses[0].pInputAttachments = nullptr;
-        subpasses[0].colorAttachmentCount = 0;
-        subpasses[0].pColorAttachments = nullptr;
-        subpasses[0].preserveAttachmentCount = 0;
-        subpasses[0].pPreserveAttachments = nullptr;
-        subpasses[0].flags = 0;
+        VkSubpassDescription2KHR depthPrepass{};
+        depthPrepass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2_KHR;
+        depthPrepass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        depthPrepass.pDepthStencilAttachment = &depthAttachmentReference;
+        depthPrepass.viewMask = viewMask;
 
-        subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpasses[1].pDepthStencilAttachment = nullptr;
-        subpasses[1].pResolveAttachments = nullptr;
-        subpasses[1].inputAttachmentCount = 1;
-        subpasses[1].pInputAttachments = &depthInputAttachmentReference;
-        subpasses[1].colorAttachmentCount = 1;
-        subpasses[1].pColorAttachments = &quantAttachmentReference;
-        subpasses[1].preserveAttachmentCount = 0;
-        subpasses[1].pPreserveAttachments = nullptr;
-        subpasses[1].flags = 0;
+        VkSubpassDescription2KHR quantizationPass{};
+        quantizationPass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2_KHR;
+        quantizationPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        quantizationPass.inputAttachmentCount = 1;
+        quantizationPass.pInputAttachments = &depthInputAttachmentReference;
+        quantizationPass.colorAttachmentCount = 1;
+        quantizationPass.pColorAttachments = &quantAttachmentReference;
+        quantizationPass.viewMask = viewMask;
 
-        std::vector<VkSubpassDependency> dependencies{2};
+        std::vector<VkSubpassDescription2KHR> subpasses{depthPrepass, quantizationPass};
+
+        std::vector<VkSubpassDependency2KHR> dependencies{2};
 
         // make depth readable
+        dependencies[0].sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2_KHR;
         dependencies[0].srcSubpass = 0;
         dependencies[0].dstSubpass = 1;
         dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
         dependencies[0].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependencies[0].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
         dependencies[0].dependencyFlags = VK_DEPENDENCY_VIEW_LOCAL_BIT_KHR;
+        dependencies[0].viewOffset = 0;
 
         // make color readable
+        dependencies[1].sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2_KHR;
         dependencies[1].srcSubpass = 1;
         dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -116,25 +128,20 @@ namespace Banan {
         dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        dependencies[1].viewOffset = 0;
 
-        VkRenderPassMultiviewCreateInfoKHR multi{};
-        multi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO_KHR;
-        multi.subpassCount = subpasses.size();
-        multi.pViewMasks = &viewMask;
-        multi.correlationMaskCount = 1;
-        multi.pCorrelationMasks = &correlationMask;
-
-        VkRenderPassCreateInfo renderPassCreateInfo{};
-        renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        VkRenderPassCreateInfo2KHR renderPassCreateInfo{};
+        renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR;
         renderPassCreateInfo.attachmentCount = attachments.size();
         renderPassCreateInfo.pAttachments = attachments.data();
         renderPassCreateInfo.subpassCount = subpasses.size();
         renderPassCreateInfo.pSubpasses = subpasses.data();
         renderPassCreateInfo.dependencyCount = dependencies.size();
         renderPassCreateInfo.pDependencies = dependencies.data();
-        renderPassCreateInfo.pNext = &multi;
+        renderPassCreateInfo.correlatedViewMaskCount = 1;
+        renderPassCreateInfo.pCorrelatedViewMasks = &correlationMask;
 
-        if (vkCreateRenderPass(bananDevice.device(), &renderPassCreateInfo, nullptr, &shadowRenderpass) != VK_SUCCESS) {
+        if (vkCreateRenderPass2Khr(bananDevice.device(), &renderPassCreateInfo, nullptr, &shadowRenderpass) != VK_SUCCESS) {
             throw std::runtime_error("Unable to create shadow renderpass");
         }
     }
@@ -142,7 +149,7 @@ namespace Banan {
     void PointShadowSystem::createFramebuffers() {
         for (auto &kv : bananGameObjectManager.getGameObjects()) {
             if (kv.second.pointLight != nullptr && kv.second.pointLight->castsShadows) {
-                std::shared_ptr<BananImageArray> depthCubemap = std::make_shared<BananImageArray>(bananDevice, 1024, 1024, 6, 1, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananImage> depthCubemap = std::make_shared<BananImage>(bananDevice, 1024, 1024, 1, 6, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
                 std::shared_ptr<BananCubemap> quantCubemap = std::make_shared<BananCubemap>(bananDevice, 1024, 1, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
                 std::vector<VkImageView> attachments = {depthCubemap->descriptorInfo().imageView, quantCubemap->cubemapDescriptorInfo().imageView};

@@ -62,7 +62,7 @@ namespace Banan {
             std::unordered_map<BananGameObject::id_t, VkFramebuffer> framebuffers;
 
             std::unordered_map<BananGameObject::id_t, size_t> cubemapalias;
-            std::vector<std::shared_ptr<BananImageArray>> depthFramebufferImages;
+            std::vector<std::shared_ptr<BananImage>> depthFramebufferImages;
             std::vector<std::shared_ptr<BananCubemap>> quantCubemaps;
 
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
@@ -75,5 +75,7 @@ namespace Banan {
 
             std::unique_ptr<BananDescriptorSetLayout> quantizationSetLayout;
             std::unordered_map<BananGameObject::id_t, std::vector<VkDescriptorSet>> quantizationDescriptorSets;
+
+            PFN_vkCreateRenderPass2KHR vkCreateRenderPass2Khr;
     };
 }
