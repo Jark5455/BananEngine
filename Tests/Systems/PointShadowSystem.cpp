@@ -20,7 +20,7 @@ namespace Banan {
         createDepthPipelineLayout(layouts);
         createDepthPipeline();
 
-        createQuantPipelineLayout({quantizationSetLayout->getDescriptorSetLayout(), shadowMatrixSetLayout->getDescriptorSetLayout()});
+        createQuantPipelineLayout({quantizationSetLayout->getDescriptorSetLayout()});
         createQuantPipeline();
     }
 
@@ -292,10 +292,9 @@ namespace Banan {
             vkCmdNextSubpass(frameInfo.commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
             quantPipeline->bind(frameInfo.commandBuffer);
 
-            std::vector<VkDescriptorSet> sets = {quantizationDescriptorSets.at(kv.first).at(frameInfo.frameIndex), shadowMatrixDescriptorSets[frameInfo.frameIndex]};
-            std::vector<uint32_t> offsets = {(unsigned int) cubemapalias.at(kv.first) * (unsigned int) matriceBuffers[frameInfo.frameIndex]->getAlignmentSize()};
+            std::vector<VkDescriptorSet> sets = {quantizationDescriptorSets.at(kv.first).at(frameInfo.frameIndex)};
 
-            vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, quantPipelineLayout, 0, sets.size(), sets.data(), offsets.size(), offsets.data());
+            vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, quantPipelineLayout, 0, sets.size(), sets.data(), 0, nullptr);
             vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
 
             endShadowRenderpass(frameInfo.commandBuffer);
