@@ -18,6 +18,7 @@ namespace Banan {
 
             struct ShadowCubemapMatrices {
                 alignas(16) glm::mat4 projectionMatrix{1.f};
+                alignas(16) glm::mat4 invProjectionMatrix{1.f};
                 alignas(16) glm::mat4 viewMatrices[6];
                 alignas(16) glm::mat4 invViewMatrices[6];
             };
@@ -62,7 +63,6 @@ namespace Banan {
 
             std::unordered_map<BananGameObject::id_t, size_t> cubemapalias;
             std::vector<std::shared_ptr<BananImageArray>> depthFramebufferImages;
-            std::vector<std::shared_ptr<BananImageArray>> colorFrameBufferImages;
             std::vector<std::shared_ptr<BananCubemap>> quantCubemaps;
 
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
