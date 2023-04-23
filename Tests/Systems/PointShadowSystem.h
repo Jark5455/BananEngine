@@ -32,6 +32,9 @@ namespace Banan {
             void render(BananFrameInfo frameInfo);
             void generateMatrices(BananFrameInfo frameInfo);
 
+            VkDescriptorSetLayout getShadowMapsDescriptorSetLayout();
+            VkDescriptorSet &getShadowMapDescriptorSet(size_t frameIndex);
+
         private:
             void createRenderpass();
             void createFramebuffers();
@@ -41,6 +44,9 @@ namespace Banan {
 
             void createQuantPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
             void createQuantPipeline();
+
+            void createShadowMapFilteringPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
+            void createShadowMapFilteringPipeline();
 
             void beginShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index);
             void endShadowRenderpass(VkCommandBuffer commandBuffer);
@@ -59,19 +65,27 @@ namespace Banan {
             std::unique_ptr<BananPipeline> quantPipeline;
             VkPipelineLayout quantPipelineLayout;
 
+            std::unique_ptr<BananPipeline> shadowMapFilteringPipeline;
+            VkPipelineLayout shadowMapFilteringPipelineLayout;
+
             std::unordered_map<BananGameObject::id_t, VkFramebuffer> framebuffers;
 
             std::unordered_map<BananGameObject::id_t, size_t> cubemapalias;
             std::vector<std::shared_ptr<BananImage>> depthFramebufferImages;
             std::vector<std::shared_ptr<BananCubemap>> quantCubemaps;
+            std::vector<std::shared_ptr<BananCubemap>> filteredCubemaps;
 
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
 
             std::unique_ptr<BananDescriptorPool> shadowPool;
             std::unique_ptr<BananDescriptorPool> quantPool;
+            std::unique_ptr<BananDescriptorPool> shadowMapPool;
 
             std::unique_ptr<BananDescriptorSetLayout> shadowMatrixSetLayout;
             std::vector<VkDescriptorSet> shadowMatrixDescriptorSets;
+
+            std::unique_ptr<BananDescriptorSetLayout> shadowMapSetLayout;
+            std::vector<VkDescriptorSet> shadowMapDescriptorSets;
 
             std::unique_ptr<BananDescriptorSetLayout> quantizationSetLayout;
             std::unordered_map<BananGameObject::id_t, std::vector<VkDescriptorSet>> quantizationDescriptorSets;

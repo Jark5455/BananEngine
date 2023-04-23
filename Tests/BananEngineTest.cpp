@@ -86,7 +86,7 @@ namespace Banan{
         // ComputeSystem computeSystem{bananDevice, {globalSetLayout->getDescriptorSetLayout()}};
         PointShadowSystem pointShadowSystem{bananDevice, bananGameObjectManager, {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout()}};
-        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout(), bananGameObjectManager.getTextureSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
+        ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout(), bananGameObjectManager.getTextureSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout(), pointShadowSystem.getShadowMapsDescriptorSetLayout()}};
         ResolveSystem resolveSystem{bananDevice, bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()}};
 
         BananCamera camera{};
@@ -189,7 +189,7 @@ namespace Banan{
 
                         // computeSystem.reconstructPipeline({globalSetLayout->getDescriptorSetLayout()});
                         pointLightSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout()});
-                        procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout(), bananGameObjectManager.getTextureSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()});
+                        procrastinatedRenderSystem.reconstructPipeline(bananRenderer.getGeometryRenderPass(), {globalSetLayout->getDescriptorSetLayout(), bananGameObjectManager.getGameObjectSetLayout(), bananGameObjectManager.getTextureSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout(), pointShadowSystem.getShadowMapsDescriptorSetLayout()});
                         resolveSystem.reconstructPipelines(bananRenderer.getEdgeDetectionRenderPass(), bananRenderer.getBlendWeightRenderPass(), bananRenderer.getResolveRenderPass(), {globalSetLayout->getDescriptorSetLayout(), edgeDetectionSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), blendWeightSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), resolveLayout->getDescriptorSetLayout()});
                     }
 
@@ -213,7 +213,7 @@ namespace Banan{
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
                 int frameIndex = bananRenderer.getFrameIndex();
-                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], bananGameObjectManager.getTextureDescriptorSet(frameIndex), bananGameObjectManager.getGameObjectDescriptorSet(frameIndex), procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], bananGameObjectManager};
+                BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], bananGameObjectManager.getTextureDescriptorSet(frameIndex), bananGameObjectManager.getGameObjectDescriptorSet(frameIndex), procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], pointShadowSystem.getShadowMapDescriptorSet(frameIndex), bananGameObjectManager};
 
                 pointShadowSystem.generateMatrices(frameInfo);
 
