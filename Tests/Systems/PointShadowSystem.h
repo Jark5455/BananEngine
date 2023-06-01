@@ -39,6 +39,11 @@ namespace Banan {
             void createDepthPrepass();
             void createQuantizationPass();
 
+            void createDepthFramebuffers();
+            void createQuantizationFramebuffers();
+
+            void createBlurResources();
+
             void createDepthPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
             void createDepthPipeline();
 
@@ -48,8 +53,9 @@ namespace Banan {
             void createShadowMapFilteringPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
             void createShadowMapFilteringPipeline();
 
-            void beginShadowRenderpass(VkCommandBuffer commandBuffer, BananGameObject::id_t index);
-            void endShadowRenderpass(VkCommandBuffer commandBuffer);
+            void beginDepthPrepass(VkCommandBuffer commandBuffer, BananGameObject::id_t index);
+            void beginQuantPass(VkCommandBuffer commandBuffer, BananGameObject::id_t index);
+            void endRenderPass(VkCommandBuffer commandBuffer);
 
             void createMatrixBuffers();
             void createDescriptors();
@@ -57,7 +63,8 @@ namespace Banan {
             BananDevice &bananDevice;
             BananGameObjectManager &bananGameObjectManager;
 
-            VkRenderPass shadowRenderpass;
+            VkRenderPass depthPrepass;
+            VkRenderPass quantizationPass;
 
             std::unique_ptr<BananPipeline> depthPipeline;
             VkPipelineLayout depthPipelineLayout;
@@ -68,12 +75,13 @@ namespace Banan {
             std::unique_ptr<BananPipeline> shadowMapFilteringPipeline;
             VkPipelineLayout shadowMapFilteringPipelineLayout;
 
-            std::unordered_map<BananGameObject::id_t, VkFramebuffer> framebuffers;
+            std::unordered_map<BananGameObject::id_t, VkFramebuffer> depthFrameBuffers;
+            std::unordered_map<BananGameObject::id_t, VkFramebuffer> quantizationFrameBuffers;
 
-            std::unordered_map<BananGameObject::id_t, size_t> cubemapalias;
-            std::vector<std::shared_ptr<BananImage>> depthFramebufferImages;
-            std::vector<std::shared_ptr<BananCubemap>> quantCubemaps;
-            std::vector<std::shared_ptr<BananCubemap>> filteredCubemaps;
+            std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> depthFramebufferImages;
+            std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> quantizedImages;
+            std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> blurredImages;
+            std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> shadowMaps;
 
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
 
