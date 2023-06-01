@@ -84,7 +84,6 @@ namespace Banan {
             std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> blurredImages;
             std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> shadowMaps;
 
-            std::unordered_map<BananGameObject::id_t, size_t> aliases;
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
 
             std::unique_ptr<BananDescriptorPool> shadowPool;
@@ -99,8 +98,7 @@ namespace Banan {
             std::vector<VkDescriptorSet> shadowQuantizationDescriptorSets;
 
             std::unique_ptr<BananDescriptorSetLayout> shadowBlurSetLayout;
-            std::vector<VkDescriptorSet> shadowBlurPass1DescriptorSets;
-            std::vector<VkDescriptorSet> shadowBlurPass2DescriptorSets;
+            std::vector<VkDescriptorSet> shadowBlurPassDescriptorSets;
 
             std::unique_ptr<BananDescriptorSetLayout> shadowMapSetLayout;
             std::vector<VkDescriptorSet> shadowMapDescriptorSets;

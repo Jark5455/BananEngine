@@ -452,10 +452,6 @@ namespace Banan {
             createDescriptors();
         }
 
-        for (auto &kv : aliases) {
-            beginDepthPrepass(frameInfo.commandBuffer, kv.first);
-        }
-
 //        for (auto &kv : framebuffers) {
 //            beginShadowRenderpass(frameInfo.commandBuffer, kv.first);
 //
@@ -488,18 +484,6 @@ namespace Banan {
     void PointShadowSystem::generateMatrices(BananFrameInfo frameInfo) {
         BananCamera shadowCamera{};
         shadowCamera.setPerspectiveProjection(glm::pi<float>() / 2.0, 1, 0.1f, 1024.f);
-
-        // update aliases
-        if (aliases.size() != matriceBuffers[frameInfo.frameIndex]->getInstanceCount()) {
-            size_t counter = aliases.size();
-            for (auto &kv : bananGameObjectManager.getGameObjects()) {
-                if (kv.second.pointLight == nullptr || !kv.second.pointLight->castsShadows) continue;
-
-                if (aliases.find(kv.first) == aliases.end()) {
-                    aliases.emplace(kv.first, counter++);
-                }
-            }
-        }
 
         for (auto &kv : bananGameObjectManager.getGameObjects()) {
             if (kv.second.pointLight == nullptr || !kv.second.pointLight->castsShadows) continue;
@@ -538,8 +522,8 @@ namespace Banan {
             mat.viewMatrices[5] = shadowCamera.getView();
             mat.invViewMatrices[5] = shadowCamera.getInverseView();
 
-            matriceBuffers[frameInfo.frameIndex]->writeToIndex(&mat, aliases.at(kv.first));
-            matriceBuffers[frameInfo.frameIndex]->flushIndex(aliases.at(kv.first));
+            matriceBuffers[frameInfo.frameIndex]->writeToIndex(&mat, kv.first);
+            matriceBuffers[frameInfo.frameIndex]->flushIndex(kv.first);
         }
     }
 
@@ -553,7 +537,7 @@ namespace Banan {
 
     void PointShadowSystem::createDescriptors() {
         shadowPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * bananGameObjectManager.numPointLights() * 4)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * 5)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, BananSwapChain::MAX_FRAMES_IN_FLIGHT * bananGameObjectManager.numPointLights() * 2 + 2)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, BananSwapChain::MAX_FRAMES_IN_FLIGHT * bananGameObjectManager.numPointLights() * 4)
@@ -588,42 +572,60 @@ namespace Banan {
         }
 
         std::vector<VkDescriptorImageInfo> depthMaps;
-        depthMaps.reserve(quantCubemaps.size());
+        depthMaps.resize(depthFramebufferResolveImages.size());
 
-        std::vector<VkDescriptorImageInfo> blurredShadowMaps;
-        blurredShadowMaps.reserve(filteredCubemaps.size());
+        std::vector<VkDescriptorImageInfo> quantizedMaps;
+        quantizedMaps.resize(quantizedImages.size());
 
-        for (const auto& image : quantCubemaps) {
-            shadowMaps.push_back(image->cubemapDescriptorInfo());
+        std::vector<VkDescriptorImageInfo> blurredMaps;
+        blurredMaps.resize(blurredImages.size());
+
+        std::vector<VkDescriptorImageInfo> momentShadowMaps;
+        momentShadowMaps.resize(shadowMaps.size());
+
+        for (auto &kv : depthFramebufferResolveImages) {
+            depthMaps.at(kv.first) = kv.second->descriptorInfo();
         }
-//
-//        for (const auto& image : filteredCubemaps) {
-//            filteredShadowMaps.push_back(image->cubemapDescriptorInfo());
-//        }
-//
-//        shadowMapDescriptorSets.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
-//        for (auto &shadowMapDescriptorSet : shadowMapDescriptorSets) {
-//            BananDescriptorWriter shadowMapWriter(*shadowMapSetLayout, *shadowMapPool);
-//            shadowMapWriter.writeImages(0, shadowMaps);
-//            shadowMapWriter.writeImages(1, filteredShadowMaps);
-//            shadowMapWriter.build(shadowMapDescriptorSet);
-//        }
-//
-//        for (auto &kv : bananGameObjectManager.getGameObjects()) {
-//            if (kv.second.pointLight == nullptr) continue;
-//
-//            std::vector<VkDescriptorSet> sets{};
-//            sets.resize(2);
-//
-//            for (auto &set : sets) {
-//                BananDescriptorWriter writer(*quantizationSetLayout, *quantPool);
-//                auto imageInfo = depthFramebufferImages[cubemapalias.at(kv.first)]->descriptorInfo();
-//                writer.writeImage(0, imageInfo);
-//                writer.build(set);
-//            }
-//
-//            quantizationDescriptorSets.emplace(kv.first, sets);
-//        }
+
+        for (auto &kv : quantizedImages) {
+            quantizedMaps.at(kv.first) = kv.second->descriptorInfo();
+        }
+
+        for (auto &kv : blurredImages) {
+            blurredMaps.at(kv.first) = kv.second->descriptorInfo();
+        }
+
+        for (auto &kv : shadowMaps) {
+            momentShadowMaps.at(kv.first) = kv.second->descriptorInfo();
+        }
+
+        shadowDepthDescriptorSets.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        for (auto &set : shadowDepthDescriptorSets) {
+            BananDescriptorWriter writer(*shadowMapSetLayout, *shadowPool);
+            writer.writeImages(0, depthMaps);
+            writer.build(set);
+        }
+
+        shadowQuantizationDescriptorSets.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        for (auto &set : shadowQuantizationDescriptorSets) {
+            BananDescriptorWriter writer(*shadowMapSetLayout, *shadowPool);
+            writer.writeImages(0, quantizedMaps);
+            writer.build(set);
+        }
+
+        shadowBlurPassDescriptorSets.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        for (auto &set : shadowBlurPassDescriptorSets) {
+            BananDescriptorWriter writer(*shadowMapSetLayout, *shadowPool);
+            writer.writeImages(0, blurredMaps);
+            writer.build(set);
+        }
+
+        shadowMapDescriptorSets.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
+        for (auto &set : shadowMapDescriptorSets) {
+            BananDescriptorWriter writer(*shadowMapSetLayout, *shadowPool);
+            writer.writeImages(0, momentShadowMaps);
+            writer.build(set);
+        }
     }
 
     VkDescriptorSetLayout PointShadowSystem::getShadowMapsDescriptorSetLayout() {
