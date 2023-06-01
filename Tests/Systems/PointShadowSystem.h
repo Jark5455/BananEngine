@@ -36,8 +36,8 @@ namespace Banan {
             VkDescriptorSet &getShadowMapDescriptorSet(size_t frameIndex);
 
         private:
-            void createRenderpass();
-            void createFramebuffers();
+            void createDepthPrepass();
+            void createQuantizationPass();
 
             void createDepthPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);
             void createDepthPipeline();

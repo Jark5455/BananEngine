@@ -397,21 +397,22 @@ namespace Banan {
                 .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
                 .build();
 
+        shadowDepthSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .build();
 
-//
-//        shadowMatrixSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-//                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_ALL_GRAPHICS)
-//                .build();
-//
-//        quantizationSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-//                .addBinding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
-//                .build();
-//
-//        shadowMapSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-//                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT)
-//                .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
-//                .build();
-//
+        shadowQuantizationSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .build();
+
+        shadowBlurSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT)
+                .build();
+
+        shadowMapSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .build();
+
 //        shadowMatrixDescriptorSets.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
 //        for (size_t i = 0; i < shadowMatrixDescriptorSets.size(); i++) {
 //            BananDescriptorWriter shadowWriter(*shadowMatrixSetLayout, *shadowPool);
