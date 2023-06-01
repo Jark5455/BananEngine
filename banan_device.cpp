@@ -406,6 +406,19 @@ namespace Banan {
         throw std::runtime_error("failed to find supported format!");
     }
 
+    bool BananDevice::checkMemoryType(VkMemoryPropertyFlags props) {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+            if ((memProperties.memoryTypes[i].propertyFlags & props) == props) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
     uint32_t BananDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags props) {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);

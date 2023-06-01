@@ -78,17 +78,22 @@ namespace Banan {
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
 
             std::unique_ptr<BananDescriptorPool> shadowPool;
-            std::unique_ptr<BananDescriptorPool> quantPool;
-            std::unique_ptr<BananDescriptorPool> shadowMapPool;
 
-            std::unique_ptr<BananDescriptorSetLayout> shadowMatrixSetLayout;
-            std::vector<VkDescriptorSet> shadowMatrixDescriptorSets;
+            std::unique_ptr<BananDescriptorSetLayout> shadowUBOSetLayout;
+            std::vector<VkDescriptorSet> shadowUBODescriptorSets;
+
+            std::unique_ptr<BananDescriptorSetLayout> shadowDepthSetLayout;
+            std::vector<VkDescriptorSet> shadowDepthDescriptorSets;
+
+            std::unique_ptr<BananDescriptorSetLayout> shadowQuantizationSetLayout;
+            std::vector<VkDescriptorSet> shadowQuantizationDescriptorSets;
+
+            std::unique_ptr<BananDescriptorSetLayout> shadowBlurSetLayout;
+            std::vector<VkDescriptorSet> shadowBlurPass1DescriptorSets;
+            std::vector<VkDescriptorSet> shadowBlurPass2DescriptorSets;
 
             std::unique_ptr<BananDescriptorSetLayout> shadowMapSetLayout;
             std::vector<VkDescriptorSet> shadowMapDescriptorSets;
-
-            std::unique_ptr<BananDescriptorSetLayout> quantizationSetLayout;
-            std::unordered_map<BananGameObject::id_t, std::vector<VkDescriptorSet>> quantizationDescriptorSets;
 
             PFN_vkCreateRenderPass2KHR vkCreateRenderPass2Khr;
     };

@@ -43,6 +43,7 @@ namespace Banan {
         VkSampleCountFlagBits getMsaaSampleCount() { return msaaSamples; }
 
         SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physicalDevice); }
+        bool checkMemoryType(VkMemoryPropertyFlags properties);
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
         VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);

@@ -149,6 +149,7 @@ execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/quant.frag -o ${
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/quant.vert -o ${CMAKE_BINARY_DIR}/shaders/quant.vert.spv)
 
 execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/calc_normal_mats.comp -o ${CMAKE_BINARY_DIR}/shaders/calc_normal_mats.comp.spv)
+execute_process(COMMAND glslc ${CMAKE_SOURCE_DIR}/Tests/Shaders/calc_gaussian_blur.comp -o ${CMAKE_BINARY_DIR}/shaders/calc_gaussian_blur.comp.spv)
 
 execute_process(COMMAND cp -r ${CMAKE_SOURCE_DIR}/Tests/banan_assets ${CMAKE_BINARY_DIR})
 

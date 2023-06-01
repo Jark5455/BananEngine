@@ -1,0 +1,65 @@
+#version 450
+#extension GL_EXT_nonuniform_qualifier : enable
+
+layout (local_size_x = 1024, local_size_y = 1024, local_size_z = 6) in;
+layout (rgba16, set = 0, binding = 0) uniform restrict readonly imageCube u_input_image;
+layout (rgba16, set = 0, binding = 1) uniform restrict writeonly imageCube u_output_image;
+
+const int M = 4;
+const int N = 2 * M + 1;
+
+const float coeffs[N][N] = float[N][N] (
+    float[N] (0.0000,	0.0000,	0.0000,	0.0001,	0.0001,	0.0001,	0.0000,	0.0000,	0.0000),
+    float[N] (0.0000,	0.0000,	0.0004,	0.0014,	0.0023,	0.0014,	0.0004,	0.0000,	0.0000),
+    float[N] (0.0000,	0.0004,	0.0037,	0.0146,	0.0232,	0.0146,	0.0037,	0.0004,	0.0000),
+    float[N] (0.0001,	0.0014,	0.0146,	0.0584,	0.0926,	0.0584,	0.0146,	0.0014,	0.0001),
+    float[N] (0.0001,	0.0023,	0.0232,	0.0926,	0.1466,	0.0926,	0.0232,	0.0023,	0.0001),
+    float[N] (0.0001,	0.0014,	0.0146,	0.0584,	0.0926,	0.0584,	0.0146,	0.0014,	0.0001),
+    float[N] (0.0000,	0.0004,	0.0037,	0.0146,	0.0232,	0.0146,	0.0037,	0.0004,	0.0000),
+    float[N] (0.0000,	0.0000,	0.0004,	0.0014,	0.0023,	0.0014,	0.0004,	0.0000,	0.0000),
+    float[N] (0.0000,	0.0000,	0.0000,	0.0001,	0.0001,	0.0001,	0.0000,	0.0000,	0.0000)
+);
+
+void main() {
+    vec2 pixel_coord = gl_GlobalInvocationID.xy;
+    vec3 direction = vec3(0.0, 0.0, 0.0);
+
+    switch(gl_GlobalInvocationID.z) {
+        case 0:
+            direction = vec3(1.0, 0.0, 0.0);
+            break;
+        case 1:
+            direction = vec3(-1.0, 0.0, 0.0);
+            break;
+        case 2:
+            direction = vec3(0.0, 1.0, 0.0);
+            break;
+        case 3:
+            direction = vec3(0.0, -1.0, 0.0);
+            break;
+        case 4:
+            direction = vec3(0.0, 0.0, 1.0);
+            break;
+        case 5:
+            direction = vec3(0.0, 0.0, -1.0);
+            break;
+    }
+
+    if (length(direction) == 1) {
+        vec2 size = imageSize(u_input_image);
+        vec4 sum = vec4(0.0);
+
+        for (int i = 0; i < N; ++i)
+        {
+            ivec2 pc = pixel_coord + ivec2(0, 1) * (i - M);
+            if (pc.x < 0) pc.x = 0;
+            if (pc.y < 0) pc.y = 0;
+            if (pc.x >= size.x) pc.x = size.x - 1;
+            if (pc.y >= size.y) pc.y = size.y - 1;
+
+            sum += coeffs[i] * imageLoad(u_input_image, pc);
+        }
+
+        imageStore(u_output_image, direction, sum);
+    }
+}
