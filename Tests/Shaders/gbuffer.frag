@@ -68,8 +68,8 @@ layout(set = 2, binding = 0) uniform sampler2D texSampler[];
 
 vec2 RayMarch(vec2 st0_in, vec2 st1_in)
 {
-    float lod_base = textureQueryLod(texSampler[objectData.heightTexture], st0_in).y;
-    vec2 dims = textureSize(texSampler[objectData.heightTexture], 0);
+    float lod_base = textureQueryLod(texSampler[nonuniformEXT(objectData.heightTexture)], st0_in).y;
+    vec2 dims = textureSize(texSampler[nonuniformEXT(objectData.heightTexture)], 0);
     float distInPix = length(dims * (st1_in-st0_in));
 
     const int iterations = 3;
@@ -98,14 +98,14 @@ vec2 RayMarch(vec2 st0_in, vec2 st1_in)
             float T7 = mix(t0, t1, clamp((j*8+7)*scale, 0.0, 1.0) );
             float T8 = mix(t0, t1, clamp((j*8+8)*scale, 0.0, 1.0) );
 
-            float h1 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T1).xy, lod_base).r - 1.0;
-            float h2 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T2).xy, lod_base).r - 1.0;
-            float h3 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T3).xy, lod_base).r - 1.0;
-            float h4 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T4).xy, lod_base).r - 1.0;
-            float h5 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T5).xy, lod_base).r - 1.0;
-            float h6 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T6).xy, lod_base).r - 1.0;
-            float h7 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T7).xy, lod_base).r - 1.0;
-            float h8 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, T8).xy, lod_base).r - 1.0;
+            float h1 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, T1).xy, lod_base).r - 1.0;
+            float h2 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, T2).xy, lod_base).r - 1.0;
+            float h3 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, T3).xy, lod_base).r - 1.0;
+            float h4 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, T4).xy, lod_base).r - 1.0;
+            float h5 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, T5).xy, lod_base).r - 1.0;
+            float h6 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, T6).xy, lod_base).r - 1.0;
+            float h7 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, T7).xy, lod_base).r - 1.0;
+            float h8 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, T8).xy, lod_base).r - 1.0;
 
             float t_s = t0, t_e = t1;
 
@@ -132,8 +132,8 @@ vec2 RayMarch(vec2 st0_in, vec2 st1_in)
         ++i;
     }
 
-    float h0 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, t0).xy, lod_base).r - 1.0;
-    float h1 = textureLod(texSampler[objectData.heightTexture], mix(st0, st1, t1).xy, lod_base).r - 1.0;
+    float h0 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, t0).xy, lod_base).r - 1.0;
+    float h1 = textureLod(texSampler[nonuniformEXT(objectData.heightTexture)], mix(st0, st1, t1).xy, lod_base).r - 1.0;
     float ray_h0 = mix(st0, st1, t0).z;
     float ray_h1 = mix(st0, st1, t1).z;
 
@@ -180,7 +180,7 @@ vec3 getFinalNormal(vec2 inUV, vec3 nrmBaseNormal)
     vec3 vB = cross(nrmBaseNormal, vT);
 
     // tangent space normal
-    vec3 vM = textureLod(texSampler[objectData.normalTexture], inUV, 0.0).rgb * 2.0 - 1.0;
+    vec3 vM = textureLod(texSampler[nonuniformEXT(objectData.normalTexture)], inUV, 0.0).rgb * 2.0 - 1.0;
 
     vec3 vMa = abs(vM);
     float z_ma = max(vMa.z, max(vMa.x, vMa.y));
@@ -194,7 +194,7 @@ vec3 getFinalNormal(vec2 inUV, vec3 nrmBaseNormal)
 vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
     vec2 projV = projectVecToTextureSpace(viewDir, uv, objectData.parallaxRef.heightscale, true, dPdx, dPdy, nrmBaseNormal);
-    float height = textureLod(texSampler[index], uv, 0.0).r - 0.5;
+    float height = textureLod(texSampler[nonuniformEXT(index)], uv, 0.0).r - 0.5;
     vec2 p = height * projV;
     return uv + p;
 }
@@ -202,7 +202,7 @@ vec2 parallaxMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec
 vec2 parallaxOcclusionMapping(vec2 uv, vec3 viewDir, int index, vec3 dPdx, vec3 dPdy, vec3 nrmBaseNormal)
 {
     vec2 projV = projectVecToTextureSpace(viewDir, uv, objectData.parallaxRef.heightscale, false, dPdx, dPdy, nrmBaseNormal);
-    float height = textureLod(texSampler[index], uv, 0.0).r - 1.0;
+    float height = textureLod(texSampler[nonuniformEXT(index)], uv, 0.0).r - 1.0;
     vec2 p = RayMarch(uv, uv + projV);
     return uv + p;
 }
@@ -225,7 +225,7 @@ void main() {
 
     vec3 color = fragColor;
     if (objectData.albedoTexture != -1) {
-        color = texture(texSampler[objectData.albedoTexture], uv).rgb;
+        color = texture(texSampler[nonuniformEXT(objectData.albedoTexture)], uv).rgb;
     }
 
     vec3 normalHeightMapLod = normalize(mat3(objectData.transformRef.normalMatrix) * fragNormal);

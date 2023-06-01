@@ -79,10 +79,12 @@ namespace Banan {
             std::unordered_map<BananGameObject::id_t, VkFramebuffer> quantizationFrameBuffers;
 
             std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> depthFramebufferImages;
+            std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> depthFramebufferResolveImages;
             std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> quantizedImages;
             std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> blurredImages;
             std::unordered_map<BananGameObject::id_t, std::shared_ptr<BananImage>> shadowMaps;
 
+            std::unordered_map<BananGameObject::id_t, size_t> aliases;
             std::vector<std::unique_ptr<BananBuffer>> matriceBuffers;
 
             std::unique_ptr<BananDescriptorPool> shadowPool;
