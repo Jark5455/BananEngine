@@ -13,12 +13,7 @@ if (WIN32)
     endif()
 
     set(VCPKG_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/vcpkg.exe)
-
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(VCPKG_PLATFORM ":x64-windows")
-    elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        set(VCPKG_PLATFORM ":x86-windows")
-    endif()
+    set(VCPKG_PLATFORM ":x64-windows")
 
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 elseif(UNIX)
@@ -27,12 +22,7 @@ elseif(UNIX)
     endif()
 
     set(VCPKG_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/vcpkg)
-
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(VCPKG_PLATFORM ":x64-linux")
-    elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        set(VCPKG_PLATFORM ":x86-linux")
-    endif()
+    set(VCPKG_PLATFORM ":x64-linux")
 endif()
 
 execute_process(COMMAND ${VCPKG_EXECUTABLE} list OUTPUT_VARIABLE VCPKG_INSTALLED_PACKAGES)

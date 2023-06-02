@@ -169,7 +169,11 @@ namespace Banan {
         return imageLayout;
     }
 
-     std::shared_ptr<BananImage> BananImage::makeImageFromFilepath(BananDevice &device, const std::string &filepath) {
+    std::shared_ptr<BananImage> BananImage::makeImageFromFilepath(BananDevice &device, const std::string &filepath) {
+        struct stat buffer;
+        if (stat(filepath.c_str(), &buffer) != 0)
+            throw std::runtime_error("File does not exist" + filepath);
+
         size_t pos = filepath.rfind('.');
         std::string extension = filepath.substr(pos, filepath.length() - 1);
 

@@ -141,6 +141,10 @@ namespace Banan {
     }
 
     void BananModel::Builder::loadModel(const std::string &filepath) {
+        struct stat buffer;
+        if (stat(filepath.c_str(), &buffer) != 0)
+            throw std::runtime_error("File does not exist" + filepath);
+
         Assimp::Importer importer;
         const aiScene *scene = importer.ReadFile(filepath,
                                                  aiProcess_Triangulate |
