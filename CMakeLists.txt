@@ -56,6 +56,32 @@ find_package(SDL2 REQUIRED)
 find_package(Stb REQUIRED)
 find_package(Vulkan REQUIRED)
 
+if (NOT TARGET Vulkan::glslangValidator)
+    message(FATAL_ERROR "GLSL Compiler not found")
+endif()
+
+file(GLOB_RECURSE GLSL_SOURCE_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Tests/Shaders/*.frag"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Tests/Shaders/*.vert"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Tests/Shaders/*.comp"
+)
+
+foreach(GLSL ${GLSL_SOURCE_FILES})
+    get_filename_component(FILE_NAME ${GLSL} NAME)
+    set(SPIRV "${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv")
+    add_custom_command(
+        OUTPUT ${SPIRV}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/shaders/"
+        COMMAND Vulkan::glslangValidator -V ${GLSL} -o ${SPIRV}
+        DEPENDS ${GLSL})
+    list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+endforeach(GLSL)
+
+add_custom_target(
+    Shaders
+    DEPENDS ${SPIRV_BINARY_FILES}
+)
+
 set(BananLib banan_window.cpp banan_pipeline.cpp banan_device.cpp banan_logger.cpp banan_swap_chain.cpp banan_model.cpp banan_game_object.cpp banan_renderer.cpp banan_camera.cpp banan_buffer.cpp banan_descriptor.cpp banan_image.cpp)
 set(BananTest Tests/BananEngineTest.cpp Tests/main.cpp Tests/Systems/PointLightSystem.cpp Tests/KeyboardMovementController.cpp Tests/Systems/ComputeSystem.cpp Tests/Systems/ProcrastinatedRenderSystem.cpp Tests/Systems/ResolveSystem.cpp Tests/Systems/PointShadowSystem.cpp Tests/Systems/PointShadowSystem.h)
 
@@ -64,6 +90,15 @@ add_executable(BananEngineTest ${BananTest})
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 target_include_directories(BananEngineTest PRIVATE ${CMAKE_SOURCE_DIR})
 
-target_link_libraries(BananEngine assimp::assimp OpenEXR::OpenEXR Vulkan::Vulkan ${SDL2PP_LIBRARIES})
-include_directories(${ASSIMP_INCLUDE_DIRS} ${OpenEXR_INCLUDE_DIRS} ${Stb_INCLUDE_DIR} ${SDL2PP_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS})
+add_dependencies(BananEngineTest Shaders)
+
+add_custom_command(TARGET BananEngineTest POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:BananEngineTest>/shaders/"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${PROJECT_BINARY_DIR}/shaders"
+    "$<TARGET_FILE_DIR:BananEngineTest>/shaders"
+)
+
+target_link_libraries(BananEngine assimp::assimp OpenEXR::OpenEXR Vulkan::Vulkan $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main> $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>)
+include_directories(${ASSIMP_INCLUDE_DIRS} ${OpenEXR_INCLUDE_DIRS} ${Stb_INCLUDE_DIR} ${SDL2_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS})
 
