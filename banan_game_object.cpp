@@ -309,7 +309,7 @@ namespace Banan {
         return model;
     }
 
-    BananGameObject &BananGameObjectManager::copyGameObject(id_t indexOld, id_t indexNew) {
+    BananGameObject &BananGameObjectManager::copyGameObject(BananGameObject::id_t indexOld, BananGameObject::id_t indexNew) {
         auto &object = getGameObjectAtIndex(indexOld);
         auto &new_object = getGameObjectAtIndex(indexNew);
 
@@ -334,7 +334,7 @@ namespace Banan {
         return new_object;
     }
 
-    BananGameObject &BananGameObjectManager::duplicateGameObject(id_t index) {
+    BananGameObject &BananGameObjectManager::duplicateGameObject(BananGameObject::id_t index) {
         auto &new_object = makeVirtualGameObject();
         copyGameObject(index, new_object.getId());
         return new_object;
@@ -349,7 +349,7 @@ namespace Banan {
         return info;
     }
 
-    BananGameObject &BananGameObjectManager::getGameObjectAtIndex(id_t index) {
+    BananGameObject &BananGameObjectManager::getGameObjectAtIndex(BananGameObject::id_t index) {
         return gameObjects.at(index);
     }
 

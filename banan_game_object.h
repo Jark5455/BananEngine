@@ -120,10 +120,10 @@ namespace Banan {
             BananGameObject &makeVirtualGameObject();
             BananGameObject &makeGameObject(const BananGameObject::Builder &builder);
             BananGameObject &makePointLight(float intensity = 10.0f, float radius = 0.1f, glm::vec4 color = glm::vec4(1.f));
-            BananGameObject &duplicateGameObject(id_t index);
-            BananGameObject &copyGameObject(id_t indexOld, id_t indexNew);
+            BananGameObject &duplicateGameObject(BananGameObject::id_t index);
+            BananGameObject &copyGameObject(BananGameObject::id_t indexOld, BananGameObject::id_t indexNew);
 
-            BananGameObject &getGameObjectAtIndex(id_t index);
+            BananGameObject &getGameObjectAtIndex(BananGameObject::id_t index);
             BananGameObject::Map &getGameObjects();
             size_t getGameObjectBufferAlignmentSize(int frameIndex);
 

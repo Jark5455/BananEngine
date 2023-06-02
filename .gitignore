@@ -1,5 +1,6 @@
 /cmake-build-debug-coverage/
 /cmake-build-debug/
 /.idea/
-/Tests/banan_assets/
 /.env.cmake/
+/Tests/banan_assets/
+/vcpkg/
