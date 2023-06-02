@@ -81,6 +81,7 @@ namespace Banan {
         depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkAttachmentReference2KHR depthResolveAttachmentReference{};
+        depthResolveAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
         depthResolveAttachmentReference.attachment = 1;
         depthResolveAttachmentReference.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         depthResolveAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -98,7 +99,7 @@ namespace Banan {
         const uint32_t correlationMask = 0;
 
         VkSubpassDescription2KHR subpassDescription{};
-        subpassDescription.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2_KHR;
+        subpassDescription.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2_KHR;
         subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpassDescription.colorAttachmentCount = 0;
         subpassDescription.inputAttachmentCount = 0;
@@ -112,7 +113,7 @@ namespace Banan {
         subpassDescription.viewMask = viewMask;
         subpassDescription.pNext = &depthStencilResolve;
 
-        std::vector<VkSubpassDependency2KHR> dependencies{2};
+        std::array<VkSubpassDependency2KHR, 2> dependencies{};
 
         // ensure write
         dependencies[0].sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2_KHR;
@@ -128,7 +129,7 @@ namespace Banan {
         // make depth readable
         dependencies[1].sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2_KHR;
         dependencies[1].srcSubpass = 0;
-        dependencies[1].dstSubpass = 1;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[1].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
         dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -163,7 +164,7 @@ namespace Banan {
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         colorAttachment.flags = 0;
 
         VkAttachmentReference2KHR colorAttachmentReference{};
@@ -179,7 +180,7 @@ namespace Banan {
         const uint32_t correlationMask = 0;
 
         VkSubpassDescription2KHR subpassDescription{};
-        subpassDescription.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2_KHR;
+        subpassDescription.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2_KHR;
         subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpassDescription.colorAttachmentCount = 1;
         subpassDescription.inputAttachmentCount = 0;
@@ -209,7 +210,7 @@ namespace Banan {
         // make depth readable
         dependencies[1].sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2_KHR;
         dependencies[1].srcSubpass = 0;
-        dependencies[1].dstSubpass = 1;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
@@ -227,6 +228,8 @@ namespace Banan {
         renderPassCreateInfo.pDependencies = dependencies.data();
         renderPassCreateInfo.correlatedViewMaskCount = 1;
         renderPassCreateInfo.pCorrelatedViewMasks = &correlationMask;
+        renderPassCreateInfo.pNext = nullptr;
+        renderPassCreateInfo.flags = 0;
 
         if (vkCreateRenderPass2Khr(bananDevice.device(), &renderPassCreateInfo, nullptr, &quantizationPass) != VK_SUCCESS) {
             throw std::runtime_error("Unable to create shadow renderpass");
@@ -280,14 +283,15 @@ namespace Banan {
             // skip if already allocated
             if (quantizationFrameBuffers.find(kv.first) != quantizationFrameBuffers.end()) continue;
 
-            std::shared_ptr<BananImage> quantizationImage = std::make_shared<BananImage>(bananDevice, 1024, 1024, 1, 2, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            std::shared_ptr<BananImage> quantizationImage = std::make_shared<BananImage>(bananDevice, 1024, 1024, 1, 2, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            VkImageView view = quantizationImage->getImageView();
 
             VkFramebuffer framebuffer;
             VkFramebufferCreateInfo framebufferInfo = {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = depthPrepass;
+            framebufferInfo.renderPass = quantizationPass;
             framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = (VkImageView *) (quantizationImage->getImageView());
+            framebufferInfo.pAttachments = &view;
             framebufferInfo.width = 1024;
             framebufferInfo.height = 1024;
             framebufferInfo.layers = 1;
@@ -310,12 +314,12 @@ namespace Banan {
             if (kv.second.pointLight == nullptr || !kv.second.pointLight->castsShadows) continue;
 
             if (blurredImages.find(kv.first) == blurredImages.end()) {
-                std::shared_ptr<BananImage> blurredImage = std::make_shared<BananImage>(bananDevice, 1024, 1024, 1, 2, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananImage> blurredImage = std::make_shared<BananImage>(bananDevice, 1024, 1024, 1, 2, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
                 blurredImages.emplace(kv.first, blurredImage);
             }
 
             if (shadowMaps.find(kv.first) == shadowMaps.end()) {
-                std::shared_ptr<BananImage> shadowMap = std::make_shared<BananImage>(bananDevice, 1024, 1024, 1, 2, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                std::shared_ptr<BananImage> shadowMap = std::make_shared<BananImage>(bananDevice, 1024, 1024, 1, 2, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
                 shadowMaps.emplace(kv.first, shadowMap);
             }
         }
@@ -452,6 +456,28 @@ namespace Banan {
             createDescriptors();
         }
 
+        for (auto &kv : bananGameObjectManager.getGameObjects()) {
+            if (kv.second.pointLight == nullptr || !kv.second.pointLight->castsShadows) continue;
+
+            beginDepthPrepass(frameInfo.commandBuffer, kv.first);
+
+            depthPipeline->bind(frameInfo.commandBuffer);
+
+            for (auto &objectkv : bananGameObjectManager.getGameObjects()) {
+                if (objectkv.second.model == nullptr) continue;
+
+                std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet, shadowUBODescriptorSets[frameInfo.frameIndex]};
+                std::vector<uint32_t> offsets = {objectkv.first * (unsigned int) frameInfo.gameObjectManager.getGameObjectBufferAlignmentSize(frameInfo.frameIndex), (unsigned int) kv.first * (unsigned int) matriceBuffers[frameInfo.frameIndex]->getAlignmentSize()};
+
+                vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,depthPipelineLayout,0,sets.size(),sets.data(),offsets.size(),offsets.data());
+
+                objectkv.second.model->bindPosition(frameInfo.commandBuffer);
+                objectkv.second.model->draw(frameInfo.commandBuffer);
+            }
+
+            endRenderPass(frameInfo.commandBuffer);
+        }
+
 //        for (auto &kv : framebuffers) {
 //            beginShadowRenderpass(frameInfo.commandBuffer, kv.first);
 //
@@ -502,26 +528,6 @@ namespace Banan {
             mat.viewMatrices[1] = shadowCamera.getView();
             mat.invViewMatrices[1] = shadowCamera.getInverseView();
 
-            // POSITIVE_Y
-            shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(270.f), 0.f, glm::radians(180.f)});
-            mat.viewMatrices[2] = shadowCamera.getView();
-            mat.invViewMatrices[2] = shadowCamera.getInverseView();
-
-            // NEGATIVE_Y
-            shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(90.f), 0.f, glm::radians(180.f)});
-            mat.viewMatrices[3] = shadowCamera.getView();
-            mat.invViewMatrices[3] = shadowCamera.getInverseView();
-
-            // POSITIVE_Z
-            shadowCamera.setViewYXZ(kv.second.transform.translation, {0.f, 0.f, glm::radians(180.f)});
-            mat.viewMatrices[4] = shadowCamera.getView();
-            mat.invViewMatrices[4] = shadowCamera.getInverseView();
-
-            // NEGATIVE_Z
-            shadowCamera.setViewYXZ(kv.second.transform.translation, {glm::radians(180.f), 0.f, 0.f});
-            mat.viewMatrices[5] = shadowCamera.getView();
-            mat.invViewMatrices[5] = shadowCamera.getInverseView();
-
             matriceBuffers[frameInfo.frameIndex]->writeToIndex(&mat, kv.first);
             matriceBuffers[frameInfo.frameIndex]->flushIndex(kv.first);
         }
@@ -548,19 +554,20 @@ namespace Banan {
                 .build();
 
         shadowDepthSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1024) // max id
                 .build();
 
         shadowQuantizationSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1024) // max id
                 .build();
 
         shadowBlurSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1024) // max id
+                .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1024) // max id
                 .build();
 
         shadowMapSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1024) // max id
                 .build();
 
         shadowUBODescriptorSets.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
@@ -571,32 +578,25 @@ namespace Banan {
             shadowWriter.build(shadowUBODescriptorSets[i]);
         }
 
-        std::vector<VkDescriptorImageInfo> depthMaps;
-        depthMaps.resize(depthFramebufferResolveImages.size());
-
-        std::vector<VkDescriptorImageInfo> quantizedMaps;
-        quantizedMaps.resize(quantizedImages.size());
-
-        std::vector<VkDescriptorImageInfo> blurredMaps;
-        blurredMaps.resize(blurredImages.size());
-
-        std::vector<VkDescriptorImageInfo> momentShadowMaps;
-        momentShadowMaps.resize(shadowMaps.size());
+        std::unordered_map<uint32_t, VkDescriptorImageInfo> depthMaps;
+        std::unordered_map<uint32_t, VkDescriptorImageInfo> quantizedMaps;
+        std::unordered_map<uint32_t, VkDescriptorImageInfo> blurredMaps;
+        std::unordered_map<uint32_t, VkDescriptorImageInfo> momentShadowMaps;
 
         for (auto &kv : depthFramebufferResolveImages) {
-            depthMaps.at(kv.first) = kv.second->descriptorInfo();
+            depthMaps.emplace(kv.first, kv.second->descriptorInfo());
         }
 
         for (auto &kv : quantizedImages) {
-            quantizedMaps.at(kv.first) = kv.second->descriptorInfo();
+            quantizedMaps.emplace(kv.first, kv.second->descriptorInfo());
         }
 
         for (auto &kv : blurredImages) {
-            blurredMaps.at(kv.first) = kv.second->descriptorInfo();
+            blurredMaps.emplace(kv.first, kv.second->descriptorInfo());
         }
 
         for (auto &kv : shadowMaps) {
-            momentShadowMaps.at(kv.first) = kv.second->descriptorInfo();
+            momentShadowMaps.emplace(kv.first, kv.second->descriptorInfo());
         }
 
         shadowDepthDescriptorSets.resize(BananSwapChain::MAX_FRAMES_IN_FLIGHT);

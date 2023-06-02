@@ -57,8 +57,8 @@ layout(set = 1, binding = 0) uniform GameObjects {
 layout(set = 2, binding = 0) uniform ShadowViews {
     mat4 projectionMatrix;
     mat4 invProjection;
-    mat4 viewMatrices[6];
-    mat4 invViewMatrices[6];
+    mat4 viewMatrices[2];
+    mat4 invViewMatrices[2];
 } mats;
 
 void main() {

@@ -100,6 +100,7 @@ namespace Banan {
                                                             VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
                                                             VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
                                                             VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+                                                            VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
                                                             VK_KHR_MULTIVIEW_EXTENSION_NAME,
                                                             VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
     };

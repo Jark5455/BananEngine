@@ -343,7 +343,7 @@ namespace Banan {
     }
 
     void BananSwapChain::createGeometryFramebuffer() {
-        std::array<VkImageView,4> attachments = {gBufferAttachments[0]->descriptorInfo().imageView, gBufferAttachments[1]->descriptorInfo().imageView, gBufferAttachments[2]->descriptorInfo().imageView, geometryImage->descriptorInfo().imageView};
+        std::array<VkImageView,4> attachments = {gBufferAttachments[0]->getImageView(), gBufferAttachments[1]->getImageView(), gBufferAttachments[2]->getImageView(), geometryImage->getImageView()};
 
         VkFramebufferCreateInfo framebufferInfo = {};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -518,7 +518,7 @@ namespace Banan {
     void BananSwapChain::createResolveFramebuffers() {
 
         {
-            VkImageView edgeView = edgeImage->descriptorInfo().imageView;
+            VkImageView edgeView = edgeImage->getImageView();
 
             VkFramebufferCreateInfo framebufferInfo = {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -535,7 +535,7 @@ namespace Banan {
         }
 
         {
-            VkImageView blendView = blendImage->descriptorInfo().imageView;
+            VkImageView blendView = blendImage->getImageView();
 
             VkFramebufferCreateInfo framebufferInfo = {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
