@@ -26,13 +26,13 @@ elseif(UNIX)
         execute_process(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/bootstrap-vcpkg.sh)
     endif()
 
+    set(VCPKG_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/vcpkg)
+
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set(VCPKG_PLATFORM ":x64-linux")
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
         set(VCPKG_PLATFORM ":x86-linux")
     endif()
-
-    set(VCPKG_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/vcpkg)
 endif()
 
 execute_process(COMMAND ${VCPKG_EXECUTABLE} list OUTPUT_VARIABLE VCPKG_INSTALLED_PACKAGES)
