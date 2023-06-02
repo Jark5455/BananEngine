@@ -10,9 +10,9 @@
 #include <memory>
 #include <cassert>
 #include <thread>
+#include <sys/stat.h>
 
 #include <stb_image.h>
-#include <openexr.h>
 #include <ImathBox.h>
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>

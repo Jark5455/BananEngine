@@ -9,6 +9,7 @@
 #include <cstring>
 #include <iterator>
 #include <thread>
+#include <sys/stat.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>

@@ -29,7 +29,7 @@ namespace Banan {
     }
 
     SDL_Window *BananWindow::getSDLWindow() const {
-        return nullptr;
+        return window;
     }
 }
 

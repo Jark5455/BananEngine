@@ -25,6 +25,7 @@ elseif(UNIX)
     set(VCPKG_PLATFORM ":x64-linux")
 endif()
 
+execute_process(COMMAND ${VCPKG_EXECUTABLE} integrate install)
 execute_process(COMMAND ${VCPKG_EXECUTABLE} list OUTPUT_VARIABLE VCPKG_INSTALLED_PACKAGES)
 
 if (NOT ${VCPKG_INSTALLED_PACKAGES} MATCHES ".*assimp${VCPKG_PLATFORM}.*")
@@ -36,7 +37,7 @@ if (NOT ${VCPKG_INSTALLED_PACKAGES} MATCHES ".*openexr${VCPKG_PLATFORM}.*")
 endif()
 
 if (NOT ${VCPKG_INSTALLED_PACKAGES} MATCHES ".*sdl2${VCPKG_PLATFORM}.*")
-    execute_process(COMMAND ${VCPKG_EXECUTABLE} install sdl2${VCPKG_PLATFORM})
+    execute_process(COMMAND ${VCPKG_EXECUTABLE} install sdl2[vulkan]${VCPKG_PLATFORM})
 endif()
 
 if (NOT ${VCPKG_INSTALLED_PACKAGES} MATCHES ".*vulkan${VCPKG_PLATFORM}.*")
@@ -47,12 +48,11 @@ if (NOT ${VCPKG_INSTALLED_PACKAGES} MATCHES ".*stb${VCPKG_PLATFORM}.*")
     execute_process(COMMAND ${VCPKG_EXECUTABLE} install stb${VCPKG_PLATFORM})
 endif()
 
-execute_process(COMMAND ${VCPKG_EXECUTABLE} integrate install)
 include(${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 find_package(assimp CONFIG REQUIRED)
 find_package(OpenEXR CONFIG REQUIRED)
-find_package(SDL2 CONFIG REQUIRED)
+find_package(SDL2 REQUIRED)
 find_package(Stb REQUIRED)
 find_package(Vulkan REQUIRED)
 
@@ -64,6 +64,6 @@ add_executable(BananEngineTest ${BananTest})
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 target_include_directories(BananEngineTest PRIVATE ${CMAKE_SOURCE_DIR})
 
-target_link_libraries(BananEngine assimp::assimp OpenEXR::OpenEXR SDL2::SDL2main SDL2::SDL2 Vulkan::Vulkan)
-include_directories(${ASSIMP_INCLUDE_DIRS} ${OpenEXR_INCLUDE_DIRS} ${Stb_INCLUDE_DIR} ${SDL2_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(BananEngine assimp::assimp OpenEXR::OpenEXR Vulkan::Vulkan ${SDL2PP_LIBRARIES})
+include_directories(${ASSIMP_INCLUDE_DIRS} ${OpenEXR_INCLUDE_DIRS} ${Stb_INCLUDE_DIR} ${SDL2PP_INCLUDE_DIRS} ${Vulkan_INCLUDE_DIRS})
 
