@@ -182,7 +182,7 @@ namespace Banan {
         auto &bindingDescription = setLayout.bindings[binding];
         for (auto &kv : imageInfos) {
             VkWriteDescriptorSet write{};
-            write.sType = write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write.descriptorType = bindingDescription.descriptorType;
             write.dstBinding = binding;
             write.dstArrayElement = kv.first;
@@ -199,7 +199,7 @@ namespace Banan {
         auto &bindingDescription = setLayout.bindings[binding];
 
         VkWriteDescriptorSet write{};
-        write.sType = write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.descriptorType = bindingDescription.descriptorType;
         write.dstBinding = binding;
         write.dstArrayElement = 0;
