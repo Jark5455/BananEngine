@@ -45,7 +45,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      VULKAN_SDK: ${{github.workspace}}\vulkan-sdk\
+      VULKAN_SDK: C:\VulkanSDK\
 
     steps:
     
