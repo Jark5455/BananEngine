@@ -16,6 +16,9 @@ jobs:
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
+    env:
+      CC: /usr/bin/clang
+      CXX: /ust/bin/clang++
 
     steps:
     
@@ -24,7 +27,7 @@ jobs:
         wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
         sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
         sudo apt update
-        sudo apt install vulkan-sdk libglm-dev
+        sudo apt install vulkan-sdk libglm-dev clang
       
     - uses: actions/checkout@v3
       with:
@@ -41,12 +44,16 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
+    env:
+      VULKAN_SDK: ${{github.workspace}}\vulkan-sdk\
+
     steps:
-              
-      - uses: humbletim/install-vulkan-sdk@v1.1.1
-        with:
-          version: latest
-          cache: true
+    
+      - name: Install Vulkan SDK
+        run: |
+          Invoke-Webrequest -URI https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe -OutFile ${{github.workspace}}\vulkan-sdk.exe
+          ${{github.workspace}}\vulkan-sdk.exe --root ${{github.workspace}}\vulkan-sdk\ --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
+          ls ${{github.workspace}}\vulkan-sdk\
             
       - uses: actions/checkout@v3
         with:
