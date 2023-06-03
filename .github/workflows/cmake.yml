@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CC: /usr/bin/clang
-      CXX: /ust/bin/clang++
+      CXX: /usr/bin/clang++
 
     steps:
     
@@ -27,7 +27,7 @@ jobs:
         wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
         sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
         sudo apt update
-        sudo apt install vulkan-sdk libglm-dev clang clang-tools
+        sudo apt install vulkan-sdk libglm-dev clang
       
     - uses: actions/checkout@v3
       with:
