@@ -44,16 +44,15 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
-    env:
-      VULKAN_SDK: C:\VulkanSDK\
-
     steps:
     
       - name: Install Vulkan SDK
         run: |
           Invoke-Webrequest -URI https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe -OutFile ${{github.workspace}}\vulkan-sdk.exe
-          ${{github.workspace}}\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
-          ls C:\VulkanSDK\
+          ${{github.workspace}}\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.32bit com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.volk com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
+          
+          $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
+          $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
             
       - uses: actions/checkout@v3
         with:
