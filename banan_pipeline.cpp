@@ -9,24 +9,24 @@
 #include <stdexcept>
 
 namespace Banan{
-    BananPipeline::BananPipeline(BananDevice &device, const std::string &vertFilepath, const std::string &fragFilePath, const PipelineConfigInfo &configInfo) : device{device} {
+    BananPipeline::BananPipeline(BananDevice &device, const std::string &vertFilepath, const std::string &fragFilePath, const PipelineConfigInfo &configInfo) : bananDevice{device} {
         createGraphicsPipeline(vertFilepath, fragFilePath, configInfo);
     }
 
-    BananPipeline::BananPipeline(BananDevice &device, const std::string &computeFilepath, const PipelineConfigInfo &configInfo) : device{device} {
+    BananPipeline::BananPipeline(BananDevice &device, const std::string &computeFilepath, const PipelineConfigInfo &configInfo) : bananDevice{device} {
         createComputePipeline(computeFilepath, configInfo);
     }
 
     BananPipeline::~BananPipeline() {
 
         if (computeShaderModule == VK_NULL_HANDLE) {
-            vkDestroyShaderModule(device.device(), vertShaderModule, nullptr);
-            vkDestroyShaderModule(device.device(), fragShaderModule, nullptr);
+            vkDestroyShaderModule(bananDevice.device(), vertShaderModule, nullptr);
+            vkDestroyShaderModule(bananDevice.device(), fragShaderModule, nullptr);
         } else {
-            vkDestroyShaderModule(device.device(), computeShaderModule, nullptr);
+            vkDestroyShaderModule(bananDevice.device(), computeShaderModule, nullptr);
         }
 
-        vkDestroyPipeline(device.device(), pipeline, nullptr);
+        vkDestroyPipeline(bananDevice.device(), pipeline, nullptr);
     }
 
     std::vector<char> BananPipeline::readFile(const std::string &filepath) {
@@ -40,7 +40,7 @@ namespace Banan{
         std::vector<char> buffer(fileSize);
 
         file.seekg(0);
-        file.read(buffer.data(), fileSize);
+        file.read(buffer.data(), static_cast<long long>(fileSize));
 
         file.close();
         return buffer;
@@ -67,7 +67,7 @@ namespace Banan{
         pipelineInfo.layout = info.pipelineLayout;
         pipelineInfo.flags = 0;
 
-        if (vkCreateComputePipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+        if (vkCreateComputePipelines(bananDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline");
         }
     }
@@ -130,7 +130,7 @@ namespace Banan{
         pipelineInfo.basePipelineIndex = -1;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-        if (vkCreateGraphicsPipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(bananDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline");
         }
     }
@@ -298,7 +298,7 @@ namespace Banan{
         createInfo.codeSize = code.size();
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-        if (vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
+        if (vkCreateShaderModule(bananDevice.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
             throw std::runtime_error("failed to create shader module");
         }
     }

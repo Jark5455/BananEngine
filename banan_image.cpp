@@ -18,7 +18,7 @@
 #include <ImfArray.h>
 
 namespace Banan {
-    BananImage::BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) : bananDevice{device}, imageFormat{format}, mipLevels{mipLevels}, arrayLevels{arrayLevels} {
+    BananImage::BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevelsCount, uint32_t arrayLevelsCount, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) : bananDevice{device}, imageFormat{format}, mipLevels{mipLevelsCount}, arrayLevels{arrayLevelsCount} {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -191,7 +191,7 @@ namespace Banan {
         void *data;
 
         if (extension == ".exr") {
-            Imf::setGlobalThreadCount((int) std::thread::hardware_concurrency());
+            Imf::setGlobalThreadCount(static_cast<int>(std::thread::hardware_concurrency()));
             Imf::Array2D<Imf::Rgba> pixelBuffer = Imf::Array2D<Imf::Rgba>();
             Imf::Array2D<Imf::Rgba> &pixelBufferRef = pixelBuffer;
 
@@ -204,17 +204,17 @@ namespace Banan {
 
             pixelBufferRef.resizeErase(dim.x, dim.y);
 
-            in.setFrameBuffer(&pixelBufferRef[0][0] - dx - dy * dim.x, 1, dim.x);
+            in.setFrameBuffer(&pixelBufferRef[0][0] - dx - dy * dim.x, 1, static_cast<size_t>(dim.x));
             in.readPixels(win.min.y, win.max.y);
 
-            data = malloc(dim.y * dim.y * 8);
-            width = dim.x;
-            height = dim.y;
+            width = static_cast<uint32_t>(dim.x);
+            height = static_cast<uint32_t>(dim.y);
             stride = 16;
             levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, width)))) + 1;
+            data = malloc(width * height * 8);
 
             std::vector<uint16_t> singleChannelPixelBuffer{};
-            singleChannelPixelBuffer.reserve(dim.x * dim.y * 4);
+            singleChannelPixelBuffer.reserve(width * height * 4);
 
             uint32_t index = 0;
             for (int y1 = 0; y1 < dim.y; y1++) {
@@ -226,9 +226,9 @@ namespace Banan {
                 }
             }
 
-            memcpy(data, singleChannelPixelBuffer.data(), dim.x * dim.y * 8);
+            memcpy(data, singleChannelPixelBuffer.data(), (static_cast<size_t>(dim.x) * static_cast<size_t>(dim.y) * 8));
         } else {
-            data = stbi_load(filepath.c_str(), (int *) &width, (int *) &height, nullptr, STBI_rgb_alpha);
+            data = stbi_load(filepath.c_str(), reinterpret_cast<int *>(&width), reinterpret_cast<int *>(&height), nullptr, STBI_rgb_alpha);
             levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, width)))) + 1;
             stride = 8;
         }
@@ -242,7 +242,7 @@ namespace Banan {
 
         BananBuffer stagingBuffer{device, pixelSize, pixelCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         stagingBuffer.map();
-        stagingBuffer.writeToBuffer((void *) data);
+        stagingBuffer.writeToBuffer(static_cast<void *>(data));
 
         free(data);
 
@@ -257,7 +257,7 @@ namespace Banan {
         return bananImage;
     }
 
-    BananCubemap::BananCubemap(BananDevice &device, uint32_t sideLength, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) : bananDevice{device}, cubemapImageFormat{format}, mipLevels{mipLevels} {
+    BananCubemap::BananCubemap(BananDevice &device, uint32_t sideLength, uint32_t mipLevelsCount, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags) : bananDevice{device}, cubemapImageFormat{format}, mipLevels{mipLevelsCount} {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;

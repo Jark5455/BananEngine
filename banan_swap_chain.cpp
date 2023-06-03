@@ -248,7 +248,7 @@ namespace Banan {
 
         VkSubpassDescription gBufferSubpass{};
         gBufferSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        gBufferSubpass.colorAttachmentCount = gbufferReferences.size();
+        gBufferSubpass.colorAttachmentCount = static_cast<uint32_t>(gbufferReferences.size());
         gBufferSubpass.pColorAttachments = gbufferReferences.data();
         gBufferSubpass.pDepthStencilAttachment = &depthReference;
 
@@ -269,7 +269,7 @@ namespace Banan {
         compositeSubpass.colorAttachmentCount = 1;
         compositeSubpass.pColorAttachments = &compositeReferences;
         compositeSubpass.pDepthStencilAttachment = nullptr;
-        compositeSubpass.inputAttachmentCount = inputAttachments.size();
+        compositeSubpass.inputAttachmentCount = static_cast<uint32_t>(inputAttachments.size());
         compositeSubpass.pInputAttachments = inputAttachments.data();
 
         VkSubpassDescription forwardSubpass{};
@@ -330,11 +330,11 @@ namespace Banan {
 
         VkRenderPassCreateInfo renderPassInfo = {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = attachments.size();
+        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         renderPassInfo.pAttachments = attachments.data();
-        renderPassInfo.subpassCount = subpasses.size();
+        renderPassInfo.subpassCount = static_cast<uint32_t>(subpasses.size());
         renderPassInfo.pSubpasses = subpasses.data();
-        renderPassInfo.dependencyCount = dependencies.size();
+        renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
         renderPassInfo.pDependencies = dependencies.data();
 
         if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &geometryRenderpass) != VK_SUCCESS) {
@@ -401,7 +401,7 @@ namespace Banan {
             renderPassInfo.pAttachments = &edgeAttachment;
             renderPassInfo.subpassCount = 1;
             renderPassInfo.pSubpasses = &edgeDetectionSubpass;
-            renderPassInfo.dependencyCount = dependencies.size();
+            renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
             renderPassInfo.pDependencies = dependencies.data();
 
             if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &edgeDetectionRenderPass) != VK_SUCCESS) {
@@ -449,7 +449,7 @@ namespace Banan {
             renderPassInfo.pAttachments = &blendAttachment;
             renderPassInfo.subpassCount = 1;
             renderPassInfo.pSubpasses = &blendAttachmentSubpass;
-            renderPassInfo.dependencyCount = dependencies.size();
+            renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
             renderPassInfo.pDependencies = dependencies.data();
 
             if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &blendWeightRenderPass) != VK_SUCCESS) {
@@ -506,7 +506,7 @@ namespace Banan {
             renderPassInfo.pAttachments = &resolveAttachment;
             renderPassInfo.subpassCount = 1;
             renderPassInfo.pSubpasses = &resolveAttachmentSubpass;
-            renderPassInfo.dependencyCount = dependencies.size();
+            renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
             renderPassInfo.pDependencies = dependencies.data();
 
             if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &resolveRenderPass) != VK_SUCCESS) {

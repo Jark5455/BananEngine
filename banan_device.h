@@ -82,7 +82,7 @@ namespace Banan {
         VkDebugUtilsMessengerEXT debugMessenger;
         VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties properties;
-        BananWindow &window;
+        BananWindow &bananWindow;
         VkCommandPool commandPool;
 
         VkDevice device_;

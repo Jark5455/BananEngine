@@ -97,7 +97,7 @@ namespace Banan{
         std::vector<VkDescriptorSet> blendWeightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> resolveDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
 
-        for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+        for (uint32_t i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
             writer.writeBuffer(0, bufferInfo);
@@ -154,7 +154,7 @@ namespace Banan{
                         procrastinatedPool->resetPool();
                         resolvePool->resetPool();
 
-                        for (int i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+                        for (uint32_t i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
                             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
                             auto gbufferInfo = bananRenderer.getGBufferDescriptorInfo();
                             auto albedo = gbufferInfo[0];
@@ -212,7 +212,7 @@ namespace Banan{
             camera.setPerspectiveProjection(glm::radians(90.f), aspect, 0.1f, 100.f);
 
             if (auto commandBuffer = bananRenderer.beginFrame()) {
-                int frameIndex = bananRenderer.getFrameIndex();
+                size_t frameIndex = bananRenderer.getFrameIndex();
                 BananFrameInfo frameInfo{frameIndex, frameTime, commandBuffer, camera, globalDescriptorSets[frameIndex], bananGameObjectManager.getTextureDescriptorSet(frameIndex), bananGameObjectManager.getGameObjectDescriptorSet(frameIndex), procrastinatedDescriptorSets[frameIndex], edgeDetectionDescriptorSets[frameIndex], blendWeightDescriptorSets[frameIndex], resolveDescriptorSets[frameIndex], pointShadowSystem.getShadowMapDescriptorSet(frameIndex), bananGameObjectManager};
 
                 pointShadowSystem.generateMatrices(frameInfo);
@@ -222,8 +222,8 @@ namespace Banan{
                 ubo.view = camera.getView();
                 ubo.inverseView = camera.getInverseView();
                 ubo.inverseProjection = camera.getInverseProjection();
-                ubo.numGameObjects = (int) bananGameObjectManager.getGameObjects().size();
-                ubo.numPointLights = (int) bananGameObjectManager.numPointLights();
+                ubo.numGameObjects = static_cast<int>(bananGameObjectManager.getGameObjects().size());
+                ubo.numPointLights = static_cast<int>(bananGameObjectManager.numPointLights());
                 ubo.pointLightBaseRef = bananGameObjectManager.getPointLightBaseRef(frameIndex);
 
                 pointLightSystem.update(frameInfo);
@@ -261,11 +261,11 @@ namespace Banan{
         // SMAA Textures stuff
         BananBuffer areaTexStagingBuffer{bananDevice, 2, AREATEX_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         areaTexStagingBuffer.map();
-        areaTexStagingBuffer.writeToBuffer((void *) &areaTexBytes, AREATEX_SIZE);
+        areaTexStagingBuffer.writeToBuffer(const_cast<void *>(reinterpret_cast<const void *>(&areaTexBytes)), AREATEX_SIZE);
 
         BananBuffer searchTexStagingBuffer{bananDevice, 1, SEARCHTEX_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         searchTexStagingBuffer.map();
-        searchTexStagingBuffer.writeToBuffer((void *) &searchTexBytes, SEARCHTEX_SIZE);
+        searchTexStagingBuffer.writeToBuffer(const_cast<void *>(reinterpret_cast<const void *>(&searchTexBytes)), SEARCHTEX_SIZE);
 
         VkCommandBuffer commandBuffer = bananDevice.beginSingleTimeCommands();
 
@@ -307,7 +307,7 @@ namespace Banan{
         floor.transform.rotation = {0.f, glm::pi<float>(), 0.0f};
         floor.transform.scale = {3.f, 3.f, 3.f};
 
-        floor.parallax.heightscale = 0.1;
+        floor.parallax.heightscale = 0.1f;
         floor.parallax.parallaxBias = -0.02f;
         floor.parallax.numLayers = 48.0f;
         floor.parallax.parallaxmode = 1;

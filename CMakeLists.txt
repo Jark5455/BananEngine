@@ -90,8 +90,8 @@ add_executable(BananEngineTest ${BananTest})
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 target_include_directories(BananEngineTest PRIVATE ${CMAKE_SOURCE_DIR})
 
-target_compile_options(BananEngine PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>)
-target_compile_options(BananEngineTest PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>)
+target_compile_options(BananEngine PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-unused-parameter -Wno-unused-function -Wno-switch-enum -Wno-unused-macros>)
+target_compile_options(BananEngineTest PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-unused-parameter -Wno-unused-function -Wno-switch-enum -Wno-unused-macros>)
 
 add_dependencies(BananEngineTest Shaders)
 

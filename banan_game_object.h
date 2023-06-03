@@ -125,7 +125,7 @@ namespace Banan {
 
             BananGameObject &getGameObjectAtIndex(BananGameObject::id_t index);
             BananGameObject::Map &getGameObjects();
-            size_t getGameObjectBufferAlignmentSize(int frameIndex);
+            size_t getGameObjectBufferAlignmentSize(size_t frameIndex);
 
             size_t getImageIndexFromAlias(std::string alias);
             size_t getModelIndexFromAlias(std::string alias);
@@ -134,13 +134,13 @@ namespace Banan {
             std::vector<VkDescriptorImageInfo> textureInfo();
 
             size_t numPointLights();
-            uint64_t getPointLightBaseRef(int frameIndex);
+            uint64_t getPointLightBaseRef(size_t frameIndex);
 
             VkDescriptorSetLayout getGameObjectSetLayout();
             VkDescriptorSetLayout getTextureSetLayout();
 
-            VkDescriptorSet &getGameObjectDescriptorSet(int frameIndex);
-            VkDescriptorSet &getTextureDescriptorSet(int frameIndex);
+            VkDescriptorSet &getGameObjectDescriptorSet(size_t frameIndex);
+            VkDescriptorSet &getTextureDescriptorSet(size_t frameIndex);
 
             void updateBuffers(size_t frameIndex);
             void createBuffers(size_t preAllocatedGameObjects);

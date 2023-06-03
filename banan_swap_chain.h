@@ -19,7 +19,7 @@ namespace Banan {
     class BananSwapChain {
     public:
 
-        static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+        static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
         BananSwapChain(BananDevice &deviceRef, VkExtent2D extent, std::shared_ptr<BananSwapChain> previous);
         ~BananSwapChain();
 
@@ -35,10 +35,10 @@ namespace Banan {
         VkFramebuffer getBlendWeightFramebuffer() { return blendFramebuffer; }
         VkRenderPass getBlendWeightRenderpass() { return blendWeightRenderPass; }
 
-        VkFramebuffer getResolveFramebuffer(int index) { return resolveFramebuffers[index]; }
+        VkFramebuffer getResolveFramebuffer(size_t index) { return resolveFramebuffers[index]; }
         VkRenderPass getResolveRenderpass() { return resolveRenderPass; }
 
-        VkImageView getImageView(int index) { return swapChainImageViews[index]; }
+        VkImageView getImageView(size_t index) { return swapChainImageViews[index]; }
         size_t imageCount() { return swapChainImages.size(); }
         VkFormat getSwapChainImageFormat() { return swapChainImageFormat; }
         VkExtent2D getSwapChainExtent() { return swapChainExtent; }

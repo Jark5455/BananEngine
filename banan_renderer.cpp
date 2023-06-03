@@ -23,7 +23,7 @@ namespace Banan {
 
     VkCommandBuffer BananRenderer::getCurrentCommandBuffer() const {
         assert(isFrameStarted && "Cannot get Command buffer when frame is not in progress");
-        return commandBuffers[currentFrameIndex];
+        return commandBuffers[static_cast<size_t>(currentFrameIndex)];
     }
 
     VkRenderPass BananRenderer::getGeometryRenderPass() const {
@@ -57,8 +57,7 @@ namespace Banan {
     }
 
     void BananRenderer::freeCommandBuffers() {
-        vkFreeCommandBuffers(bananDevice.device(), bananDevice.getCommandPool(), commandBuffers.size(),
-                             commandBuffers.data());
+        vkFreeCommandBuffers(bananDevice.device(), bananDevice.getCommandPool(), static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
         commandBuffers.clear();
     }
 
@@ -242,7 +241,7 @@ namespace Banan {
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = bananSwapChain->getResolveRenderpass();
-        renderPassInfo.framebuffer = bananSwapChain->getResolveFramebuffer((int) currentImageIndex);
+        renderPassInfo.framebuffer = bananSwapChain->getResolveFramebuffer(currentImageIndex);
 
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
@@ -266,7 +265,7 @@ namespace Banan {
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
     }
 
-    int BananRenderer::getFrameIndex() const {
+    uint32_t BananRenderer::getFrameIndex() const {
         assert(isFrameStarted && "Cannot get frame index when frame is not in progress");
         return currentFrameIndex;
     }

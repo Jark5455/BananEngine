@@ -29,7 +29,7 @@ namespace Banan {
     };
 
     struct BananFrameInfo {
-        int frameIndex;
+        size_t frameIndex;
         float frameTime;
         VkCommandBuffer commandBuffer;
         BananCamera &camera;

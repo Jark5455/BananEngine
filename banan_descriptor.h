@@ -15,7 +15,7 @@ namespace Banan {
         public:
             class Builder {
                 public:
-                    Builder(BananDevice &bananDevice) : bananDevice{bananDevice} {}
+                    Builder(BananDevice &device) : bananDevice{device} {}
                     Builder &addFlag(VkDescriptorBindingFlagsEXT flag);
                     Builder &addBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count = 1);
                     std::unique_ptr<BananDescriptorSetLayout> build() const;
@@ -45,7 +45,7 @@ namespace Banan {
         public:
             class Builder {
                 public:
-                    Builder(BananDevice &bananDevice) : bananDevice{bananDevice} {}
+                    Builder(BananDevice &device) : bananDevice{device} {}
 
                     Builder &addPoolSize(VkDescriptorType descriptorType, uint32_t count);
                     Builder &setPoolFlags(VkDescriptorPoolCreateFlags flags);

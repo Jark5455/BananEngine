@@ -31,7 +31,7 @@ namespace Banan{
         bool isFrameInProgress() const;
         VkCommandBuffer getCurrentCommandBuffer() const;
 
-        int getFrameIndex() const;
+        uint32_t getFrameIndex() const;
         std::vector<VkDescriptorImageInfo> getGBufferDescriptorInfo();
 
         VkDescriptorImageInfo getGeometryDescriptorInfo();
@@ -60,7 +60,7 @@ namespace Banan{
         std::vector<VkDescriptorImageInfo> GBufferInfo{};
 
         uint32_t currentImageIndex;
-        int currentFrameIndex{0};
+        uint32_t currentFrameIndex{0};
         bool isFrameStarted{false};
     };
 }

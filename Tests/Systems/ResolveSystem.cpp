@@ -131,7 +131,7 @@ namespace Banan {
         edgeDetectionPipeline->bind(frameInfo.commandBuffer);
         std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.edgeDetectionDescriptorSet};
 
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,edgeDetectionPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,edgeDetectionPipelineLayout,0,static_cast<uint32_t>(sets.size()),sets.data(),0,nullptr);
         vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
     }
 
@@ -139,7 +139,7 @@ namespace Banan {
         blendWeightPipeline->bind(frameInfo.commandBuffer);
         std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.blendWeightDescriptorSet};
 
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,blendWeightPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,blendWeightPipelineLayout,0,static_cast<uint32_t>(sets.size()),sets.data(),0,nullptr);
         vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
     }
 
@@ -147,7 +147,7 @@ namespace Banan {
         resolvePipeline->bind(frameInfo.commandBuffer);
         std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.resolveDescriptorSet};
 
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,resolvePipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,resolvePipelineLayout,0,static_cast<uint32_t>(sets.size()),sets.data(),0,nullptr);
         vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
     }
 }

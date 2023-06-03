@@ -11,7 +11,7 @@
 namespace Banan {
 
     PointShadowSystem::PointShadowSystem(Banan::BananDevice &device, Banan::BananGameObjectManager &manager, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device}, bananGameObjectManager{manager} {
-        vkCreateRenderPass2Khr = (PFN_vkCreateRenderPass2KHR) vkGetDeviceProcAddr(bananDevice.device(), "vkCreateRenderPass2KHR");
+        vkCreateRenderPass2Khr = reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vkGetDeviceProcAddr(bananDevice.device(), "vkCreateRenderPass2KHR"));
 
         createDepthPrepass();
         createQuantizationPass();
@@ -224,7 +224,7 @@ namespace Banan {
         renderPassCreateInfo.pAttachments = &colorAttachment;
         renderPassCreateInfo.subpassCount = 1;
         renderPassCreateInfo.pSubpasses = &subpassDescription;
-        renderPassCreateInfo.dependencyCount = dependencies.size();
+        renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
         renderPassCreateInfo.pDependencies = dependencies.data();
         renderPassCreateInfo.correlatedViewMaskCount = 1;
         renderPassCreateInfo.pCorrelatedViewMasks = &correlationMask;
@@ -248,16 +248,16 @@ namespace Banan {
             std::shared_ptr<BananImage> depthImage = std::make_shared<BananImage>(bananDevice, 1024, 1024, 1, 2, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
             std::shared_ptr<BananImage> depthImageResolve = std::make_shared<BananImage>(bananDevice, 1024, 1024, 1, 2, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            std::array<VkImageView *, 2> attachments{};
-            attachments[0] = (VkImageView *) depthImage->getImageView();
-            attachments[1] = (VkImageView *) depthImageResolve->getImageView();
+            std::array<VkImageView, 2> attachments{};
+            attachments[0] = depthImage->getImageView();
+            attachments[1] = depthImageResolve->getImageView();
 
             VkFramebuffer framebuffer;
             VkFramebufferCreateInfo framebufferInfo = {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.renderPass = depthPrepass;
             framebufferInfo.attachmentCount = attachments.size();
-            framebufferInfo.pAttachments = (VkImageView *) attachments.data();
+            framebufferInfo.pAttachments = attachments.data();
             framebufferInfo.width = 1024;
             framebufferInfo.height = 1024;
             framebufferInfo.layers = 1;
@@ -467,9 +467,9 @@ namespace Banan {
                 if (objectkv.second.model == nullptr) continue;
 
                 std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet, shadowUBODescriptorSets[frameInfo.frameIndex]};
-                std::vector<uint32_t> offsets = {objectkv.first * (unsigned int) frameInfo.gameObjectManager.getGameObjectBufferAlignmentSize(frameInfo.frameIndex), (unsigned int) kv.first * (unsigned int) matriceBuffers[frameInfo.frameIndex]->getAlignmentSize()};
+                std::vector<uint32_t> offsets = {objectkv.first * static_cast<uint32_t>(frameInfo.gameObjectManager.getGameObjectBufferAlignmentSize(frameInfo.frameIndex)), kv.first * static_cast<uint32_t>(matriceBuffers[frameInfo.frameIndex]->getAlignmentSize())};
 
-                vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,depthPipelineLayout,0,sets.size(),sets.data(),offsets.size(),offsets.data());
+                vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,depthPipelineLayout,0,static_cast<uint32_t>(sets.size()),sets.data(),static_cast<uint32_t>(offsets.size()),offsets.data());
 
                 objectkv.second.model->bindPosition(frameInfo.commandBuffer);
                 objectkv.second.model->draw(frameInfo.commandBuffer);
@@ -509,7 +509,7 @@ namespace Banan {
 
     void PointShadowSystem::generateMatrices(BananFrameInfo frameInfo) {
         BananCamera shadowCamera{};
-        shadowCamera.setPerspectiveProjection(glm::pi<float>() / 2.0, 1, 0.1f, 1024.f);
+        shadowCamera.setPerspectiveProjection(glm::pi<float>() / 2.0f, 1, 0.1f, 1024.f);
 
         for (auto &kv : bananGameObjectManager.getGameObjects()) {
             if (kv.second.pointLight == nullptr || !kv.second.pointLight->castsShadows) continue;
@@ -545,8 +545,8 @@ namespace Banan {
         shadowPool = BananDescriptorPool::Builder(bananDevice)
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * 5)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, BananSwapChain::MAX_FRAMES_IN_FLIGHT * bananGameObjectManager.numPointLights() * 2 + 2)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, BananSwapChain::MAX_FRAMES_IN_FLIGHT * bananGameObjectManager.numPointLights() * 4)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, BananSwapChain::MAX_FRAMES_IN_FLIGHT * static_cast<uint32_t>(bananGameObjectManager.numPointLights()) * 2 + 2)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, BananSwapChain::MAX_FRAMES_IN_FLIGHT * static_cast<uint32_t>(bananGameObjectManager.numPointLights()) * 4)
                 .build();
 
         shadowUBOSetLayout = BananDescriptorSetLayout::Builder(bananDevice)

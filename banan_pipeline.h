@@ -54,7 +54,7 @@ namespace Banan {
             void createGraphicsPipeline(const std::string &vertFilePath, const std::string &fragFilePath, const PipelineConfigInfo &info);
             void createShaderModule(const std::vector<char>& code, VkShaderModule *shaderModule);
 
-            BananDevice &device;
+            BananDevice &bananDevice;
             VkPipeline pipeline = VK_NULL_HANDLE;
             VkShaderModule vertShaderModule = VK_NULL_HANDLE;
             VkShaderModule fragShaderModule = VK_NULL_HANDLE;

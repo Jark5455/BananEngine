@@ -17,7 +17,7 @@ namespace Banan {
         return instanceSize;
     }
 
-    BananBuffer::BananBuffer(BananDevice &device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) : bananDevice{device}, instanceCount{instanceCount}, instanceSize{instanceSize}, usageFlags{usageFlags}, memoryPropertyFlags{memoryPropertyFlags} {
+    BananBuffer::BananBuffer(BananDevice &device, VkDeviceSize size, uint32_t count, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryProps, VkDeviceSize minOffsetAlignment) : bananDevice{device}, instanceCount{count}, instanceSize{size}, usageFlags{usage}, memoryPropertyFlags{memoryProps} {
         alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
         bufferSize = alignmentSize * instanceCount;
         device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, memory);
@@ -47,7 +47,7 @@ namespace Banan {
         if (size == VK_WHOLE_SIZE) {
             memcpy(mapped, data, bufferSize);
         } else {
-            char *memOffset = (char *)mapped;
+            char *memOffset = static_cast<char *>(mapped);
             memOffset += offset;
             memcpy(memOffset, data, size);
         }
@@ -94,9 +94,9 @@ namespace Banan {
     // TODO unsafe pointer arithmetic, fix later
     void *BananBuffer::readIndex(size_t index) {
         size_t offset = index * alignmentSize;
-        char *mem = (char *) mapped;
+        char *mem = static_cast<char *>(mapped);
         mem += offset;
-        return (void *) mem;
+        return static_cast<void *>(mem);
     }
 
     VkBuffer BananBuffer::getBuffer() {

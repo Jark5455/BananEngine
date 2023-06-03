@@ -11,14 +11,14 @@
 #include <algorithm>
 
 namespace Banan {
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType, [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, [[maybe_unused]] void *pUserData) {
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType, [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, [[maybe_unused]] void *pUserData) {
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
         return VK_FALSE;
     }
 
-    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance,"vkCreateDebugUtilsMessengerEXT");
+    static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
+        auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance,"vkCreateDebugUtilsMessengerEXT"));
         if (func != nullptr) {
             return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
         } else {
@@ -26,15 +26,15 @@ namespace Banan {
         }
     }
 
-    void DestroyDebugUtilsMessengerEXT(VkInstance instance,VkDebugUtilsMessengerEXT debugMessenger,const VkAllocationCallbacks *pAllocator) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance,"vkDestroyDebugUtilsMessengerEXT");
+    static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) {
+        auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance,"vkDestroyDebugUtilsMessengerEXT"));
         if (func != nullptr) {
             func(instance, debugMessenger, pAllocator);
         }
     }
 
 // class member functions
-    BananDevice::BananDevice(BananWindow &window) : window{window} {
+    BananDevice::BananDevice(BananWindow &window) : bananWindow{window} {
         createInstance();
         setupDebugMessenger();
         createSurface();
@@ -82,7 +82,7 @@ namespace Banan {
             createInfo.ppEnabledLayerNames = validationLayers.data();
 
             populateDebugMessengerCreateInfo(debugCreateInfo);
-            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
+            createInfo.pNext = &debugCreateInfo;
         } else {
             createInfo.enabledLayerCount = 0;
             createInfo.pNext = nullptr;
@@ -204,7 +204,7 @@ namespace Banan {
         }
     }
 
-    void BananDevice::createSurface() { window.createWindowSurface(instance, &surface_); }
+    void BananDevice::createSurface() { bananWindow.createWindowSurface(instance, &surface_); }
 
     bool BananDevice::isDeviceSuitable(VkPhysicalDevice device) {
         QueueFamilyIndices indices = findQueueFamilies(device);
@@ -273,16 +273,16 @@ namespace Banan {
     std::vector<const char *> BananDevice::getRequiredExtensions() {
 
         unsigned int extensionCount = 0;
-        SDL_Vulkan_GetInstanceExtensions(window.getSDLWindow(), &extensionCount, nullptr);
+        SDL_Vulkan_GetInstanceExtensions(bananWindow.getSDLWindow(), &extensionCount, nullptr);
         std::vector<const char *> extensionNames(extensionCount);
-        SDL_Vulkan_GetInstanceExtensions(window.getSDLWindow(), &extensionCount, extensionNames.data());
+        SDL_Vulkan_GetInstanceExtensions(bananWindow.getSDLWindow(), &extensionCount, extensionNames.data());
 
         // maintenance extension
-        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), (const char *) VK_KHR_MAINTENANCE3_EXTENSION_NAME))
+        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), VK_KHR_MAINTENANCE3_EXTENSION_NAME))
             extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
 
-        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), (const char *) VK_KHR_DEVICE_GROUP_EXTENSION_NAME))
+        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), VK_KHR_DEVICE_GROUP_EXTENSION_NAME))
             extensionNames.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
 
         if (enableValidationLayers)
@@ -343,7 +343,7 @@ namespace Banan {
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-        int i = 0;
+        uint32_t i = 0;
         for (const auto &queueFamily : queueFamilies) {
             if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 indices.graphicsFamily = i;
