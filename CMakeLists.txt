@@ -90,6 +90,9 @@ add_executable(BananEngineTest ${BananTest})
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 target_include_directories(BananEngineTest PRIVATE ${CMAKE_SOURCE_DIR})
 
+target_compile_options(BananEngine PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>)
+target_compile_options(BananEngineTest PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>)
+
 add_dependencies(BananEngineTest Shaders)
 
 add_custom_command(TARGET BananEngineTest POST_BUILD
