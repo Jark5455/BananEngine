@@ -45,8 +45,8 @@ jobs:
       
       - name: Install Vulkan SDK
         run: |
-          Invoke-Webrequest -URI https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe -OutFile vulkan-sdk.exe
-          vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
+          Invoke-Webrequest -URI https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe -OutFile ${{github.workspace}}/vulkan-sdk.exe
+          ${{github.workspace}}/vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
           
       - uses: actions/checkout@v3
         with:
