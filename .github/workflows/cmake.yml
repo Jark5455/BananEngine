@@ -40,17 +40,14 @@ jobs:
       
   build-windows:
     runs-on: windows-latest
-    env:
-      VULKAN_SDK: ${{github.workspace}}\vulkan-sdk\
-
 
     steps:
-      
-      - name: Install Vulkan SDK
-        run: |
-          Invoke-Webrequest -URI https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe -OutFile ${{github.workspace}}\vulkan-sdk.exe
-          ${{github.workspace}}\vulkan-sdk.exe --root ${{github.workspace}}\vulkan-sdk\ --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.sdl2 com.lunarg.vulkan.glm com.lunarg.vulkan.vma com.lunarg.vulkan.debug com.lunarg.vulkan.debug32
-          
+              
+      - uses: humbletim/install-vulkan-sdk@v1.1.1
+        with:
+          version: latest
+          cache: true
+            
       - uses: actions/checkout@v3
         with:
           submodules: recursive
