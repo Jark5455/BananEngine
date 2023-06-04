@@ -90,10 +90,7 @@ add_executable(BananEngineTest ${BananTest})
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 target_include_directories(BananEngineTest PRIVATE ${CMAKE_SOURCE_DIR})
 
-target_compile_options(BananEngine PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-unused-parameter -Wno-unused-function -Wno-switch-enum -Wno-unused-macros>)
-target_compile_options(BananEngineTest PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-unused-parameter -Wno-unused-function -Wno-switch-enum -Wno-unused-macros>)
-
-set(CMAKE_C_FLAGS $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-unused-parameter -Wno-unused-function -Wno-switch-enum -Wno-unused-macros>)
+set(CMAKE_C_FLAGS $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror -Wpedantic -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-unused-parameter -Wno-unused-function -Wno-switch-enum -Wno-unused-macros>)
 set(CMAKE_C_FLAGS_DEBUG $<$<CXX_COMPILER_ID:MSVC>:/DEBUG> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-g>)
 set(CMAKE_C_FLAGS_RELEASE $<$<CXX_COMPILER_ID:MSVC>:/O2> $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-O3>)
 
