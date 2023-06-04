@@ -70,9 +70,6 @@ jobs:
           ${{github.workspace}}\vcpkg\bootstrap-vcpkg.bat
           ${{github.workspace}}\vcpkg\vcpkg.exe integrate install
           
-          ${{github.workspace}}\vcpkg\vcpkg.exe install llvm
-          ls \vcpkg\installed\x86-windows\bin\
-          
           ${{github.workspace}}\vcpkg\vcpkg.exe install assimp:x64-windows
           ${{github.workspace}}\vcpkg\vcpkg.exe install openexr:x64-windows
           ${{github.workspace}}\vcpkg\vcpkg.exe install sdl2[vulkan]:x64-windows
@@ -86,7 +83,7 @@ jobs:
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
           
-          cmake -B ${{github.workspace}}/build --debug-find -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake -B ${{github.workspace}}/build --debug-find -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -T ClangCL
 
       - name: Compile BananEngine
         run: cmake --build ${{github.workspace}}/build
