@@ -58,6 +58,7 @@ jobs:
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
           
+          ${{github.workspace}}\vcpkg\bootstrap-vcpkg.bat
           ${{github.workspace}}\vcpkg\vcpkg.exe install vulkan:x64-windows
           
       - name: Configure CMake
