@@ -10,7 +10,7 @@ namespace Banan {
 
     class BananBuffer {
     public:
-        BananBuffer(BananDevice& device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
+        BananBuffer(BananDevice& device, VkDeviceSize instanceSize, size_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
         ~BananBuffer();
 
         BananBuffer(const BananBuffer&) = delete;
@@ -48,7 +48,7 @@ namespace Banan {
         VkDeviceMemory memory = VK_NULL_HANDLE;
 
         VkDeviceSize bufferSize;
-        uint32_t instanceCount;
+        size_t instanceCount;
         VkDeviceSize instanceSize;
         VkDeviceSize alignmentSize;
         VkBufferUsageFlags usageFlags;
