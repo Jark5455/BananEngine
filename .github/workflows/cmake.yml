@@ -70,6 +70,9 @@ jobs:
           ${{github.workspace}}\vcpkg\bootstrap-vcpkg.bat
           ${{github.workspace}}\vcpkg\vcpkg.exe integrate install
           
+          ${{github.workspace}}\vcpkg\vcpkg.exe install llvm
+          ls \vcpkg\installed\x86-windows\bin\
+          
           ${{github.workspace}}\vcpkg\vcpkg.exe install assimp:x64-windows
           ${{github.workspace}}\vcpkg\vcpkg.exe install openexr:x64-windows
           ${{github.workspace}}\vcpkg\vcpkg.exe install sdl2[vulkan]:x64-windows
