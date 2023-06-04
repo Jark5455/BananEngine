@@ -17,7 +17,7 @@ namespace Banan {
         return instanceSize;
     }
 
-    BananBuffer::BananBuffer(BananDevice &device, VkDeviceSize size, uint32_t count, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryProps, VkDeviceSize minOffsetAlignment) : bananDevice{device}, instanceCount{count}, instanceSize{size}, usageFlags{usage}, memoryPropertyFlags{memoryProps} {
+    BananBuffer::BananBuffer(BananDevice &device, VkDeviceSize size, size_t count, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryProps, VkDeviceSize minOffsetAlignment) : bananDevice{device}, instanceCount{count}, instanceSize{size}, usageFlags{usage}, memoryPropertyFlags{memoryProps} {
         alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
         bufferSize = alignmentSize * instanceCount;
         device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, memory);
@@ -107,7 +107,7 @@ namespace Banan {
         return mapped;
     }
 
-    uint32_t BananBuffer::getInstanceCount() const {
+    size_t BananBuffer::getInstanceCount() const {
         return instanceCount;
     }
 

@@ -8,7 +8,7 @@
 #include <iostream>
 
 namespace Banan {
-    BananGameObject::BananGameObject(id_t objId, const BananGameObjectManager &manager) {
+    BananGameObject::BananGameObject(id_t objId) {
         id = objId;
     }
 
@@ -241,7 +241,7 @@ namespace Banan {
     }
 
     BananGameObject &BananGameObjectManager::makeVirtualGameObject() {
-        auto gameObject = BananGameObject{currentId++, *this};
+        auto gameObject = BananGameObject{currentId++};
         auto gameObjectId = gameObject.getId();
         gameObjects.emplace(gameObjectId, std::move(gameObject));
 
@@ -276,7 +276,7 @@ namespace Banan {
     }
 
     BananGameObject &BananGameObjectManager::makePointLight(float intensity, float radius, glm::vec4 color) {
-        auto gameObject = BananGameObject{currentId++, *this};
+        auto gameObject = BananGameObject{currentId++};
         auto gameObjectId = gameObject.getId();
         gameObjects.emplace(gameObjectId, std::move(gameObject));
 
