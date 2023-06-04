@@ -34,7 +34,6 @@ jobs:
         sudo apt install vulkan-sdk libglm-dev clang
         
         ${{github.workspace}}/vcpkg/bootstrap-vcpkg.sh
-        ${{github.workspace}}/vcpkg/vcpkg integrate install
 
         ${{github.workspace}}/vcpkg/vcpkg install assimp:x64-windows
         ${{github.workspace}}/vcpkg/vcpkg install openexr:x64-windows
