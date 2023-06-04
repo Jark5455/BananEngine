@@ -102,7 +102,7 @@ namespace Banan {
             std::unique_ptr<PointLightComponent> pointLight = nullptr;
 
         private:
-            BananGameObject(id_t objId, const BananGameObjectManager &manager);
+            BananGameObject(id_t objId);
             id_t id;
 
             friend class BananGameObjectManager;
