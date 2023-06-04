@@ -121,7 +121,7 @@ namespace Banan {
 
     void BananGameObjectManager::createBuffers(size_t preAllocatedGameObjects) {
         for (auto& buffer : gameObjectDataBuffers) {
-            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size() + preAllocatedGameObjects, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
+            buffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), static_cast<uint32_t>(gameObjects.size() + preAllocatedGameObjects), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
             buffer->map();
         }
 
