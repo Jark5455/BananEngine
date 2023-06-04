@@ -32,7 +32,7 @@ namespace Banan {
         VkBuffer getBuffer();
         void* readIndex(size_t index);
         void* getMappedMemory();
-        uint32_t getInstanceCount() const;
+        size_t getInstanceCount() const;
         VkDeviceSize getInstanceSize() const;
         VkDeviceSize getAlignmentSize() const;
         VkBufferUsageFlags getUsageFlags() const;

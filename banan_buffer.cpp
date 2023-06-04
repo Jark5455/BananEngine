@@ -107,7 +107,7 @@ namespace Banan {
         return mapped;
     }
 
-    uint32_t BananBuffer::getInstanceCount() const {
+    size_t BananBuffer::getInstanceCount() const {
         return instanceCount;
     }
 
