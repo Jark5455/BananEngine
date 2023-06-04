@@ -429,10 +429,10 @@ namespace Banan {
     }
 
 
-    uint32_t BananDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags props) {
+    size_t BananDevice::findMemoryType(size_t typeFilter, VkMemoryPropertyFlags props) {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        for (size_t i = 0; i < memProperties.memoryTypeCount; i++) {
             if ((typeFilter & (1 << i)) &&
                 (memProperties.memoryTypes[i].propertyFlags & props) == props) {
                 return i;
@@ -520,13 +520,13 @@ namespace Banan {
         endSingleTimeCommands(commandBuffer);
     }
 
-    void BananDevice::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount) {
+    void BananDevice::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, size_t mipLevels, size_t layerCount) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
         transitionImageLayout(commandBuffer, image, format, oldLayout, newLayout, mipLevels, layerCount);
         endSingleTimeCommands(commandBuffer);
     }
 
-        void BananDevice::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount) {
+        void BananDevice::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, size_t mipLevels, size_t layerCount) {
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = oldLayout;
@@ -538,9 +538,9 @@ namespace Banan {
         barrier.image = image;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = mipLevels;
+        barrier.subresourceRange.levelCount = static_cast<uint32_t>(mipLevels);
         barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = layerCount;
+        barrier.subresourceRange.layerCount = static_cast<uint32_t>(layerCount);
 
         VkPipelineStageFlags sourceStage;
         VkPipelineStageFlags destinationStage;
@@ -650,7 +650,7 @@ namespace Banan {
         vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
-    void BananDevice::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount) {
+    void BananDevice::copyBufferToImage(VkBuffer buffer, VkImage image, size_t width, size_t height, size_t layerCount) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
         VkBufferImageCopy region{};
@@ -664,13 +664,13 @@ namespace Banan {
         region.imageSubresource.layerCount = layerCount;
 
         region.imageOffset = {0, 0, 0};
-        region.imageExtent = {width, height, 1};
+        region.imageExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
 
         vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         endSingleTimeCommands(commandBuffer);
     }
 
-    void BananDevice::generateMipMaps(VkImage image, uint32_t width, uint32_t height, uint32_t mipLevels) {
+    void BananDevice::generateMipMaps(VkImage image, size_t width, size_t height, size_t mipLevels) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
         VkImageMemoryBarrier barrier{};

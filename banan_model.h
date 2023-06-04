@@ -21,9 +21,9 @@ namespace Banan {
         struct Texture {
             void *data = nullptr;
             size_t stride = 0;
-            uint32_t width = 0;
-            uint32_t height = 0;
-            uint32_t mipLevels = 1;
+            size_t width = 0;
+            size_t height = 0;
+            size_t mipLevels = 1;
         };
 
         struct Vertex {
@@ -41,7 +41,7 @@ namespace Banan {
         struct Builder {
             std::vector<glm::vec3> positions{};
             std::vector<Vertex> misc{};
-            std::vector<uint32_t> indices{};
+            std::vector<size_t> indices{};
 
             void loadModel(const std::string &filepath);
         };
@@ -60,7 +60,7 @@ namespace Banan {
 
     private:
         void createVertexBuffers(const std::vector<glm::vec3> &vertices, const std::vector<Vertex> &misc);
-        void createIndexBuffers(const std::vector<uint32_t> &indices);
+        void createIndexBuffers(const std::vector<size_t> &indices);
 
         bool hasIndexBuffer;
 
@@ -68,9 +68,9 @@ namespace Banan {
 
         std::unique_ptr<BananBuffer> vertexBuffer;
         std::unique_ptr<BananBuffer> miscBuffer;
-        uint32_t vertexCount;
+        size_t vertexCount;
 
         std::unique_ptr<BananBuffer> indexBuffer;
-        uint32_t indexCount;
+        size_t indexCount;
     };
 }

@@ -19,7 +19,7 @@ namespace Banan {
     class BananSwapChain {
     public:
 
-        static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+        static constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
         BananSwapChain(BananDevice &deviceRef, VkExtent2D extent, std::shared_ptr<BananSwapChain> previous);
         ~BananSwapChain();
 
@@ -42,8 +42,8 @@ namespace Banan {
         size_t imageCount() { return swapChainImages.size(); }
         VkFormat getSwapChainImageFormat() { return swapChainImageFormat; }
         VkExtent2D getSwapChainExtent() { return swapChainExtent; }
-        uint32_t width() { return swapChainExtent.width; }
-        uint32_t height() { return swapChainExtent.height; }
+        size_t width() { return static_cast<size_t>(swapChainExtent.width); }
+        size_t height() { return static_cast<size_t>(swapChainExtent.height); }
 
         std::vector<std::shared_ptr<BananImage>> gbuffer() { return gBufferAttachments; }
         std::shared_ptr<BananImage> geometry() { return geometryImage; }
@@ -56,8 +56,8 @@ namespace Banan {
 
         VkFormat findDepthFormat();
 
-        VkResult acquireNextImage(uint32_t *imageIndex);
-        VkResult submitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex);
+        VkResult acquireNextImage(size_t *imageIndex);
+        VkResult submitCommandBuffers(const VkCommandBuffer *buffers, const size_t *imageIndex);
 
         bool compareSwapFormats(const BananSwapChain &otherSwapChain) const;
 

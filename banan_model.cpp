@@ -47,18 +47,18 @@ namespace Banan {
     void BananModel::draw(VkCommandBuffer commandBuffer) {
 
         if (hasIndexBuffer) {
-            vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexCount), 1, 0, 0, 0);
         } else {
-            vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
+            vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertexCount), 1, 0, 0);
         }
     }
 
     void BananModel::createVertexBuffers(const std::vector<glm::vec3> &vertices, const std::vector<Vertex> &misc) {
-        vertexCount = static_cast<uint32_t>(vertices.size());
+        vertexCount = vertices.size();
         assert(vertexCount >= 3 && "Vertex count must be atleast 3");
         assert(vertexCount == misc.size() && "Vertex count must be same as misc count");
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
-        uint32_t vertexSize = sizeof(vertices[0]);
+        size_t vertexSize = sizeof(vertices[0]);
 
         BananBuffer stagingBuffer{bananDevice, vertexSize, vertexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         stagingBuffer.map();
@@ -68,7 +68,7 @@ namespace Banan {
         bananDevice.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
 
         bufferSize = sizeof(misc[0]) * vertexCount;
-        uint32_t miscSize = sizeof(misc[0]);
+        size_t miscSize = sizeof(misc[0]);
 
         BananBuffer miscStagingBuffer{bananDevice, miscSize, vertexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         miscStagingBuffer.map();
@@ -78,8 +78,8 @@ namespace Banan {
         bananDevice.copyBuffer(miscStagingBuffer.getBuffer(), miscBuffer->getBuffer(), bufferSize);
     }
 
-    void BananModel::createIndexBuffers(const std::vector<uint32_t> &indices) {
-        indexCount = static_cast<uint32_t>(indices.size());
+    void BananModel::createIndexBuffers(const std::vector<size_t> &indices) {
+        indexCount = indices.size();
         hasIndexBuffer = indexCount > 0;
 
         if (!hasIndexBuffer) {
@@ -87,7 +87,7 @@ namespace Banan {
         }
 
         VkDeviceSize bufferSize = sizeof(indices[0]) * indexCount;
-        uint32_t indexSize = sizeof(indices[0]);
+        size_t indexSize = sizeof(indices[0]);
 
         BananBuffer stagingBuffer{bananDevice, indexSize, indexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
         stagingBuffer.map();
@@ -161,14 +161,14 @@ namespace Banan {
         indices.clear();
 
         if (scene) {
-            for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
+            for (size_t i = 0; i < scene->mNumMeshes; i++) {
                 const aiMesh *mesh = scene->mMeshes[i];
 
                 positions.reserve(positions.size() + mesh->mNumVertices);
                 misc.reserve(positions.size() + mesh->mNumVertices);
                 indices.reserve(positions.size() + mesh->mNumFaces * 3);
 
-                for (uint32_t j = 0; j < mesh->mNumVertices; j++) {
+                for (size_t j = 0; j < mesh->mNumVertices; j++) {
                     Vertex v{};
 
                     v.color =  mesh->HasVertexColors(j) ? glm::vec3{mesh->mColors[j]->r, mesh->mColors[j]->g, mesh->mColors[j]->b} : glm::vec3{1.0f, 1.0f, 1.0f};
@@ -180,7 +180,7 @@ namespace Banan {
                     positions.emplace_back( mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z);
                 }
 
-                for (uint32_t k = 0; k < mesh->mNumFaces; k++) {
+                for (size_t k = 0; k < mesh->mNumFaces; k++) {
                     indices.push_back(mesh->mFaces[k].mIndices[0]);
                     indices.push_back(mesh->mFaces[k].mIndices[1]);
                     indices.push_back(mesh->mFaces[k].mIndices[2]);

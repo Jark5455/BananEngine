@@ -44,7 +44,7 @@ namespace Banan {
 
         SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physicalDevice); }
         bool checkMemoryType(VkMemoryPropertyFlags properties);
-        uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        size_t findMemoryType(size_t typeFilter, VkMemoryPropertyFlags properties);
         QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
         VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
         VkSampleCountFlagBits getMaxUsableSampleCount();
@@ -53,10 +53,10 @@ namespace Banan {
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount);
-        void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount);
-        void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount);
-        void generateMipMaps(VkImage image, uint32_t width, uint32_t height, uint32_t mipLevels);
+        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, size_t mipLevels, size_t layerCount);
+        void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, size_t mipLevels, size_t layerCount);
+        void copyBufferToImage(VkBuffer buffer, VkImage image, size_t width, size_t height, size_t layerCount);
+        void generateMipMaps(VkImage image, size_t width, size_t height, size_t mipLevels);
 
         void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
 

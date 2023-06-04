@@ -58,13 +58,13 @@ namespace Banan {
         }
     }
 
-    VkResult BananSwapChain::acquireNextImage(uint32_t *imageIndex) {
-        vkWaitForFences(device.device(),1,&inFlightFences[currentFrame],VK_TRUE,std::numeric_limits<uint64_t>::max());
-        VkResult result = vkAcquireNextImageKHR(device.device(),swapChain,std::numeric_limits<uint64_t>::max(),imageAvailableSemaphores[currentFrame],VK_NULL_HANDLE,imageIndex);
+    VkResult BananSwapChain::acquireNextImage(size_t *imageIndex) {
+        vkWaitForFences(device.device(), 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+        VkResult result = vkAcquireNextImageKHR(device.device(), swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, reinterpret_cast<uint32_t *>(const_cast<size_t *>(imageIndex)));
         return result;
     }
 
-    VkResult BananSwapChain::submitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex) {
+    VkResult BananSwapChain::submitCommandBuffers(const VkCommandBuffer *buffers, const size_t *imageIndex) {
         if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
             vkWaitForFences(device.device(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
         }
@@ -102,7 +102,7 @@ namespace Banan {
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
 
-        presentInfo.pImageIndices = imageIndex;
+        presentInfo.pImageIndices = reinterpret_cast<uint32_t *>(const_cast<size_t *>(imageIndex));
 
         auto result = vkQueuePresentKHR(device.presentQueue(), &presentInfo);
 
@@ -600,15 +600,15 @@ namespace Banan {
         swapChainDepthFormat =  findDepthFormat();
         VkMemoryPropertyFlags memoryPropertyFlags = device.checkMemoryType(VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-        gBufferAttachments.push_back(std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, 1, swapChainDepthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, memoryPropertyFlags));
-        gBufferAttachments.push_back(std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, memoryPropertyFlags));
-        gBufferAttachments.push_back(std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, memoryPropertyFlags));
+        gBufferAttachments.push_back(std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, swapChainDepthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, memoryPropertyFlags));
+        gBufferAttachments.push_back(std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, memoryPropertyFlags));
+        gBufferAttachments.push_back(std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, memoryPropertyFlags));
     }
 
     void BananSwapChain::createResolveResources() {
-        geometryImage = std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        edgeImage = std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        blendImage = std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        geometryImage = std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        edgeImage = std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        blendImage = std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     }
 
     VkSurfaceFormatKHR BananSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {

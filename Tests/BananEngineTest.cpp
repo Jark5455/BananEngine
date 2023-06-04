@@ -97,7 +97,7 @@ namespace Banan{
         std::vector<VkDescriptorSet> blendWeightDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         std::vector<VkDescriptorSet> resolveDescriptorSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
 
-        for (uint32_t i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+        for (size_t i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
             BananDescriptorWriter writer = BananDescriptorWriter(*globalSetLayout, *globalPool);
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
             writer.writeBuffer(0, bufferInfo);
@@ -154,7 +154,7 @@ namespace Banan{
                         procrastinatedPool->resetPool();
                         resolvePool->resetPool();
 
-                        for (uint32_t i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+                        for (size_t i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
                             BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
                             auto gbufferInfo = bananRenderer.getGBufferDescriptorInfo();
                             auto albedo = gbufferInfo[0];

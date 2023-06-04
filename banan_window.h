@@ -11,7 +11,7 @@ namespace Banan {
     public:
         BananWindow();
 
-        BananWindow(int w, int h);
+        BananWindow(size_t w, size_t h);
         ~BananWindow();
 
         BananWindow(const BananWindow &) = delete;
@@ -22,8 +22,8 @@ namespace Banan {
         SDL_Window *getSDLWindow() const;
 
     private:
-        int width;
-        int height;
+        size_t width;
+        size_t height;
 
         SDL_Window *window;
     };

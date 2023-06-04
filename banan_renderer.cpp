@@ -265,7 +265,7 @@ namespace Banan {
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
     }
 
-    uint32_t BananRenderer::getFrameIndex() const {
+    size_t BananRenderer::getFrameIndex() const {
         assert(isFrameStarted && "Cannot get frame index when frame is not in progress");
         return currentFrameIndex;
     }

@@ -19,8 +19,8 @@ int main(int argv, char** args);
 namespace Banan{
     class BananEngineTest {
     public:
-        static constexpr int WIDTH = 800;
-        static constexpr int HEIGHT = 600;
+        static constexpr size_t WIDTH = 800;
+        static constexpr size_t HEIGHT = 600;
 
         BananEngineTest(const BananEngineTest &) = delete;
         BananEngineTest &operator=(const BananEngineTest &) = delete;

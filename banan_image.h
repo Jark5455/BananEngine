@@ -16,7 +16,7 @@ namespace Banan {
 
             static std::shared_ptr<BananImage> makeImageFromFilepath(BananDevice &device, const std::string &filepath);
 
-            BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+            BananImage(BananDevice &device, size_t width, size_t height, size_t mipLevels, size_t arrayLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
             ~BananImage();
 
             BananImage(const BananImage&) = delete;
@@ -46,15 +46,15 @@ namespace Banan {
             VkImageView imageView;
             VkSampler imageSampler;
             VkDeviceMemory memory;
-            uint32_t mipLevels;
-            uint32_t arrayLevels;
+            size_t mipLevels;
+            size_t arrayLevels;
             VkExtent2D imageExtent;
             VkImageLayout imageLayout;
     };
 
     class BananCubemap {
         public:
-            BananCubemap(BananDevice &device, uint32_t sideLength, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+            BananCubemap(BananDevice &device, size_t sideLength, size_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
             ~BananCubemap();
 
             BananCubemap(const BananCubemap&) = delete;
@@ -74,6 +74,6 @@ namespace Banan {
             VkImageView cubemapImageView;
             VkSampler cubemapImageSampler;
             VkDeviceMemory memory;
-            uint32_t mipLevels;
+            size_t mipLevels;
     };
 }
