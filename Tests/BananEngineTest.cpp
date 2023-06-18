@@ -31,21 +31,21 @@ namespace Banan{
 
         loadGameObjects();
 
+        globalImagePool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(bananDevice.physicalDeviceProperties().limits.maxBoundDescriptorSets)
+                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, bananDevice.getDescriptorIndexingProperties().maxDescriptorSetUpdateAfterBindSampledImages)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, bananDevice.getDescriptorIndexingProperties().maxDescriptorSetUpdateAfterBindStorageImages)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, bananDevice.getDescriptorIndexingProperties().maxDescriptorSetUpdateAfterBindInputAttachments)
+                .build();
+
         globalPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .setMaxSets(bananDevice.physicalDeviceProperties().limits.maxBoundDescriptorSets)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, bananDevice.physicalDeviceProperties().limits.maxDescriptorSetUniformBuffers)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, bananDevice.physicalDeviceProperties().limits.maxDescriptorSetStorageBuffers)
                 .build();
 
-        procrastinatedPool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
-                .build();
-
-        resolvePool = BananDescriptorPool::Builder(bananDevice)
-                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 6)
-                .build();
+        bananGameObjectManager = std::make_unique<BananGameObjectManager>(bananDevice, globalPool, globalImagePool);
     }
 
     BananEngineTest::~BananEngineTest() = default;
@@ -103,7 +103,7 @@ namespace Banan{
             writer.writeBuffer(0, bufferInfo);
             writer.build(globalDescriptorSets[i]);
 
-            BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
+            BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *globalImagePool);
             auto gbufferInfo = bananRenderer.getGBufferDescriptorInfo();
             auto albedo = gbufferInfo[0];
             auto normal = gbufferInfo[1];
@@ -114,12 +114,12 @@ namespace Banan{
             procrastinatedWriter.writeImage(2, depth);
             procrastinatedWriter.build(procrastinatedDescriptorSets[i]);
 
-            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *resolvePool);
+            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *globalImagePool);
             auto geomInfo = bananRenderer.getGeometryDescriptorInfo();
             edgeDetectionWriter.writeImage(0, geomInfo);
             edgeDetectionWriter.build(edgeDetectionDescriptorSets[i]);
 
-            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *resolvePool);
+            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *globalImagePool);
             auto edgeInfo = bananRenderer.getEdgeDescriptorInfo();
             auto areaTexInfo = areaTex->descriptorInfo();
             auto searchTexInfo = searchTex->descriptorInfo();
@@ -128,7 +128,7 @@ namespace Banan{
             blendWeightWriter.writeImage(2, searchTexInfo);
             blendWeightWriter.build(blendWeightDescriptorSets[i]);
 
-            BananDescriptorWriter resolveWriter(*resolveLayout, *resolvePool);
+            BananDescriptorWriter resolveWriter(*resolveLayout, *globalImagePool);
             auto blendInfo = bananRenderer.getBlendWeightDescriptorInfo();
             resolveWriter.writeImage(0, geomInfo);
             resolveWriter.writeImage(1, blendInfo);
@@ -150,12 +150,10 @@ namespace Banan{
                 case SDL_WINDOWEVENT:
                     if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
                         bananRenderer.recreateSwapChain();
-
-                        procrastinatedPool->resetPool();
-                        resolvePool->resetPool();
+                        globalImagePool->resetPool();
 
                         for (size_t i = 0; i < BananSwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
-                            BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *procrastinatedPool);
+                            BananDescriptorWriter procrastinatedWriter = BananDescriptorWriter(*procrastinatedSetLayout, *globalImagePool);
                             auto gbufferInfo = bananRenderer.getGBufferDescriptorInfo();
                             auto albedo = gbufferInfo[0];
                             auto normal = gbufferInfo[1];
@@ -166,12 +164,12 @@ namespace Banan{
                             procrastinatedWriter.writeImage(2, depth);
                             procrastinatedWriter.build(procrastinatedDescriptorSets[i]);
 
-                            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *resolvePool);
+                            BananDescriptorWriter edgeDetectionWriter(*edgeDetectionSetLayout, *globalImagePool);
                             auto geomInfo = bananRenderer.getGeometryDescriptorInfo();
                             edgeDetectionWriter.writeImage(0, geomInfo);
                             edgeDetectionWriter.build(edgeDetectionDescriptorSets[i]);
 
-                            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *resolvePool);
+                            BananDescriptorWriter blendWeightWriter(*blendWeightSetLayout, *globalImagePool);
                             auto edgeInfo = bananRenderer.getEdgeDescriptorInfo();
                             auto areaTexInfo = areaTex->descriptorInfo();
                             auto searchTexInfo = searchTex->descriptorInfo();
@@ -180,7 +178,7 @@ namespace Banan{
                             blendWeightWriter.writeImage(2, searchTexInfo);
                             blendWeightWriter.build(blendWeightDescriptorSets[i]);
 
-                            BananDescriptorWriter resolveWriter(*resolveLayout, *resolvePool);
+                            BananDescriptorWriter resolveWriter(*resolveLayout, *globalImagePool);
                             auto blendInfo = bananRenderer.getBlendWeightDescriptorInfo();
                             resolveWriter.writeImage(0, geomInfo);
                             resolveWriter.writeImage(1, blendInfo);

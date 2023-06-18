@@ -177,7 +177,7 @@ namespace Banan {
                     v.uv = glm::vec2{mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y};
 
                     misc.push_back(v);
-                    positions.emplace_back( mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z);
+                    positions.emplace_back(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z);
                 }
 
                 for (size_t k = 0; k < mesh->mNumFaces; k++) {

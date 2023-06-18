@@ -16,17 +16,17 @@ namespace Banan {
             class Builder {
                 public:
                     Builder(BananDevice &device) : bananDevice{device} {}
-                    Builder &addFlag(VkDescriptorBindingFlagsEXT flag);
+                    Builder &addFlags(uint32_t binding, VkDescriptorBindingFlagsEXT flag);
                     Builder &addBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count = 1);
-                    std::unique_ptr<BananDescriptorSetLayout> build() const;
+                    std::shared_ptr<BananDescriptorSetLayout> build() const;
 
                 private:
                     BananDevice &bananDevice;
                     std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
-                    std::vector<VkDescriptorBindingFlagsEXT> flags{};
+                    std::unordered_map<uint32_t, VkDescriptorBindingFlagsEXT> flags{};
             };
 
-            BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorBindingFlagsEXT> flags);
+            BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings, std::unordered_map<uint32_t, VkDescriptorBindingFlagsEXT> flags);
             ~BananDescriptorSetLayout();
             BananDescriptorSetLayout(const BananDescriptorSetLayout &) = delete;
             BananDescriptorSetLayout &operator=(const BananDescriptorSetLayout &) = delete;
@@ -35,7 +35,7 @@ namespace Banan {
 
         private:
             BananDevice &bananDevice;
-            VkDescriptorSetLayout descriptorSetLayout;
+            VkDescriptorSetLayout descriptorSetLayout{};
             std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
 
             friend class BananDescriptorWriter;
@@ -50,7 +50,7 @@ namespace Banan {
                     Builder &addPoolSize(VkDescriptorType descriptorType, uint32_t count);
                     Builder &setPoolFlags(VkDescriptorPoolCreateFlags flags);
                     Builder &setMaxSets(uint32_t count);
-                    std::unique_ptr<BananDescriptorPool> build() const;
+                    std::shared_ptr<BananDescriptorPool> build() const;
 
                 private:
                     BananDevice &bananDevice;
