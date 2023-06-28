@@ -42,13 +42,23 @@ jobs:
         ${{github.workspace}}/vcpkg/vcpkg install stb:x64-linux
         ${{github.workspace}}/vcpkg/vcpkg install vulkan:x64-linux
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Configure CMake Build Debug
+      run: cmake -B ${{github.workspace}}/build-linux/build-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
       
-    - name: Compile BananEngine
-      run: cmake --build ${{github.workspace}}/build
+    - name: Compile BananEngine Build Debug
+      run: cmake --build ${{github.workspace}}/build-linux/build-debug
+      
+    - name: Configure CMake Build Release
+      run: cmake -B ${{github.workspace}}/build-linux/build-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      
+    - name: Compile BananEngine Build Debug
+      run: cmake --build ${{github.workspace}}/build-linux/build-release
+      
+    - name: Archive compilation output
+      uses: actions/upload-artifact@v3
+      with:
+        name: Build Output Linux
+        path: ${{github.workspace}}/build-linux/
       
   build-windows:
     runs-on: windows-latest
@@ -76,17 +86,35 @@ jobs:
           ${{github.workspace}}\vcpkg\vcpkg.exe install stb:x64-windows
           ${{github.workspace}}\vcpkg\vcpkg.exe install vulkan:x64-windows
           
-      - name: Configure CMake
+      - name: Configure CMake Build Debug
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: |
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
           
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -T ClangCL
+          cmake -B ${{github.workspace}}/build-windows/build-debug -DCMAKE_BUILD_TYPE=Debug -T ClangCL
 
-      - name: Compile BananEngine
-        run: cmake --build ${{github.workspace}}/build
+      - name: Compile BananEngine Build Debug
+        run: cmake --build ${{github.workspace}}/build-windows/build-debug
+        
+      - name: Configure CMake Build Release
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        run: |
+          $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
+          $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
+          
+          cmake -B ${{github.workspace}}/build-windows/build-release -DCMAKE_BUILD_TYPE=Release -T ClangCL
+
+      - name: Compile BananEngine Build Release
+        run: cmake --build ${{github.workspace}}/build-windows/build-release
+        
+      - name: Archive compilation output
+        uses: actions/upload-artifact@v3
+        with:
+          name: Build Output Windows
+          path: ${{github.workspace}}/build-windows/
           
         
         
