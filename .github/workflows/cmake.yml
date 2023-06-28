@@ -87,8 +87,6 @@ jobs:
           ${{github.workspace}}\vcpkg\vcpkg.exe install vulkan:x64-windows
           
       - name: Configure CMake Build Debug
-        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: |
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
@@ -99,8 +97,6 @@ jobs:
         run: cmake --build ${{github.workspace}}/build-windows/build-debug
         
       - name: Configure CMake Build Release
-        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: |
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
