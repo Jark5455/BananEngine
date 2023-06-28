@@ -36,11 +36,11 @@ namespace Banan{
         BananWindow bananWindow{WIDTH, HEIGHT};
         BananDevice bananDevice{bananWindow};
         BananRenderer bananRenderer{bananWindow, bananDevice};
+        BananGameObjectManager bananGameObjectManager{bananDevice};
 
-        std::unique_ptr<BananGameObjectManager> bananGameObjectManager;
-
-        std::shared_ptr<BananDescriptorPool> globalPool;
-        std::shared_ptr<BananDescriptorPool> globalImagePool;
+        std::unique_ptr<BananDescriptorPool> globalPool;
+        std::unique_ptr<BananDescriptorPool> procrastinatedPool;
+        std::unique_ptr<BananDescriptorPool> resolvePool;
 
         std::shared_ptr<BananLogger> bananLogger;
 

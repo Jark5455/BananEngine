@@ -102,8 +102,6 @@ namespace Banan {
             throw std::runtime_error("failed to create instance!");
         }
 
-        vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
-
         hasGflwRequiredInstanceExtensions();
     }
 
@@ -154,7 +152,6 @@ namespace Banan {
         indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
         indexingFeatures.runtimeDescriptorArray = VK_TRUE;
         indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
-        indexingFeatures.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE;
         indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
         indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
 
@@ -290,8 +287,13 @@ namespace Banan {
         std::vector<const char *> extensionNames(extensionCount);
         SDL_Vulkan_GetInstanceExtensions(bananWindow.getSDLWindow(), &extensionCount, extensionNames.data());
 
-        extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        extensionNames.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+        // maintenance extension
+        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), VK_KHR_MAINTENANCE3_EXTENSION_NAME))
+            extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+
+        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), VK_KHR_DEVICE_GROUP_EXTENSION_NAME))
+            extensionNames.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
 
         if (enableValidationLayers)
             extensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -768,17 +770,5 @@ namespace Banan {
         if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
 
         return VK_SAMPLE_COUNT_1_BIT;
-    }
-
-    VkPhysicalDeviceDescriptorIndexingProperties BananDevice::getDescriptorIndexingProperties() {
-        VkPhysicalDeviceDescriptorIndexingPropertiesEXT indexingProps{};
-        indexingProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT;
-
-        VkPhysicalDeviceProperties2KHR props{};
-        props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
-        props.pNext = &indexingProps;
-
-        vkGetPhysicalDeviceProperties2KHR(physicalDevice, &props);
-        return *(static_cast<VkPhysicalDeviceDescriptorIndexingPropertiesEXT *>(props.pNext));
     }
 }

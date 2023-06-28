@@ -23,28 +23,25 @@ namespace Banan {
         return *this;
     }
 
-    std::shared_ptr<BananDescriptorSetLayout> BananDescriptorSetLayout::Builder::build() const {
-        return std::make_shared<BananDescriptorSetLayout>(bananDevice, bindings, flags);
+    std::unique_ptr<BananDescriptorSetLayout> BananDescriptorSetLayout::Builder::build() const {
+        return std::make_unique<BananDescriptorSetLayout>(bananDevice, bindings, flags);
     }
 
-    BananDescriptorSetLayout::Builder &BananDescriptorSetLayout::Builder::addFlags(uint32_t binding, VkDescriptorBindingFlagsEXT flag) {
-        flags.emplace(binding, flag);
+    BananDescriptorSetLayout::Builder &BananDescriptorSetLayout::Builder::addFlag(VkDescriptorBindingFlagsEXT flag) {
+        flags.push_back(flag);
         return *this;
     }
 
-    BananDescriptorSetLayout::BananDescriptorSetLayout(BananDevice &device, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindingsMap, std::unordered_map<uint32_t, VkDescriptorBindingFlagsEXT> flags) : bananDevice{device}, bindings{std::move(bindingsMap)} {
-        auto getVal = [](auto const& pair) {return pair.second;};
-
+    BananDescriptorSetLayout::BananDescriptorSetLayout(BananDevice &device, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindingsMap, std::vector<VkDescriptorBindingFlagsEXT> flags) : bananDevice{device}, bindings{std::move(bindingsMap)} {
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
-        std::vector<VkDescriptorBindingFlagsEXT> setLayoutFlags{};
-
-        std::transform(bindings.begin(), bindings.end(), std::back_inserter(setLayoutBindings), getVal);
-        std::transform(flags.begin(), flags.end(), std::back_inserter(setLayoutFlags), getVal);
+        for (auto kv : bindings) {
+            setLayoutBindings.insert(setLayoutBindings.begin(), kv.second);
+        }
 
         VkDescriptorSetLayoutBindingFlagsCreateInfoEXT descriptorSetLayoutBindingFlagsCreateInfoExt{};
         descriptorSetLayoutBindingFlagsCreateInfoExt.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
         descriptorSetLayoutBindingFlagsCreateInfoExt.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
-        descriptorSetLayoutBindingFlagsCreateInfoExt.pBindingFlags = setLayoutFlags.data();
+        descriptorSetLayoutBindingFlagsCreateInfoExt.pBindingFlags = flags.data();
         descriptorSetLayoutBindingFlagsCreateInfoExt.pNext = nullptr;
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
@@ -52,8 +49,10 @@ namespace Banan {
         descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
         descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
 
-        descriptorSetLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-        descriptorSetLayoutInfo.pNext = &descriptorSetLayoutBindingFlagsCreateInfoExt;
+        if (std::count(flags.begin(), flags.end(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) > 0)
+            descriptorSetLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+
+        descriptorSetLayoutInfo.pNext = flags.empty() ? nullptr : &descriptorSetLayoutBindingFlagsCreateInfoExt;
 
         if (vkCreateDescriptorSetLayout(bananDevice.device(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor set layout!");
@@ -78,9 +77,10 @@ namespace Banan {
         return *this;
     }
 
-    std::shared_ptr<BananDescriptorPool> BananDescriptorPool::Builder::build() const {
-        return std::make_shared<BananDescriptorPool>(bananDevice, maxSets, poolFlags, poolSizes);
+    std::unique_ptr<BananDescriptorPool> BananDescriptorPool::Builder::build() const {
+        return std::make_unique<BananDescriptorPool>(bananDevice, maxSets, poolFlags, poolSizes);
     }
+
 
     BananDescriptorPool::BananDescriptorPool(BananDevice &device, uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize> &poolSizes) : bananDevice{device} {
         VkDescriptorPoolCreateInfo descriptorPoolInfo{};
@@ -100,7 +100,7 @@ namespace Banan {
         vkDestroyDescriptorPool(bananDevice.device(), descriptorPool, nullptr);
     }
 
-    bool BananDescriptorPool::allocateDescriptor(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<uint32_t> descriptorCount) {
+    bool BananDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<uint32_t> descriptorCount) {
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;
@@ -121,7 +121,7 @@ namespace Banan {
         return true;
     }
 
-    bool BananDescriptorPool::allocateDescriptor(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor) {
+    bool BananDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor) {
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;

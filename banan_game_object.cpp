@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <utility>
 
 namespace Banan {
     BananGameObject::BananGameObject(id_t objId) {
@@ -81,14 +80,23 @@ namespace Banan {
         };
     }
 
-    BananGameObjectManager::BananGameObjectManager(BananDevice &device, std::shared_ptr<BananDescriptorPool> pool1, std::shared_ptr<BananDescriptorPool> pool2) : bananDevice{device}, bufferPool{std::move(pool1)}, imagePool{std::move(pool2)} {
+    BananGameObjectManager::BananGameObjectManager(BananDevice &device) : bananDevice{device} {
         vkGetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vkGetDeviceProcAddr(bananDevice.device(), "vkGetBufferDeviceAddressKHR"));
         currentId = 0;
     }
 
     void BananGameObjectManager::buildDescriptors() {
+        gameObjectPool = BananDescriptorPool::Builder(bananDevice)
+                .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT * 2)
+                .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, BananSwapChain::MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, BananSwapChain::MAX_FRAMES_IN_FLIGHT * static_cast<uint32_t>(numTextures()))
+                .build();
+
         textureSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
-                .addFlags(0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
+                .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, static_cast<uint32_t>(numTextures()))
                 .build();
 
@@ -97,14 +105,14 @@ namespace Banan {
                 .build();
 
         for (auto &set : textureDescriptorSets) {
-            BananDescriptorWriter writer = BananDescriptorWriter(*textureSetLayout, *globalImagePool);
+            BananDescriptorWriter writer = BananDescriptorWriter(*textureSetLayout, *gameObjectPool);
             auto info = textureInfo();
             writer.writeImages(0, info);
             writer.build(set, {static_cast<uint32_t>(numTextures())});
         }
 
         for (size_t i = 0; i < gameObjectDataDescriptorSets.size(); i++) {
-            BananDescriptorWriter writer = BananDescriptorWriter(*gameObjectDataSetLayout, *globalPool);
+            BananDescriptorWriter writer = BananDescriptorWriter(*gameObjectDataSetLayout, *gameObjectPool);
             auto info = gameObjectDataBuffers[i]->descriptorInfo(gameObjectDataBuffers[i]->getInstanceSize());
             writer.writeBuffer(0, info);
             writer.build(gameObjectDataDescriptorSets[i]);

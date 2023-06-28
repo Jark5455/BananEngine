@@ -110,7 +110,7 @@ namespace Banan {
 
     class BananGameObjectManager {
         public:
-            BananGameObjectManager(BananDevice &device, std::shared_ptr<BananDescriptorPool> bufferPool, std::shared_ptr<BananDescriptorPool> imagePool);
+            BananGameObjectManager(BananDevice &device);
 
             BananGameObjectManager(const BananGameObjectManager &) = delete;
             BananGameObjectManager &operator=(const BananGameObjectManager &) = delete;
@@ -149,7 +149,6 @@ namespace Banan {
         private:
             std::shared_ptr<BananImage> loadImage(const std::string& filepath);
             std::shared_ptr<BananModel> loadMesh(const std::string& filepath);
-
             PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR;
 
             std::unordered_map<std::string, size_t> texturealias;
@@ -165,14 +164,13 @@ namespace Banan {
             BananGameObject::Map gameObjects;
             BananGameObject::id_t currentId;
 
-            std::shared_ptr<BananDescriptorPool> bufferPool;
-            std::shared_ptr<BananDescriptorPool> imagePool;
+            std::unique_ptr<BananDescriptorPool> gameObjectPool;
 
             std::vector<VkDescriptorSet> gameObjectDataDescriptorSets{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
             std::vector<VkDescriptorSet> textureDescriptorSets{BananSwapChain::MAX_FRAMES_IN_FLIGHT};
 
-            std::shared_ptr<BananDescriptorSetLayout> gameObjectDataSetLayout = nullptr;
-            std::shared_ptr<BananDescriptorSetLayout> textureSetLayout = nullptr;
+            std::unique_ptr<BananDescriptorSetLayout> gameObjectDataSetLayout = nullptr;
+            std::unique_ptr<BananDescriptorSetLayout> textureSetLayout = nullptr;
 
             BananDevice &bananDevice;
 
