@@ -578,10 +578,10 @@ namespace Banan {
             shadowWriter.build(shadowUBODescriptorSets[i]);
         }
 
-        std::unordered_map<uint32_t, VkDescriptorImageInfo> depthMaps;
-        std::unordered_map<uint32_t, VkDescriptorImageInfo> quantizedMaps;
-        std::unordered_map<uint32_t, VkDescriptorImageInfo> blurredMaps;
-        std::unordered_map<uint32_t, VkDescriptorImageInfo> momentShadowMaps;
+        std::unordered_map<size_t, VkDescriptorImageInfo> depthMaps;
+        std::unordered_map<size_t, VkDescriptorImageInfo> quantizedMaps;
+        std::unordered_map<size_t, VkDescriptorImageInfo> blurredMaps;
+        std::unordered_map<size_t, VkDescriptorImageInfo> momentShadowMaps;
 
         for (auto &kv : depthFramebufferResolveImages) {
             depthMaps.emplace(kv.first, kv.second->descriptorInfo());

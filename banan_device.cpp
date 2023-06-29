@@ -135,13 +135,13 @@ namespace Banan {
         QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily, indices.presentFamily};
+        std::set<size_t> uniqueQueueFamilies = {indices.graphicsFamily, indices.presentFamily};
 
         float queuePriority = 1.0f;
         for (uint32_t queueFamily : uniqueQueueFamilies) {
             VkDeviceQueueCreateInfo queueCreateInfo = {};
             queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueFamilyIndex = static_cast<uint32_t>(queueFamily);
             queueCreateInfo.queueCount = 1;
             queueCreateInfo.pQueuePriorities = &queuePriority;
             queueCreateInfos.push_back(queueCreateInfo);
@@ -686,7 +686,7 @@ namespace Banan {
         auto mipWidth = static_cast<int32_t>(width);
         auto mipHeight = static_cast<int32_t>(height);
 
-        for (uint32_t i = 1; i < mipLevels; i++) {
+        for (size_t i = 1; i < mipLevels; i++) {
 
             barrier.subresourceRange.baseMipLevel = i - 1;
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
