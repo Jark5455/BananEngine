@@ -40,7 +40,6 @@ namespace Banan {
         VkDescriptorSet edgeDetectionDescriptorSet;
         VkDescriptorSet blendWeightDescriptorSet;
         VkDescriptorSet resolveDescriptorSet;
-        VkDescriptorSet shadowMapDescriptorSet;
 
         BananGameObjectManager &gameObjectManager;
     };

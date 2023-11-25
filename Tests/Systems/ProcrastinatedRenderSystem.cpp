@@ -29,7 +29,7 @@ namespace Banan {
 
             std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet, frameInfo.textureDescriptorSet};
             std::vector<uint32_t> offsets = {kv.first * static_cast<uint32_t>(frameInfo.gameObjectManager.getGameObjectBufferAlignmentSize(frameInfo.frameIndex))};
-            vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,GBufferPipelineLayout,0,static_cast<uint32_t>(sets.size()),sets.data(),static_cast<uint32_t>(offsets.size()),offsets.data());
+            vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, GBufferPipelineLayout, 0, static_cast<uint32_t>(sets.size()),sets.data(), static_cast<uint32_t>(offsets.size()), offsets.data());
 
             obj.model->bindAll(frameInfo.commandBuffer);
             obj.model->draw(frameInfo.commandBuffer);
@@ -42,7 +42,7 @@ namespace Banan {
         mainRenderTargetPipeline->bind(frameInfo.commandBuffer);
         std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.procrastinatedDescriptorSet};
 
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,mainRenderTargetPipelineLayout,0,static_cast<uint32_t>(sets.size()),sets.data(),0,nullptr);
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mainRenderTargetPipelineLayout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
         vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
 
         vkCmdNextSubpass(frameInfo.commandBuffer, VK_SUBPASS_CONTENTS_INLINE);

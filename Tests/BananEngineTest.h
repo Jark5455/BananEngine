@@ -9,7 +9,6 @@
 #include <banan_model.h>
 #include <banan_game_object.h>
 #include <banan_renderer.h>
-#include <banan_logger.h>
 
 #include <memory>
 #include <vector>
@@ -29,7 +28,6 @@ namespace Banan{
         ~BananEngineTest();
 
         void run();
-        std::shared_ptr<BananLogger> getLogger();
     private:
         void loadGameObjects();
 
@@ -41,8 +39,6 @@ namespace Banan{
         std::unique_ptr<BananDescriptorPool> globalPool;
         std::unique_ptr<BananDescriptorPool> procrastinatedPool;
         std::unique_ptr<BananDescriptorPool> resolvePool;
-
-        std::shared_ptr<BananLogger> bananLogger;
 
         std::unique_ptr<BananImage> areaTex;
         std::unique_ptr<BananImage> searchTex;

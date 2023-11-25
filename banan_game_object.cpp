@@ -198,7 +198,6 @@ namespace Banan {
                 pointlight.radius = kv.second.transform.scale.x;
                 pointlight.color = glm::vec4{kv.second.pointLight->color, 1.f};
                 pointlight.lightIntensity = kv.second.pointLight->intensity;
-                pointlight.shadowMapIndex = kv.second.pointLight->castsShadows ? kv.second.pointLight->shadowMapIndex : -1;
 
                 pointlight.hasNext = 1;
                 pointlight.next = data.pointLightRef + pointLightBuffers[frameIndex]->getAlignmentSize();

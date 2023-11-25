@@ -154,6 +154,7 @@ namespace Banan {
         indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
         indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
         indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+        indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 
         VkPhysicalDeviceBufferDeviceAddressFeatures deviceAddressFeatures{};
         deviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;

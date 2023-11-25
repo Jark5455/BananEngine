@@ -40,7 +40,6 @@ namespace Banan {
         alignas(16) glm::vec4 color{1.f};
         alignas(4) float radius = 1.0f;
         alignas(4) float lightIntensity = 1.0f;
-        alignas(4) int shadowMapIndex;
 
         alignas(4) int hasNext = 0;
         alignas(8) uint64_t next = 0;
@@ -49,9 +48,6 @@ namespace Banan {
     struct PointLightComponent {
         glm::vec3 color{1.f};
         float intensity = 1.0f;
-
-        bool castsShadows = true;
-        int shadowMapIndex;
     };
 
     struct GameObjectData {
