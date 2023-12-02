@@ -40,7 +40,7 @@ jobs:
       run: conan install . --output-folder=${{github.workspace}}/build-linux/build-debug --build=missing -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True --settings=build_type=Debug
       
     - name: Configure CMake Build Debug
-      run: cmake -B ${{github.workspace}}/build-linux/build-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      run: cmake -B ${{github.workspace}}/build-linux/build-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/build-linux/build-debug/conan_toolchain.cmake
       
     - name: Compile BananEngine Build Debug
       run: cmake --build ${{github.workspace}}/build-linux/build-debug
@@ -49,7 +49,7 @@ jobs:
       run: conan install . --output-folder=${{github.workspace}}/build-linux/build-release -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True --build=missing
       
     - name: Configure CMake Build Release
-      run: cmake -B ${{github.workspace}}/build-linux/build-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      run: cmake -B ${{github.workspace}}/build-linux/build-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/build-linux/build-release/conan_toolchain.cmake
       
     - name: Compile BananEngine Build Debug
       run: cmake --build ${{github.workspace}}/build-linux/build-release
@@ -90,7 +90,7 @@ jobs:
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
           
-          cmake -B ${{github.workspace}}/build-windows/build-debug -T ClangCL
+          cmake -B ${{github.workspace}}/build-windows/build-debug -T ClangCL -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/build-windows/build-debug/conan_toolchain.cmake
 
       - name: Compile BananEngine Build Debug
         run: cmake --build ${{github.workspace}}/build-windows/build-debug --config Debug
@@ -103,7 +103,7 @@ jobs:
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
           
-          cmake -B ${{github.workspace}}/build-windows/build-release -T ClangCL
+          cmake -B ${{github.workspace}}/build-windows/build-release -T ClangCL -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/build-windows/build-release/conan_toolchain.cmake
 
         
       - name: Compile BananEngine Build Release
