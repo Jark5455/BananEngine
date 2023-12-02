@@ -31,4 +31,7 @@ target_link_libraries(BananEngine OpenEXR::OpenEXR)
 target_link_libraries(BananEngine Imath::Imath)
 target_link_libraries(BananEngine Vulkan::Vulkan)
 
-include_directories(${OpenEXR_INCLUDE_DIRS} ${Imath_INCLUDE_DIRS} ${stb_INCLUDE_DIRS})
+include_directories(${Vulkan_INCLUDE_DIRS} ${SDL2_INCLUDE_DIRS})
+
+# TODO eventually phase out the following dependencies
+include_directories(${assimp_INCLUDE_DIRS} ${OpenEXR_INCLUDE_DIRS} ${Imath_INCLUDE_DIRS} ${stb_INCLUDE_DIRS})
