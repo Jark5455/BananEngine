@@ -62,7 +62,7 @@ namespace Banan {
         VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
         std::vector<VkAttachmentDescription> osAttachments{frameBufferFormats.size()};
 
-        for (int i = 0; i < frameBufferFormats.size(); i++) {
+        for (int i = 0; i < osAttachments.size(); i++) {
             osAttachments[i].format = frameBufferFormats[i];
             osAttachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
             osAttachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -86,12 +86,12 @@ namespace Banan {
 
         if (std::find(std::begin(depthFormats), std::end(depthFormats), frameBufferFormats.back()) != std::end(depthFormats)) {
             VkAttachmentReference depthReference{};
-            depthReference.attachment = frameBufferFormats.size() - 1;
+            depthReference.attachment = osAttachments.size() - 1;
             depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             depthReferences.push_back(depthReference);
         } else {
             VkAttachmentReference colorReference{};
-            colorReference.attachment = frameBufferFormats.size() - 1;
+            colorReference.attachment = osAttachments.size() - 1;
             colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             colorReferences.push_back(colorReference);
         }
@@ -135,15 +135,15 @@ namespace Banan {
     }
 
     void BananRenderPass::beginRenderPass(VkCommandBuffer commandBuffer, bool flippedViewport) {
-        VkClearValue clearValues[frameBufferAttachments.size()];
+        std::vector<VkClearValue> clearValues{frameBufferAttachments.size()};
 
-        for (int i = 0; i < frameBufferAttachments.size() - 1; i++) {
+        for (int i = 0; i < clearValues.size() - 1; i++) {
             clearValues[i].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
         }
 
         VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
         if (std::find(std::begin(depthFormats), std::end(depthFormats), frameBufferFormats.back()) != std::end(depthFormats)) {
-            clearValues[frameBufferAttachments.size() - 1].depthStencil = { 1.0f, 0 };
+            clearValues[clearValues.size() - 1].depthStencil = { 1.0f, 0 };
         }
 
         VkRenderPassBeginInfo renderPassBeginInfo{};
@@ -151,8 +151,8 @@ namespace Banan {
         renderPassBeginInfo.renderPass = renderPass;
         renderPassBeginInfo.framebuffer = frameBuffer;
         renderPassBeginInfo.renderArea.extent = extent;
-        renderPassBeginInfo.clearValueCount = frameBufferAttachments.size();
-        renderPassBeginInfo.pClearValues = clearValues;
+        renderPassBeginInfo.clearValueCount = clearValues.size();
+        renderPassBeginInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
