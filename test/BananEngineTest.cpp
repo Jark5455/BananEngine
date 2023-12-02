@@ -18,8 +18,6 @@
 #include <algorithm>
 #include <chrono>
 
-#include <sys/resource.h>
-
 namespace Banan{
 
     BananEngineTest::BananEngineTest() {

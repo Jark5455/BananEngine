@@ -29,7 +29,7 @@ namespace Banan{
         VkPushConstantRange pushConstantRange{};
         pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         pushConstantRange.offset = 0;
-        pushConstantRange.size = sizeof(id_t);
+        pushConstantRange.size = sizeof(BananGameObject::id_t);
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -77,7 +77,7 @@ namespace Banan{
         for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
             auto &obj = frameInfo.gameObjects.at(it->second);
 
-            vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(id_t), &it->second);
+            vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(BananGameObject::id_t), &it->second);
             vkCmdDraw(frameInfo.commandBuffer, 6, 1, 0, 0);
         }
 
