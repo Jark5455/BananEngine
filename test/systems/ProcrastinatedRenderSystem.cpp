@@ -22,14 +22,15 @@ namespace Banan {
 
     void ProcrastinatedRenderSystem::calculateGBuffer(BananFrameInfo &frameInfo) {
         GBufferPipeline->bind(frameInfo.commandBuffer);
+        std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.textureDescriptorSet, frameInfo.normalDescriptorSet, frameInfo.heightDescriptorSet};
 
-        for (auto &kv : frameInfo.gameObjectManager.getGameObjects()) {
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,GBufferPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+
+        for (auto &kv : frameInfo.gameObjects) {
             auto &obj = kv.second;
             if (obj.model == nullptr) continue;
 
-            std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet, frameInfo.textureDescriptorSet};
-            std::vector<uint32_t> offsets = {kv.first * static_cast<uint32_t>(frameInfo.gameObjectManager.getGameObjectBufferAlignmentSize(frameInfo.frameIndex))};
-            vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, GBufferPipelineLayout, 0, static_cast<uint32_t>(sets.size()),sets.data(), static_cast<uint32_t>(offsets.size()), offsets.data());
+            vkCmdPushConstants(frameInfo.commandBuffer, GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(id_t), &kv.first);
 
             obj.model->bindAll(frameInfo.commandBuffer);
             obj.model->draw(frameInfo.commandBuffer);
@@ -42,7 +43,7 @@ namespace Banan {
         mainRenderTargetPipeline->bind(frameInfo.commandBuffer);
         std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.procrastinatedDescriptorSet};
 
-        vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mainRenderTargetPipelineLayout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,mainRenderTargetPipelineLayout,0,sets.size(),sets.data(),0,nullptr);
         vkCmdDraw(frameInfo.commandBuffer, 3, 1, 0, 0);
 
         vkCmdNextSubpass(frameInfo.commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
@@ -96,12 +97,17 @@ namespace Banan {
     }
 
     void ProcrastinatedRenderSystem::createGBufferPipelineLayout(std::vector<VkDescriptorSetLayout> layouts) {
+        VkPushConstantRange pushConstantRange{};
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        pushConstantRange.offset = 0;
+        pushConstantRange.size = sizeof(int);
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
         pipelineLayoutInfo.pSetLayouts = layouts.data();
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
-        pipelineLayoutInfo.pPushConstantRanges = nullptr;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
         if (vkCreatePipelineLayout(bananDevice.device(), &pipelineLayoutInfo, nullptr, &GBufferPipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }

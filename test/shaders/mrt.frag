@@ -1,46 +1,26 @@
 #version 450
-#extension GL_EXT_nonuniform_qualifier : enable
-#extension GL_EXT_buffer_reference : require
 
 layout(location = 0) in vec2 inUV;
 
-layout(buffer_reference, std430) buffer transform {
+struct GameObject {
+    vec4 position;
+    vec4 rotation; // color for point lights
+    vec4 scale; // radius for point lights
+
     mat4 modelMatrix;
     mat4 normalMatrix;
-};
 
-layout(buffer_reference, std430) buffer parallax {
+    int hasTexture;
+    int hasNormal;
+
+    int hasHeight;
     float heightscale;
     float parallaxBias;
     float numLayers;
     int parallaxmode;
+
+    int isPointLight;
 };
-
-layout(buffer_reference) buffer pointLight;
-layout(buffer_reference, std430) buffer pointLight {
-    vec4 position;
-    vec4 color;
-    float radius;
-    float intensity;
-
-    int hasNext;
-    pointLight next;
-};
-
-layout(set = 2, binding = 0) uniform GameObjects {
-    int albedoTexture;
-    int normalTexture;
-    int heightTexture;
-
-    int transform;
-    transform transformRef;
-
-    int parallax;
-    parallax parallaxRef;
-
-    int pointLight;
-    pointLight pointLightRef;
-} objectData;
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 projection;
@@ -49,9 +29,11 @@ layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 inverseView;
     vec4 ambientLightColor;
     int numGameObjects;
-    int numPointLights;
-    pointLight basePointLightRef;
 } ubo;
+
+layout(set = 0, binding = 1) readonly buffer GameObjects {
+    GameObject objects[];
+} ssbo;
 
 layout(set = 1, input_attachment_index = 0, binding = 0) uniform subpassInput depth;
 layout(set = 1, input_attachment_index = 1, binding = 1) uniform subpassInput normals;
@@ -65,7 +47,7 @@ vec3 reconstruct_world_position()
 {
     float z = subpassLoad(depth).r;
     if (z == 1.0)
-        discard;
+    discard;
 
     float x = inUV.x * 2.0f - 1.0f;
     float y = inUV.y * 2.0f - 1.0f;
@@ -86,10 +68,9 @@ void main() {
     vec3 viewPos = ubo.inverseView[3].xyz;
     vec3 viewDirection = normalize(viewPos - position);
 
-    if (ubo.numPointLights > 0) {
-        pointLight object = ubo.basePointLightRef;
-
-        while (true) {
+    for (int i = 0; i < ubo.numGameObjects; i++) {
+        GameObject object = ssbo.objects[i];
+        if (object.isPointLight == 1) {
             vec3 lightPos = object.position.xyz;
 
             vec3 directionToLight = lightPos - position;
@@ -99,19 +80,14 @@ void main() {
             directionToLight = normalize(directionToLight);
 
             float cosAngIncidence = max(dot(surfaceNormal, normalize(directionToLight)), 0);
-            vec3 intensity = object.color.xyz * object.intensity * attenuation;
+            vec3 intensity = object.rotation.xyz * object.rotation.w * attenuation;
             diffuseLight += intensity * cosAngIncidence;
 
             vec3 halfAngle = normalize(directionToLight + viewDirection);
             float blinnTerm = dot(surfaceNormal, halfAngle);
             blinnTerm = clamp(blinnTerm, 0, 1);
             blinnTerm = pow(blinnTerm, 512.0f);
-            specularLight += object.color.xyz * attenuation * blinnTerm;
-
-            if (object.hasNext == 1)
-                object = object.next;
-            else
-                break;
+            specularLight += object.rotation.xyz * attenuation * blinnTerm;
         }
     }
 

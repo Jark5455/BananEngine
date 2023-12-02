@@ -9,24 +9,24 @@
 #include <stdexcept>
 
 namespace Banan{
-    BananPipeline::BananPipeline(BananDevice &device, const std::string &vertFilepath, const std::string &fragFilePath, const PipelineConfigInfo &configInfo) : bananDevice{device} {
+    BananPipeline::BananPipeline(BananDevice &device, const std::string &vertFilepath, const std::string &fragFilePath, const PipelineConfigInfo &configInfo) : device{device} {
         createGraphicsPipeline(vertFilepath, fragFilePath, configInfo);
     }
 
-    BananPipeline::BananPipeline(BananDevice &device, const std::string &computeFilepath, const PipelineConfigInfo &configInfo) : bananDevice{device} {
+    BananPipeline::BananPipeline(BananDevice &device, const std::string &computeFilepath, const PipelineConfigInfo &configInfo) : device{device} {
         createComputePipeline(computeFilepath, configInfo);
     }
 
     BananPipeline::~BananPipeline() {
 
         if (computeShaderModule == VK_NULL_HANDLE) {
-            vkDestroyShaderModule(bananDevice.device(), vertShaderModule, nullptr);
-            vkDestroyShaderModule(bananDevice.device(), fragShaderModule, nullptr);
+            vkDestroyShaderModule(device.device(), vertShaderModule, nullptr);
+            vkDestroyShaderModule(device.device(), fragShaderModule, nullptr);
         } else {
-            vkDestroyShaderModule(bananDevice.device(), computeShaderModule, nullptr);
+            vkDestroyShaderModule(device.device(), computeShaderModule, nullptr);
         }
 
-        vkDestroyPipeline(bananDevice.device(), pipeline, nullptr);
+        vkDestroyPipeline(device.device(), pipeline, nullptr);
     }
 
     std::vector<char> BananPipeline::readFile(const std::string &filepath) {
@@ -40,7 +40,7 @@ namespace Banan{
         std::vector<char> buffer(fileSize);
 
         file.seekg(0);
-        file.read(buffer.data(), static_cast<long long>(fileSize));
+        file.read(buffer.data(), fileSize);
 
         file.close();
         return buffer;
@@ -48,6 +48,7 @@ namespace Banan{
 
     void BananPipeline::createComputePipeline(const std::string &computeFilepath, const PipelineConfigInfo &info) {
         assert(info.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline: no pipelineLayout provided in configInfo");
+        assert(info.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline: no renderPass provided in configInfo");
 
         auto computeCode = readFile(computeFilepath);
         createShaderModule(computeCode, &computeShaderModule);
@@ -67,7 +68,7 @@ namespace Banan{
         pipelineInfo.layout = info.pipelineLayout;
         pipelineInfo.flags = 0;
 
-        if (vkCreateComputePipelines(bananDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+        if (vkCreateComputePipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline");
         }
     }
@@ -130,7 +131,7 @@ namespace Banan{
         pipelineInfo.basePipelineIndex = -1;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-        if (vkCreateGraphicsPipelines(bananDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline");
         }
     }
@@ -258,8 +259,11 @@ namespace Banan{
         configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
         configInfo.dynamicStateInfo.flags = 0;
 
-        configInfo.attributeDescriptions = BananModel::Vertex::getPositionOnlyAttributeDescriptions();
-        configInfo.bindingDescriptions = BananModel::Vertex::getPositionOnlyBindingDescriptions();
+        configInfo.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+        configInfo.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
+        configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
+        configInfo.dynamicStateInfo.flags = 0;
     }
 
     void BananPipeline::gbufferPipelineConfigInfo(Banan::PipelineConfigInfo &configInfo) {
@@ -290,6 +294,12 @@ namespace Banan{
         configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
         configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
         configInfo.dynamicStateInfo.flags = 0;
+
+        configInfo.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+        configInfo.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
+        configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
+        configInfo.dynamicStateInfo.flags = 0;
     }
 
     void BananPipeline::createShaderModule(const std::vector<char> &code, VkShaderModule *shaderModule) {
@@ -298,7 +308,7 @@ namespace Banan{
         createInfo.codeSize = code.size();
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-        if (vkCreateShaderModule(bananDevice.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
+        if (vkCreateShaderModule(device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
             throw std::runtime_error("failed to create shader module");
         }
     }

@@ -23,23 +23,11 @@ namespace Banan {
 
     VkCommandBuffer BananRenderer::getCurrentCommandBuffer() const {
         assert(isFrameStarted && "Cannot get Command buffer when frame is not in progress");
-        return commandBuffers[static_cast<size_t>(currentFrameIndex)];
+        return commandBuffers[currentFrameIndex];
     }
 
-    VkRenderPass BananRenderer::getGeometryRenderPass() const {
-        return bananSwapChain->getGeometryRenderpass();
-    }
-
-    VkRenderPass BananRenderer::getEdgeDetectionRenderPass() const {
-        return bananSwapChain->getEdgeDetectionRenderPass();
-    }
-
-    VkRenderPass BananRenderer::getBlendWeightRenderPass() const {
-        return bananSwapChain->getBlendWeightRenderpass();
-    }
-
-    VkRenderPass BananRenderer::getResolveRenderPass() const {
-        return bananSwapChain->getResolveRenderpass();
+    VkRenderPass BananRenderer::getSwapChainRenderPass() const {
+        return bananSwapChain->getRenderPass();
     }
 
     void BananRenderer::createCommandBuffers() {
@@ -57,7 +45,8 @@ namespace Banan {
     }
 
     void BananRenderer::freeCommandBuffers() {
-        vkFreeCommandBuffers(bananDevice.device(), bananDevice.getCommandPool(), static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+        vkFreeCommandBuffers(bananDevice.device(), bananDevice.getCommandPool(), commandBuffers.size(),
+                             commandBuffers.data());
         commandBuffers.clear();
     }
 
@@ -130,30 +119,23 @@ namespace Banan {
         currentFrameIndex = (currentFrameIndex + 1) % BananSwapChain::MAX_FRAMES_IN_FLIGHT;
     }
 
-    void BananRenderer::endRenderPass(VkCommandBuffer commandBuffer) {
-        assert(isFrameStarted && "Cant end render pass if frame is not in progress");
-        assert(commandBuffer == getCurrentCommandBuffer() && "Can't end render pass on command buffer that is different to the current frame");
-
-        vkCmdEndRenderPass(commandBuffer);
-    }
-
-    void BananRenderer::beginGeometryRenderPass(VkCommandBuffer commandBuffer) {
+    void BananRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer) {
         assert(isFrameStarted && "Cant begin render pass if frame is not in progress");
         assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer that is different to the current frame");
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = bananSwapChain->getGeometryRenderpass();
-        renderPassInfo.framebuffer = bananSwapChain->getGeometryFramebuffer();
+        renderPassInfo.renderPass = bananSwapChain->getRenderPass();
+        renderPassInfo.framebuffer = bananSwapChain->getFrameBuffer(static_cast<int>(currentImageIndex));
 
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
 
         std::array<VkClearValue, 4> clearValues{};
         clearValues[0].depthStencil = {1.0f, 0};
-        clearValues[1].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-        clearValues[2].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-        clearValues[3].color = {{0.1f, 0.1f, 0.1f, 1.0f}};
+        clearValues[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
+        clearValues[2].color = {0.0f, 0.0f, 0.0f, 1.0f};
+        clearValues[3].color = {0.1f, 0.1f, 0.1f, 1.0f};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -172,100 +154,14 @@ namespace Banan {
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
     }
 
-    void BananRenderer::beginEdgeDetectionRenderPass(VkCommandBuffer commandBuffer) {
-        assert(isFrameStarted && "Cant begin render pass if frame is not in progress");
-        assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer that is different to the current frame");
+    void BananRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer) {
+        assert(isFrameStarted && "Cant end render pass if frame is not in progress");
+        assert(commandBuffer == getCurrentCommandBuffer() && "Can't end render pass on command buffer that is different to the current frame");
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = bananSwapChain->getEdgeDetectionRenderPass();
-        renderPassInfo.framebuffer = bananSwapChain->getEdgeDetectionFramebuffer();
-
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
-
-        VkClearValue clearValue = {{{0.0f, 0.0f}}};
-
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearValue;
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(bananSwapChain->getSwapChainExtent().width);
-        viewport.height = static_cast<float>(bananSwapChain->getSwapChainExtent().height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        VkRect2D scissor{{0, 0}, bananSwapChain->getSwapChainExtent()};
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        vkCmdEndRenderPass(commandBuffer);
     }
 
-    void BananRenderer::beginBlendWeightRenderPass(VkCommandBuffer commandBuffer) {
-        assert(isFrameStarted && "Cant begin render pass if frame is not in progress");
-        assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer that is different to the current frame");
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = bananSwapChain->getBlendWeightRenderpass();
-        renderPassInfo.framebuffer = bananSwapChain->getBlendWeightFramebuffer();
-
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
-
-        VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearValue;
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(bananSwapChain->getSwapChainExtent().width);
-        viewport.height = static_cast<float>(bananSwapChain->getSwapChainExtent().height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        VkRect2D scissor{{0, 0}, bananSwapChain->getSwapChainExtent()};
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-    }
-
-    void BananRenderer::beginResolveRenderPass(VkCommandBuffer commandBuffer) {
-        assert(isFrameStarted && "Cant begin render pass if frame is not in progress");
-        assert(commandBuffer == getCurrentCommandBuffer() && "Can't begin render pass on command buffer that is different to the current frame");
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = bananSwapChain->getResolveRenderpass();
-        renderPassInfo.framebuffer = bananSwapChain->getResolveFramebuffer(currentImageIndex);
-
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = bananSwapChain->getSwapChainExtent();
-
-        VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearValue;
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(bananSwapChain->getSwapChainExtent().width);
-        viewport.height = static_cast<float>(bananSwapChain->getSwapChainExtent().height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        VkRect2D scissor{{0, 0}, bananSwapChain->getSwapChainExtent()};
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-    }
-
-    size_t BananRenderer::getFrameIndex() const {
+    int BananRenderer::getFrameIndex() const {
         assert(isFrameStarted && "Cannot get frame index when frame is not in progress");
         return currentFrameIndex;
     }
@@ -283,17 +179,5 @@ namespace Banan {
         GBufferInfo.push_back(bananSwapChain->gbuffer()[2]->descriptorInfo());
 
         return GBufferInfo;
-    }
-
-    VkDescriptorImageInfo BananRenderer::getGeometryDescriptorInfo() {
-        return bananSwapChain->geometry()->descriptorInfo();
-    }
-
-    VkDescriptorImageInfo BananRenderer::getEdgeDescriptorInfo() {
-        return bananSwapChain->edge()->descriptorInfo();
-    }
-
-    VkDescriptorImageInfo BananRenderer::getBlendWeightDescriptorInfo() {
-        return bananSwapChain->blend()->descriptorInfo();
     }
 }

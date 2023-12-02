@@ -6,74 +6,55 @@
 
 #include "banan_device.h"
 
-#include <memory>
-
 #define STB_IMAGE_IMPLEMENTATION
 
 namespace Banan {
     class BananImage {
-        public:
+    public:
+        BananImage(BananDevice &device, uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+        ~BananImage();
 
-            static std::shared_ptr<BananImage> makeImageFromFilepath(BananDevice &device, const std::string &filepath);
+        BananImage(const BananImage&) = delete;
+        BananImage& operator=(const BananImage&) = delete;
 
-            BananImage(BananDevice &device, size_t width, size_t height, size_t mipLevels, size_t arrayLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
-            ~BananImage();
+        VkDescriptorImageInfo descriptorInfo();
+        VkImage getImageHandle();
 
-            BananImage(const BananImage&) = delete;
-            BananImage& operator=(const BananImage&) = delete;
+    private:
 
-            VkDescriptorImageInfo descriptorInfo();
-            VkImage getImageHandle();
-            VkImageView getImageView();
-            VkSampler getImageSampler();
-            VkExtent2D getImageExtent();
-            VkFormat getImageFormat();
-            VkImageLayout getImageLayout();
+        void createTextureImageView();
+        void createTextureSampler();
 
-            void transitionLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout);
-            void generateMipMaps(uint32_t mipLevels);
-
-        protected:
-            BananImage(BananDevice &device, VkFormat format);
-
-            void createTextureImageView();
-            void createTextureArrayImageView();
-            void createTextureSampler();
-
-            BananDevice &bananDevice;
-            VkImage image;
-            VkFormat imageFormat;
-            VkImageView imageView;
-            VkSampler imageSampler;
-            VkDeviceMemory memory;
-            size_t mipLevels;
-            size_t arrayLevels;
-            VkExtent2D imageExtent;
-            VkImageLayout imageLayout;
+        BananDevice &bananDevice;
+        VkImage image;
+        VkFormat imageFormat;
+        VkImageView imageView;
+        VkSampler imageSampler;
+        VkDeviceMemory memory;
+        uint32_t mipLevels;
     };
 
     class BananCubemap {
-        public:
-            BananCubemap(BananDevice &device, size_t sideLength, size_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkImageUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
-            ~BananCubemap();
+    public:
+        BananCubemap(BananDevice &device, uint32_t sideLength, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkSampleCountFlagBits numSamples, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
+        ~BananCubemap();
 
-            BananCubemap(const BananCubemap&) = delete;
-            BananCubemap& operator=(const BananCubemap&) = delete;
+        BananCubemap(const BananCubemap&) = delete;
+        BananCubemap& operator=(const BananCubemap&) = delete;
 
-            VkDescriptorImageInfo cubemapDescriptorInfo();
+        VkDescriptorImageInfo descriptorInfo();
+        VkImage getImageHandle();
 
-            VkImage getImageHandle();
+    private:
+        void createTextureImageView();
+        void createTextureSampler();
 
-        private:
-            void createTextureCubemapImageView();
-            void createTextureSampler();
-
-            BananDevice &bananDevice;
-            VkFormat cubemapImageFormat;
-            VkImage cubemapImage;
-            VkImageView cubemapImageView;
-            VkSampler cubemapImageSampler;
-            VkDeviceMemory memory;
-            size_t mipLevels;
+        BananDevice &bananDevice;
+        VkFormat cubemapImageFormat;
+        VkImage cubemapImage;
+        VkImageView cubemapImageView;
+        VkSampler cubemapImageSampler;
+        VkDeviceMemory memory;
+        uint32_t mipLevels;
     };
 }

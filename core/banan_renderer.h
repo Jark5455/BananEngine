@@ -8,6 +8,7 @@
 #include "banan_swap_chain.h"
 #include "banan_device.h"
 #include "banan_model.h"
+#include "banan_renderpass.h"
 
 #include <memory>
 #include <vector>
@@ -22,31 +23,18 @@ namespace Banan{
         BananRenderer(BananWindow &window, BananDevice &device);
         ~BananRenderer();
 
-        VkRenderPass getGeometryRenderPass() const;
-        VkRenderPass getEdgeDetectionRenderPass() const;
-        VkRenderPass getBlendWeightRenderPass() const;
-        VkRenderPass getResolveRenderPass() const;
-
+        VkRenderPass getSwapChainRenderPass() const;
         float getAspectRatio() const;
         bool isFrameInProgress() const;
         VkCommandBuffer getCurrentCommandBuffer() const;
 
-        size_t getFrameIndex() const;
+        int getFrameIndex() const;
         std::vector<VkDescriptorImageInfo> getGBufferDescriptorInfo();
-
-        VkDescriptorImageInfo getGeometryDescriptorInfo();
-        VkDescriptorImageInfo getEdgeDescriptorInfo();
-        VkDescriptorImageInfo getBlendWeightDescriptorInfo();
 
         VkCommandBuffer beginFrame();
         void endFrame();
-        void beginGeometryRenderPass(VkCommandBuffer commandBuffer);
-        void beginEdgeDetectionRenderPass(VkCommandBuffer commandBuffer);
-        void beginBlendWeightRenderPass(VkCommandBuffer commandBuffer);
-        void beginResolveRenderPass(VkCommandBuffer commandBuffer);
-
-        void endRenderPass(VkCommandBuffer commandBuffer);
-
+        void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
+        void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
         void recreateSwapChain();
 
     private:
@@ -59,8 +47,8 @@ namespace Banan{
         std::vector<VkCommandBuffer> commandBuffers{};
         std::vector<VkDescriptorImageInfo> GBufferInfo{};
 
-        size_t currentImageIndex;
-        size_t currentFrameIndex{0};
+        uint32_t currentImageIndex;
+        int currentFrameIndex{0};
         bool isFrameStarted{false};
     };
 }

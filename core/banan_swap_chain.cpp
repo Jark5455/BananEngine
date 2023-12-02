@@ -16,11 +16,8 @@ namespace Banan {
         createSwapChain();
         createImageViews();
         createGBufferResources();
-        createResolveResources();
-        createGeometryRenderPass();
-        createGeometryFramebuffer();
-        createResolveRenderpasses();
-        createResolveFramebuffers();
+        createRenderPass();
+        createFramebuffers();
         createSyncObjects();
     }
 
@@ -35,20 +32,11 @@ namespace Banan {
             swapChain = nullptr;
         }
 
-        vkDestroyFramebuffer(device.device(), geometryFramebuffer, nullptr);
-        vkDestroyRenderPass(device.device(), geometryRenderpass, nullptr);
-
-        vkDestroyFramebuffer(device.device(), edgeDetectionFramebuffer, nullptr);
-        vkDestroyRenderPass(device.device(), edgeDetectionRenderPass, nullptr);
-
-        vkDestroyFramebuffer(device.device(), blendFramebuffer, nullptr);
-        vkDestroyRenderPass(device.device(), blendWeightRenderPass, nullptr);
-
-        for (auto framebuffer : resolveFramebuffers) {
+        for (auto framebuffer : swapChainFramebuffers) {
             vkDestroyFramebuffer(device.device(), framebuffer, nullptr);
         }
 
-        vkDestroyRenderPass(device.device(), resolveRenderPass, nullptr);
+        vkDestroyRenderPass(device.device(), renderPass, nullptr);
 
         // cleanup synchronization objects
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -58,13 +46,13 @@ namespace Banan {
         }
     }
 
-    VkResult BananSwapChain::acquireNextImage(size_t *imageIndex) {
-        vkWaitForFences(device.device(), 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-        VkResult result = vkAcquireNextImageKHR(device.device(), swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, reinterpret_cast<uint32_t *>(const_cast<size_t *>(imageIndex)));
+    VkResult BananSwapChain::acquireNextImage(uint32_t *imageIndex) {
+        vkWaitForFences(device.device(),1,&inFlightFences[currentFrame],VK_TRUE,std::numeric_limits<uint64_t>::max());
+        VkResult result = vkAcquireNextImageKHR(device.device(),swapChain,std::numeric_limits<uint64_t>::max(),imageAvailableSemaphores[currentFrame],VK_NULL_HANDLE,imageIndex);
         return result;
     }
 
-    VkResult BananSwapChain::submitCommandBuffers(const VkCommandBuffer *buffers, const size_t *imageIndex) {
+    VkResult BananSwapChain::submitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex) {
         if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
             vkWaitForFences(device.device(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
         }
@@ -102,7 +90,7 @@ namespace Banan {
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
 
-        presentInfo.pImageIndices = reinterpret_cast<uint32_t *>(const_cast<size_t *>(imageIndex));
+        presentInfo.pImageIndices = imageIndex;
 
         auto result = vkQueuePresentKHR(device.presentQueue(), &presentInfo);
 
@@ -136,7 +124,7 @@ namespace Banan {
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         QueueFamilyIndices indices = device.findPhysicalQueueFamilies();
-        uint32_t queueFamilyIndices[] = {static_cast<uint32_t>(indices.graphicsFamily), static_cast<uint32_t>(indices.presentFamily)};
+        uint32_t queueFamilyIndices[] = {indices.graphicsFamily, indices.presentFamily};
 
         if (indices.graphicsFamily != indices.presentFamily) {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -193,7 +181,7 @@ namespace Banan {
         }
     }
 
-    void BananSwapChain::createGeometryRenderPass() {
+    void BananSwapChain::createRenderPass() {
 
         std::vector<VkAttachmentDescription> attachments{4};
 
@@ -202,10 +190,10 @@ namespace Banan {
         attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[0].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments[0].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         // gbuffer normals attachment
         attachments[1].format = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -214,7 +202,7 @@ namespace Banan {
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[1].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         // gbuffer albedo attachment
@@ -224,18 +212,18 @@ namespace Banan {
         attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[2].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         attachments[2].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         // composite color attachment
-        attachments[3].format = VK_FORMAT_R8G8B8A8_UNORM;
+        attachments[3].format = swapChainImageFormat;
         attachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[3].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachments[3].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
         VkAttachmentReference depthReference = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 
@@ -248,11 +236,13 @@ namespace Banan {
 
         VkSubpassDescription gBufferSubpass{};
         gBufferSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        gBufferSubpass.colorAttachmentCount = static_cast<uint32_t>(gbufferReferences.size());
+        gBufferSubpass.colorAttachmentCount = gbufferReferences.size();
         gBufferSubpass.pColorAttachments = gbufferReferences.data();
         gBufferSubpass.pDepthStencilAttachment = &depthReference;
 
-        VkAttachmentReference compositeReferences{3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+        VkAttachmentReference compositeReferences{1};
+        compositeReferences.attachment = 3;
+        compositeReferences.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         std::vector<VkAttachmentReference> inputAttachments{3};
         inputAttachments[0] = depthReference;
@@ -269,7 +259,7 @@ namespace Banan {
         compositeSubpass.colorAttachmentCount = 1;
         compositeSubpass.pColorAttachments = &compositeReferences;
         compositeSubpass.pDepthStencilAttachment = nullptr;
-        compositeSubpass.inputAttachmentCount = static_cast<uint32_t>(inputAttachments.size());
+        compositeSubpass.inputAttachmentCount = inputAttachments.size();
         compositeSubpass.pInputAttachments = inputAttachments.data();
 
         VkSubpassDescription forwardSubpass{};
@@ -278,50 +268,43 @@ namespace Banan {
         forwardSubpass.pColorAttachments = &compositeReferences;
         forwardSubpass.pDepthStencilAttachment = &depthReference;
 
-        std::vector<VkSubpassDependency> dependencies{5};
+        std::vector<VkSubpassDependency> dependencies{4};
 
-        // This dependency transitions the input attachment from color attachment to shader read
-        dependencies[0].srcSubpass = 0;
-        dependencies[0].dstSubpass = 1;
-        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        // ensure attachments are writeable
+        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[0].dstSubpass = 0;
+        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependencies[0].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-        // This dependency transitions the input attachment from depth attachment to shader read
+        // convert to read only for shader
         dependencies[1].srcSubpass = 0;
         dependencies[1].dstSubpass = 1;
-        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[1].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-        // This dependency transitions the depth attachment back to write and read
+        // convert from shader read back to depth stencil and color attachment
         dependencies[2].srcSubpass = 1;
         dependencies[2].dstSubpass = 2;
         dependencies[2].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[2].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[2].srcAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-        dependencies[2].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependencies[2].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependencies[2].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[2].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependencies[2].dependencyFlags  = VK_DEPENDENCY_BY_REGION_BIT;
 
+        // convert attachment to presentable image
         dependencies[3].srcSubpass = 2;
         dependencies[3].dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[3].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[3].dstStageMask =  VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        dependencies[3].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[3].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[3].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[3].dstAccessMask = 0;
         dependencies[3].dependencyFlags  = VK_DEPENDENCY_BY_REGION_BIT;
-
-        dependencies[4].srcSubpass = 2;
-        dependencies[4].dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[4].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[4].dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        dependencies[4].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependencies[4].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        dependencies[4].dependencyFlags  = VK_DEPENDENCY_BY_REGION_BIT;
 
         std::vector<VkSubpassDescription> subpasses{3};
         subpasses[0] = gBufferSubpass;
@@ -330,244 +313,35 @@ namespace Banan {
 
         VkRenderPassCreateInfo renderPassInfo = {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        renderPassInfo.attachmentCount = attachments.size();
         renderPassInfo.pAttachments = attachments.data();
-        renderPassInfo.subpassCount = static_cast<uint32_t>(subpasses.size());
+        renderPassInfo.subpassCount = subpasses.size();
         renderPassInfo.pSubpasses = subpasses.data();
-        renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+        renderPassInfo.dependencyCount = dependencies.size();
         renderPassInfo.pDependencies = dependencies.data();
 
-        if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &geometryRenderpass) != VK_SUCCESS) {
+        if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
             throw std::runtime_error("failed to create render pass!");
         }
     }
 
-    void BananSwapChain::createGeometryFramebuffer() {
-        std::array<VkImageView,4> attachments = {gBufferAttachments[0]->getImageView(), gBufferAttachments[1]->getImageView(), gBufferAttachments[2]->getImageView(), geometryImage->getImageView()};
+    void BananSwapChain::createFramebuffers() {
+        swapChainFramebuffers.resize(imageCount());
+        for (size_t i = 0; i < imageCount(); i++) {
+            std::array<VkImageView,4> attachments = {gBufferAttachments[0]->descriptorInfo().imageView, gBufferAttachments[1]->descriptorInfo().imageView, gBufferAttachments[2]->descriptorInfo().imageView, swapChainImageViews[i]};
 
-        VkFramebufferCreateInfo framebufferInfo = {};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = geometryRenderpass;
-        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = swapChainExtent.width;
-        framebufferInfo.height = swapChainExtent.height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(device.device(), &framebufferInfo, nullptr, &geometryFramebuffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
-        }
-    }
-
-    void BananSwapChain::createResolveRenderpasses() {
-
-        // edge detection pass
-        {
-            VkAttachmentDescription edgeAttachment{};
-
-            // techically this could be R8G8 but for some reason its slower on nvidia, will test on amd later
-            edgeAttachment.format = VK_FORMAT_R8G8_UNORM;
-            edgeAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-            edgeAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            edgeAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            edgeAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            edgeAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            edgeAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            edgeAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-            VkAttachmentReference edgeAttachmentReference{};
-            edgeAttachmentReference.attachment = 0;
-            edgeAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-            VkSubpassDescription edgeDetectionSubpass{};
-            edgeDetectionSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            edgeDetectionSubpass.colorAttachmentCount = 1;
-            edgeDetectionSubpass.pColorAttachments = &edgeAttachmentReference;
-
-            std::vector<VkSubpassDependency> dependencies{1};
-
-            // shader read only
-            dependencies[0].srcSubpass = 0;
-            dependencies[0].dstSubpass = VK_SUBPASS_EXTERNAL;
-            dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependencies[0].dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-            dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            dependencies[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-            VkRenderPassCreateInfo renderPassInfo = {};
-            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = 1;
-            renderPassInfo.pAttachments = &edgeAttachment;
-            renderPassInfo.subpassCount = 1;
-            renderPassInfo.pSubpasses = &edgeDetectionSubpass;
-            renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-            renderPassInfo.pDependencies = dependencies.data();
-
-            if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &edgeDetectionRenderPass) != VK_SUCCESS) {
-                throw std::runtime_error("Unable to create edge detection renderpass for SMAA");
-            }
-        }
-
-        // blend weight pass
-        {
-            VkAttachmentDescription blendAttachment{};
-
-            // techically this could be R8G8 but for some reason its slower on nvidia, will test on amd later
-            blendAttachment.format = VK_FORMAT_R8G8B8A8_UNORM;
-            blendAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-            blendAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            blendAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            blendAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            blendAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            blendAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            blendAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-            VkAttachmentReference blendAttachmentReference{};
-            blendAttachmentReference.attachment = 0;
-            blendAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-            VkSubpassDescription blendAttachmentSubpass{};
-            blendAttachmentSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            blendAttachmentSubpass.colorAttachmentCount = 1;
-            blendAttachmentSubpass.pColorAttachments = &blendAttachmentReference;
-
-            std::vector<VkSubpassDependency> dependencies{1};
-
-            // shader read only
-            dependencies[0].srcSubpass = 0;
-            dependencies[0].dstSubpass = VK_SUBPASS_EXTERNAL;
-            dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependencies[0].dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-            dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            dependencies[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-            VkRenderPassCreateInfo renderPassInfo = {};
-            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = 1;
-            renderPassInfo.pAttachments = &blendAttachment;
-            renderPassInfo.subpassCount = 1;
-            renderPassInfo.pSubpasses = &blendAttachmentSubpass;
-            renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-            renderPassInfo.pDependencies = dependencies.data();
-
-            if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &blendWeightRenderPass) != VK_SUCCESS) {
-                throw std::runtime_error("Unable to create edge detection renderpass for SMAA");
-            }
-        }
-
-        // resolve pass
-        {
-            VkAttachmentDescription resolveAttachment{};
-
-            // techically this could be R8G8 but for some reason its slower on nvidia, will test on amd later
-            resolveAttachment.format = swapChainImageFormat;
-            resolveAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-            resolveAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            resolveAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            resolveAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            resolveAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-            VkAttachmentReference resolveAttachmentReference{};
-            resolveAttachmentReference.attachment = 0;
-            resolveAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-            VkSubpassDescription resolveAttachmentSubpass{};
-            resolveAttachmentSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            resolveAttachmentSubpass.colorAttachmentCount = 1;
-            resolveAttachmentSubpass.pColorAttachments = &resolveAttachmentReference;
-
-            std::vector<VkSubpassDependency> dependencies{2};
-
-            // convert to writeable
-            dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-            dependencies[0].dstSubpass = 0;
-            dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependencies[0].srcAccessMask = 0;
-            dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-            // convert to presentable
-            dependencies[1].srcSubpass = 0;
-            dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-            dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-            dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            dependencies[1].dstAccessMask = 0;
-            dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-            VkRenderPassCreateInfo renderPassInfo = {};
-            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = 1;
-            renderPassInfo.pAttachments = &resolveAttachment;
-            renderPassInfo.subpassCount = 1;
-            renderPassInfo.pSubpasses = &resolveAttachmentSubpass;
-            renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-            renderPassInfo.pDependencies = dependencies.data();
-
-            if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &resolveRenderPass) != VK_SUCCESS) {
-                throw std::runtime_error("Unable to create edge detection renderpass for SMAA");
-            }
-        }
-    }
-
-    void BananSwapChain::createResolveFramebuffers() {
-
-        {
-            VkImageView edgeView = edgeImage->getImageView();
-
+            VkExtent2D swapChainExtent = getSwapChainExtent();
             VkFramebufferCreateInfo framebufferInfo = {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = edgeDetectionRenderPass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = &edgeView;
+            framebufferInfo.renderPass = renderPass;
+            framebufferInfo.attachmentCount = attachments.size();
+            framebufferInfo.pAttachments = attachments.data();
             framebufferInfo.width = swapChainExtent.width;
             framebufferInfo.height = swapChainExtent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(device.device(), &framebufferInfo, nullptr, &edgeDetectionFramebuffer) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create edge framebuffer!");
-            }
-        }
-
-        {
-            VkImageView blendView = blendImage->getImageView();
-
-            VkFramebufferCreateInfo framebufferInfo = {};
-            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = blendWeightRenderPass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = &blendView;
-            framebufferInfo.width = swapChainExtent.width;
-            framebufferInfo.height = swapChainExtent.height;
-            framebufferInfo.layers = 1;
-
-            if (vkCreateFramebuffer(device.device(), &framebufferInfo, nullptr, &blendFramebuffer) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create blend framebuffer!");
-            }
-        }
-
-        {
-            resolveFramebuffers.resize(imageCount());
-            for (size_t i = 0; i < imageCount(); i++) {
-                VkImageView colorView = swapChainImageViews[i];
-
-                VkFramebufferCreateInfo framebufferInfo = {};
-                framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                framebufferInfo.renderPass = resolveRenderPass;
-                framebufferInfo.attachmentCount = 1;
-                framebufferInfo.pAttachments = &colorView;
-                framebufferInfo.width = swapChainExtent.width;
-                framebufferInfo.height = swapChainExtent.height;
-                framebufferInfo.layers = 1;
-
-                if (vkCreateFramebuffer(device.device(), &framebufferInfo, nullptr, &resolveFramebuffers[i]) != VK_SUCCESS) {
-                    throw std::runtime_error("failed to create blend framebuffer!");
-                }
+            if (vkCreateFramebuffer(device.device(),&framebufferInfo,nullptr,&swapChainFramebuffers[i]) != VK_SUCCESS) {
+                throw std::runtime_error("failed to create framebuffer!");
             }
         }
     }
@@ -598,17 +372,13 @@ namespace Banan {
 
     void BananSwapChain::createGBufferResources() {
         swapChainDepthFormat =  findDepthFormat();
-        VkMemoryPropertyFlags memoryPropertyFlags = device.checkMemoryType(VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        gBufferAttachments.push_back(std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, swapChainDepthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+        gBufferAttachments.push_back(std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+        gBufferAttachments.push_back(std::make_shared<BananImage>(device, swapChainExtent.width, swapChainExtent.height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
-        gBufferAttachments.push_back(std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, swapChainDepthFormat, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, memoryPropertyFlags));
-        gBufferAttachments.push_back(std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, memoryPropertyFlags));
-        gBufferAttachments.push_back(std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, memoryPropertyFlags));
-    }
-
-    void BananSwapChain::createResolveResources() {
-        geometryImage = std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        edgeImage = std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        blendImage = std::make_shared<BananImage>(device, static_cast<size_t>(swapChainExtent.width), static_cast<size_t>(swapChainExtent.height), 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        device.transitionImageLayout(gBufferAttachments[0]->getImageHandle(), swapChainDepthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, 1);
+        device.transitionImageLayout(gBufferAttachments[1]->getImageHandle(), VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
+        device.transitionImageLayout(gBufferAttachments[2]->getImageHandle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
     }
 
     VkSurfaceFormatKHR BananSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {

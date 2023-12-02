@@ -12,7 +12,6 @@
 #include <array>
 #include <cassert>
 #include <map>
-#include <ranges>
 #include <stdexcept>
 
 namespace Banan{
@@ -26,12 +25,18 @@ namespace Banan{
     }
 
     void PointLightSystem::createPipelineLayout(std::vector<VkDescriptorSetLayout> layouts) {
+
+        VkPushConstantRange pushConstantRange{};
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        pushConstantRange.offset = 0;
+        pushConstantRange.size = sizeof(id_t);
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
         pipelineLayoutInfo.pSetLayouts = layouts.data();
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
-        pipelineLayoutInfo.pPushConstantRanges = nullptr;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
         if (vkCreatePipelineLayout(bananDevice.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
@@ -55,7 +60,7 @@ namespace Banan{
 
     void PointLightSystem::render(BananFrameInfo &frameInfo) {
         std::map<float, BananGameObject::id_t> sorted;
-        for (auto &kv : frameInfo.gameObjectManager.getGameObjects()) {
+        for (auto &kv : frameInfo.gameObjects) {
             auto &obj = kv.second;
             if (obj.pointLight == nullptr) continue;
 
@@ -66,22 +71,22 @@ namespace Banan{
 
         bananPipeline->bind(frameInfo.commandBuffer);
 
+        std::vector<VkDescriptorSet> sets{frameInfo.globalDescriptorSet};
+        vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,0,sets.size(),sets.data(),0,nullptr);
+
         for (auto it = sorted.rbegin(); it != sorted.rend(); ++it) {
+            auto &obj = frameInfo.gameObjects.at(it->second);
 
-            std::vector<VkDescriptorSet> sets = {frameInfo.globalDescriptorSet, frameInfo.gameObjectDescriptorSet};
-            std::vector<uint32_t> offsets = {it->second * static_cast<uint32_t>(frameInfo.gameObjectManager.getGameObjectBufferAlignmentSize(frameInfo.frameIndex))};
-            vkCmdBindDescriptorSets(frameInfo.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, static_cast<uint32_t>(sets.size()), sets.data(), static_cast<uint32_t>(offsets.size()), offsets.data());
-
-
+            vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(id_t), &it->second);
             vkCmdDraw(frameInfo.commandBuffer, 6, 1, 0, 0);
         }
 
         vkCmdDraw(frameInfo.commandBuffer, 6, 1, 0, 0);
     }
 
-    // temp func, just rotates lights
-    void PointLightSystem::update(BananFrameInfo &frameInfo) {
-        for (auto &kv : frameInfo.gameObjectManager.getGameObjects()) {
+    void PointLightSystem::update(BananFrameInfo &frameInfo, GlobalUbo &ubo) {
+        int lightIndex = 0;
+        for (auto &kv : frameInfo.gameObjects) {
             auto &obj = kv.second;
             if (obj.pointLight == nullptr) continue;
 
@@ -97,4 +102,3 @@ namespace Banan{
         createPipeline(renderPass);
     }
 }
-

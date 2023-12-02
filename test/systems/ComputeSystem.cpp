@@ -7,9 +7,9 @@
 #include <stdexcept>
 
 namespace Banan {
-    ComputeSystem::ComputeSystem(BananDevice &device, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device} {
+    ComputeSystem::ComputeSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device} {
         createPipelineLayout(layouts);
-        createPipelines();
+        createPipelines(renderPass);
     }
 
     ComputeSystem::~ComputeSystem() {
@@ -28,8 +28,9 @@ namespace Banan {
         }
     }
 
-    void ComputeSystem::createPipelines() {
+    void ComputeSystem::createPipelines(VkRenderPass renderPass) {
         PipelineConfigInfo pipelineConfig{};
+        pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
         bananPipelines.push_back(std::make_shared<BananPipeline>(bananDevice, "shaders/calc_normal_mats.comp.spv", pipelineConfig));
     }
@@ -38,14 +39,14 @@ namespace Banan {
         for (auto pipeline : bananPipelines) {
             pipeline->bind(frameInfo.commandBuffer);
             vkCmdBindDescriptorSets(frameInfo.commandBuffer,VK_PIPELINE_BIND_POINT_COMPUTE,pipelineLayout,0,1,&frameInfo.globalDescriptorSet,0,nullptr);
-            vkCmdDispatch(frameInfo.commandBuffer, static_cast<uint32_t>(frameInfo.gameObjectManager.getGameObjects().size() / 256) + 1, 1, 1);
+            vkCmdDispatch(frameInfo.commandBuffer, (frameInfo.gameObjects.size() / 256) + 1, 1, 1);
         }
     }
 
-    void ComputeSystem::reconstructPipeline(std::vector<VkDescriptorSetLayout> layouts) {
+    void ComputeSystem::reconstructPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) {
         vkDestroyPipelineLayout(bananDevice.device(), pipelineLayout, nullptr);
 
         createPipelineLayout(layouts);
-        createPipelines();
+        createPipelines(renderPass);
     }
 }

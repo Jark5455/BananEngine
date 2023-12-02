@@ -8,25 +8,16 @@
 #include <iostream>
 #include <set>
 #include <unordered_set>
-#include <algorithm>
-
-#include <SDL2/SDL_vulkan.h>
 
 namespace Banan {
-
-    #if defined(_MSC_VER)
-    #pragma warning(push)
-    #pragma warning(disable: 4100)
-    #endif
-
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, [[maybe_unused]] void *pUserData) {
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
         return VK_FALSE;
     }
 
-    static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
-        auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance,"vkCreateDebugUtilsMessengerEXT"));
+    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance,"vkCreateDebugUtilsMessengerEXT");
         if (func != nullptr) {
             return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
         } else {
@@ -34,19 +25,15 @@ namespace Banan {
         }
     }
 
-    #if defined(_MSC_VER)
-    #pragma warning(pop)
-    #endif
-
-    static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator) {
-        auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance,"vkDestroyDebugUtilsMessengerEXT"));
+    void DestroyDebugUtilsMessengerEXT(VkInstance instance,VkDebugUtilsMessengerEXT debugMessenger,const VkAllocationCallbacks *pAllocator) {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance,"vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr) {
             func(instance, debugMessenger, pAllocator);
         }
     }
 
 // class member functions
-    BananDevice::BananDevice(BananWindow &window) : bananWindow{window} {
+    BananDevice::BananDevice(BananWindow &window) : window{window} {
         createInstance();
         setupDebugMessenger();
         createSurface();
@@ -68,7 +55,6 @@ namespace Banan {
     }
 
     void BananDevice::createInstance() {
-
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available!");
         }
@@ -79,7 +65,7 @@ namespace Banan {
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "BananEngine";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_0;
+        appInfo.apiVersion = VK_API_VERSION_1_1;
 
         VkInstanceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -95,7 +81,7 @@ namespace Banan {
             createInfo.ppEnabledLayerNames = validationLayers.data();
 
             populateDebugMessengerCreateInfo(debugCreateInfo);
-            createInfo.pNext = &debugCreateInfo;
+            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
         } else {
             createInfo.enabledLayerCount = 0;
             createInfo.pNext = nullptr;
@@ -138,40 +124,25 @@ namespace Banan {
         QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<size_t> uniqueQueueFamilies = {indices.graphicsFamily, indices.presentFamily};
+        std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily, indices.presentFamily};
 
         float queuePriority = 1.0f;
         for (uint32_t queueFamily : uniqueQueueFamilies) {
             VkDeviceQueueCreateInfo queueCreateInfo = {};
             queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = static_cast<uint32_t>(queueFamily);
+            queueCreateInfo.queueFamilyIndex = queueFamily;
             queueCreateInfo.queueCount = 1;
             queueCreateInfo.pQueuePriorities = &queuePriority;
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+        VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
         indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
         indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
         indexingFeatures.runtimeDescriptorArray = VK_TRUE;
         indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
         indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
         indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
-        indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-
-        VkPhysicalDeviceBufferDeviceAddressFeatures deviceAddressFeatures{};
-        deviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
-        deviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
-        deviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_FALSE;
-        deviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_FALSE;
-        deviceAddressFeatures.pNext = &indexingFeatures;
-
-        VkPhysicalDeviceMultiviewFeaturesKHR multiviewFeatures{};
-        multiviewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR;
-        multiviewFeatures.multiview = VK_TRUE;
-        multiviewFeatures.multiviewGeometryShader = VK_FALSE;
-        multiviewFeatures.multiviewTessellationShader = VK_FALSE;
-        multiviewFeatures.pNext = &deviceAddressFeatures;
 
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -185,7 +156,7 @@ namespace Banan {
         createInfo.pEnabledFeatures = &deviceFeatures;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-        createInfo.pNext = &multiviewFeatures;
+        createInfo.pNext = &indexingFeatures;
 
         // might not really be necessary anymore because device specific validation layers
         // have been deprecated
@@ -218,7 +189,7 @@ namespace Banan {
         }
     }
 
-    void BananDevice::createSurface() { bananWindow.createWindowSurface(instance, &surface_); }
+    void BananDevice::createSurface() { window.createWindowSurface(instance, &surface_); }
 
     bool BananDevice::isDeviceSuitable(VkPhysicalDevice device) {
         QueueFamilyIndices indices = findQueueFamilies(device);
@@ -234,7 +205,17 @@ namespace Banan {
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-        return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+        VkPhysicalDeviceDescriptorIndexingFeatures indexing_features = {};
+        indexing_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+        indexing_features.pNext = nullptr;
+
+        VkPhysicalDeviceFeatures2 device_features2 = {};
+        device_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        device_features2.pNext = &indexing_features;
+
+        vkGetPhysicalDeviceFeatures2(device, &device_features2);
+
+        return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy && indexing_features.descriptorBindingPartiallyBound && indexing_features.runtimeDescriptorArray;
     }
 
     void BananDevice::populateDebugMessengerCreateInfo(
@@ -287,20 +268,13 @@ namespace Banan {
     std::vector<const char *> BananDevice::getRequiredExtensions() {
 
         unsigned int extensionCount = 0;
-        SDL_Vulkan_GetInstanceExtensions(bananWindow.getSDLWindow(), &extensionCount, nullptr);
+        SDL_Vulkan_GetInstanceExtensions(window.getSDLWindow(), &extensionCount, nullptr);
         std::vector<const char *> extensionNames(extensionCount);
-        SDL_Vulkan_GetInstanceExtensions(bananWindow.getSDLWindow(), &extensionCount, extensionNames.data());
+        SDL_Vulkan_GetInstanceExtensions(window.getSDLWindow(), &extensionCount, extensionNames.data());
 
-        // maintenance extension
-        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), VK_KHR_MAINTENANCE3_EXTENSION_NAME))
-            extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
-
-        if (std::count(deviceExtensions.begin(), deviceExtensions.end(), VK_KHR_DEVICE_GROUP_EXTENSION_NAME))
-            extensionNames.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-
-        if (enableValidationLayers)
+        if (enableValidationLayers) {
             extensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
 
         return extensionNames;
     }
@@ -357,7 +331,7 @@ namespace Banan {
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-        uint32_t i = 0;
+        int i = 0;
         for (const auto &queueFamily : queueFamilies) {
             if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 indices.graphicsFamily = i;
@@ -420,25 +394,12 @@ namespace Banan {
         throw std::runtime_error("failed to find supported format!");
     }
 
-    bool BananDevice::checkMemoryType(VkMemoryPropertyFlags props) {
+    uint32_t BananDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-            if ((memProperties.memoryTypes[i].propertyFlags & props) == props) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-
-    size_t BananDevice::findMemoryType(size_t typeFilter, VkMemoryPropertyFlags props) {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-        for (size_t i = 0; i < memProperties.memoryTypeCount; i++) {
             if ((typeFilter & (1 << i)) &&
-                (memProperties.memoryTypes[i].propertyFlags & props) == props) {
+                (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
                 return i;
             }
         }
@@ -464,14 +425,6 @@ namespace Banan {
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, propertiesflags);
-
-        VkMemoryAllocateFlagsInfo flags{};
-        flags.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-
-        if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-            flags.flags |= VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-            allocInfo.pNext = &flags;
-        }
 
         if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate vertex buffer memory!");
@@ -524,13 +477,13 @@ namespace Banan {
         endSingleTimeCommands(commandBuffer);
     }
 
-    void BananDevice::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, size_t mipLevels, size_t layerCount) {
+    void BananDevice::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
         transitionImageLayout(commandBuffer, image, format, oldLayout, newLayout, mipLevels, layerCount);
         endSingleTimeCommands(commandBuffer);
     }
 
-        void BananDevice::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, size_t mipLevels, size_t layerCount) {
+    void BananDevice::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount) {
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = oldLayout;
@@ -542,9 +495,9 @@ namespace Banan {
         barrier.image = image;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = static_cast<uint32_t>(mipLevels);
+        barrier.subresourceRange.levelCount = mipLevels;
         barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = static_cast<uint32_t>(layerCount);
+        barrier.subresourceRange.layerCount = layerCount;
 
         VkPipelineStageFlags sourceStage;
         VkPipelineStageFlags destinationStage;
@@ -651,10 +604,84 @@ namespace Banan {
                 throw std::runtime_error("Unsupported layout transition");
         }
 
+        /*if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+            if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT) {
+                barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+            }
+        } else {
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        }
+
+        if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+        } else {
+            throw std::runtime_error("unsupported layout transition!");
+        }*/
+
         vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
-    void BananDevice::copyBufferToImage(VkBuffer buffer, VkImage image, size_t width, size_t height, size_t layerCount) {
+    void BananDevice::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
         VkBufferImageCopy region{};
@@ -668,13 +695,13 @@ namespace Banan {
         region.imageSubresource.layerCount = layerCount;
 
         region.imageOffset = {0, 0, 0};
-        region.imageExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
+        region.imageExtent = {width, height, 1};
 
         vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         endSingleTimeCommands(commandBuffer);
     }
 
-    void BananDevice::generateMipMaps(VkImage image, size_t width, size_t height, size_t mipLevels) {
+    void BananDevice::generateMipMaps(VkImage image, uint32_t width, uint32_t height, uint32_t mipLevels) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
         VkImageMemoryBarrier barrier{};
@@ -690,7 +717,7 @@ namespace Banan {
         auto mipWidth = static_cast<int32_t>(width);
         auto mipHeight = static_cast<int32_t>(height);
 
-        for (size_t i = 1; i < mipLevels; i++) {
+        for (uint32_t i = 1; i < mipLevels; i++) {
 
             barrier.subresourceRange.baseMipLevel = i - 1;
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -718,7 +745,7 @@ namespace Banan {
 
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
@@ -762,10 +789,11 @@ namespace Banan {
     VkSampleCountFlagBits BananDevice::getMaxUsableSampleCount() {
 
         // for some reason first time queuing properties doesnt have limits idk why lmao
-        VkPhysicalDeviceProperties props{};
-        vkGetPhysicalDeviceProperties(physicalDevice, &props);
+        VkPhysicalDeviceProperties2 props{};
+        props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &props);
 
-        VkSampleCountFlags counts = props.limits.framebufferColorSampleCounts & props.limits.framebufferDepthSampleCounts;
+        VkSampleCountFlags counts = props.properties.limits.framebufferColorSampleCounts & props.properties.limits.framebufferDepthSampleCounts;
         if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
         if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
         if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }

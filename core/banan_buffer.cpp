@@ -17,7 +17,7 @@ namespace Banan {
         return instanceSize;
     }
 
-    BananBuffer::BananBuffer(BananDevice &device, VkDeviceSize size, size_t count, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryProps, VkDeviceSize minOffsetAlignment) : bananDevice{device}, instanceCount{count}, instanceSize{size}, usageFlags{usage}, memoryPropertyFlags{memoryProps} {
+    BananBuffer::BananBuffer(BananDevice &device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) : bananDevice{device}, instanceSize{instanceSize}, instanceCount{instanceCount}, usageFlags{usageFlags}, memoryPropertyFlags{memoryPropertyFlags} {
         alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
         bufferSize = alignmentSize * instanceCount;
         device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, memory);
@@ -47,7 +47,7 @@ namespace Banan {
         if (size == VK_WHOLE_SIZE) {
             memcpy(mapped, data, bufferSize);
         } else {
-            char *memOffset = static_cast<char *>(mapped);
+            char *memOffset = (char *)mapped;
             memOffset += offset;
             memcpy(memOffset, data, size);
         }
@@ -75,28 +75,20 @@ namespace Banan {
         return VkDescriptorBufferInfo{buffer, offset,size};
     }
 
-    void BananBuffer::writeToIndex(void *data, size_t index) {
+    void BananBuffer::writeToIndex(void *data, int index) {
         writeToBuffer(data, instanceSize, index * alignmentSize);
     }
 
-    VkResult BananBuffer::flushIndex(size_t index) {
+    VkResult BananBuffer::flushIndex(int index) {
         return flush(alignmentSize, index * alignmentSize);
     }
 
-    VkDescriptorBufferInfo BananBuffer::descriptorInfoForIndex(size_t index) {
+    VkDescriptorBufferInfo BananBuffer::descriptorInfoForIndex(int index) {
         return descriptorInfo(alignmentSize, index * alignmentSize);
     }
 
-    VkResult BananBuffer::invalidateIndex(size_t index) {
+    VkResult BananBuffer::invalidateIndex(int index) {
         return invalidate(alignmentSize, index * alignmentSize);
-    }
-
-    // TODO unsafe pointer arithmetic, fix later
-    void *BananBuffer::readIndex(size_t index) {
-        size_t offset = index * alignmentSize;
-        char *mem = static_cast<char *>(mapped);
-        mem += offset;
-        return static_cast<void *>(mem);
     }
 
     VkBuffer BananBuffer::getBuffer() {
@@ -107,7 +99,7 @@ namespace Banan {
         return mapped;
     }
 
-    size_t BananBuffer::getInstanceCount() const {
+    uint32_t BananBuffer::getInstanceCount() const {
         return instanceCount;
     }
 

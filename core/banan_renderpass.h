@@ -11,30 +11,30 @@
 
 namespace Banan {
     class BananRenderPass {
-        public:
-            BananRenderPass(BananDevice &device, std::vector<VkFormat> attachmentFormats, VkExtent2D extent, bool depthImage = true);
-            ~BananRenderPass();
+    public:
+        BananRenderPass(BananDevice &device, std::vector<VkFormat> attachmentFormats, VkExtent2D extent, bool depthImage = true);
+        ~BananRenderPass();
 
-            void beginRenderPass(VkCommandBuffer commandBuffer, bool flippedViewport = false);
-            void endRenderPass(VkCommandBuffer commandBuffer);
+        void beginRenderPass(VkCommandBuffer commandBuffer, bool flippedViewport = false);
+        void endRenderPass(VkCommandBuffer commandBuffer);
 
-            VkRenderPass getRenderPass();
+        VkRenderPass getRenderPass();
 
-            std::vector<std::shared_ptr<BananImage>> getFramebufferAttachments();
-        private:
+        std::vector<std::shared_ptr<BananImage>> getFramebufferAttachments();
+    private:
 
-            void createFramebuffer();
-            void createRenderpass();
+        void createFramebuffer();
+        void createRenderpass();
 
-            VkRenderPass renderPass;
-            VkFramebuffer frameBuffer;
+        VkRenderPass renderPass;
+        VkFramebuffer frameBuffer;
 
-            std::vector<std::shared_ptr<BananImage>> frameBufferAttachments;
-            std::vector<VkFormat> frameBufferFormats;
+        std::vector<std::shared_ptr<BananImage>> frameBufferAttachments;
+        std::vector<VkFormat> frameBufferFormats;
 
-            VkExtent2D extent;
+        VkExtent2D extent;
 
-            BananDevice &bananDevice;
+        BananDevice &bananDevice;
     };
 
 }

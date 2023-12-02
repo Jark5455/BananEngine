@@ -6,7 +6,6 @@
 
 #include "systems/PointLightSystem.h"
 #include "systems/SimpleRenderSystem.h"
-#include "systems/ShadowSystem.h"
 #include "systems/ComputeSystem.h"
 #include "systems/ProcrastinatedRenderSystem.h"
 
@@ -84,7 +83,7 @@ namespace Banan{
                 .addFlag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT)
                 .addFlag(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)
                 .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, gameObjects.size())
-                //.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                        //.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
         auto normalSetLayout = BananDescriptorSetLayout::Builder(bananDevice)
@@ -107,9 +106,9 @@ namespace Banan{
                 .addBinding(2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
-        //SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
+        // SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
-        //ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
+        // ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         ComputeSystem computeSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         ProcrastinatedRenderSystem procrastinatedRenderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}, {globalSetLayout->getDescriptorSetLayout(), procrastinatedSetLayout->getDescriptorSetLayout()}};
 
@@ -374,4 +373,3 @@ namespace Banan{
         }
     }
 }
-

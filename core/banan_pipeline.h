@@ -33,31 +33,31 @@ namespace Banan {
     };
 
     class BananPipeline {
-        public:
-            BananPipeline(BananDevice &device, const std::string &vertFilepath, const std::string &fragFilePath, const PipelineConfigInfo &configInfo);
-            BananPipeline(BananDevice &device, const std::string &computeFilepath, const PipelineConfigInfo &configInfo);
+    public:
+        BananPipeline(BananDevice &device, const std::string &vertFilepath, const std::string &fragFilePath, const PipelineConfigInfo &configInfo);
+        BananPipeline(BananDevice &device, const std::string &computeFilepath, const PipelineConfigInfo &configInfo);
 
-            ~BananPipeline();
+        ~BananPipeline();
 
-            BananPipeline(const BananPipeline&) = delete;
-            BananPipeline &operator=(const BananPipeline&) = delete;
+        BananPipeline(const BananPipeline&) = delete;
+        BananPipeline &operator=(const BananPipeline&) = delete;
 
-            void bind(VkCommandBuffer buffer);
-            static void defaultPipelineConfigInfo(PipelineConfigInfo &configInfo);
-            static void alphaBlendingPipelineConfigInfo(PipelineConfigInfo &configInfo);
-            static void shadowPipelineConfigInfo(PipelineConfigInfo &configInfo);
-            static void gbufferPipelineConfigInfo(PipelineConfigInfo &configInfo);
+        void bind(VkCommandBuffer buffer);
+        static void defaultPipelineConfigInfo(PipelineConfigInfo &configInfo);
+        static void alphaBlendingPipelineConfigInfo(PipelineConfigInfo &configInfo);
+        static void shadowPipelineConfigInfo(PipelineConfigInfo &configInfo);
+        static void gbufferPipelineConfigInfo(PipelineConfigInfo &configInfo);
 
-        private:
-            static std::vector<char> readFile(const std::string &filepath);
-            void createComputePipeline(const std::string &computeFilepath, const PipelineConfigInfo &info);
-            void createGraphicsPipeline(const std::string &vertFilePath, const std::string &fragFilePath, const PipelineConfigInfo &info);
-            void createShaderModule(const std::vector<char>& code, VkShaderModule *shaderModule);
+    private:
+        static std::vector<char> readFile(const std::string &filepath);
+        void createComputePipeline(const std::string &computeFilepath, const PipelineConfigInfo &info);
+        void createGraphicsPipeline(const std::string &vertFilePath, const std::string &fragFilePath, const PipelineConfigInfo &info);
+        void createShaderModule(const std::vector<char>& code, VkShaderModule *shaderModule);
 
-            BananDevice &bananDevice;
-            VkPipeline pipeline = VK_NULL_HANDLE;
-            VkShaderModule vertShaderModule = VK_NULL_HANDLE;
-            VkShaderModule fragShaderModule = VK_NULL_HANDLE;
-            VkShaderModule computeShaderModule = VK_NULL_HANDLE;
+        BananDevice &device;
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        VkShaderModule vertShaderModule = VK_NULL_HANDLE;
+        VkShaderModule fragShaderModule = VK_NULL_HANDLE;
+        VkShaderModule computeShaderModule = VK_NULL_HANDLE;
     };
 }

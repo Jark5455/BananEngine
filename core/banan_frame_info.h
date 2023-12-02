@@ -16,31 +16,40 @@ namespace Banan {
         alignas(16) glm::mat4 view{1.f};
         alignas(16) glm::mat4 inverseView{1.f};
         alignas(16) glm::vec4 ambientLightColor{1.f, 1.f, 1.f, 0.25f};
-        int numGameObjects;
-
-        int numPointLights;
-        uint64_t pointLightBaseRef;
+        alignas(4) int numGameObjects;
     };
 
-    struct PointLightData {
-        alignas(16) glm::vec3 position{1.f};
-        alignas(16) glm::vec3 color{1.f};
-        int intensity;
+    struct GameObjectData {
+        glm::vec4 position{1.f};
+        glm::vec4 rotation{1.f};
+        glm::vec4 scale{1.f};
+
+        alignas(16) glm::mat4 modelMatrix{1.f};
+        alignas(16) glm::mat4 normalMatrix{1.f};
+
+        int hasTexture;
+        int hasNormal;
+
+        int hasHeight;
+        float heightscale;
+        float parallaxBias;
+        float numLayers;
+        int parallaxmode;
+
+        int isPointLight;
     };
 
     struct BananFrameInfo {
-        size_t frameIndex;
+        int frameIndex;
         float frameTime;
         VkCommandBuffer commandBuffer;
         BananCamera &camera;
+        BananCamera &shadowCubeMapCamera;
         VkDescriptorSet globalDescriptorSet;
         VkDescriptorSet textureDescriptorSet;
-        VkDescriptorSet gameObjectDescriptorSet;
+        VkDescriptorSet normalDescriptorSet;
+        VkDescriptorSet heightDescriptorSet;
         VkDescriptorSet procrastinatedDescriptorSet;
-        VkDescriptorSet edgeDetectionDescriptorSet;
-        VkDescriptorSet blendWeightDescriptorSet;
-        VkDescriptorSet resolveDescriptorSet;
-
-        BananGameObjectManager &gameObjectManager;
+        BananGameObject::Map &gameObjects;
     };
 }

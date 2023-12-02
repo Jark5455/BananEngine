@@ -10,7 +10,7 @@ namespace Banan {
 
     class BananBuffer {
     public:
-        BananBuffer(BananDevice& device, VkDeviceSize instanceSize, size_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
+        BananBuffer(BananDevice& device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 1);
         ~BananBuffer();
 
         BananBuffer(const BananBuffer&) = delete;
@@ -24,15 +24,14 @@ namespace Banan {
         VkDescriptorBufferInfo descriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
-        void writeToIndex(void* data, size_t index);
-        VkResult flushIndex(size_t index);
-        VkDescriptorBufferInfo descriptorInfoForIndex(size_t index);
-        VkResult invalidateIndex(size_t index);
+        void writeToIndex(void* data, int index);
+        VkResult flushIndex(int index);
+        VkDescriptorBufferInfo descriptorInfoForIndex(int index);
+        VkResult invalidateIndex(int index);
 
         VkBuffer getBuffer();
-        void* readIndex(size_t index);
         void* getMappedMemory();
-        size_t getInstanceCount() const;
+        uint32_t getInstanceCount() const;
         VkDeviceSize getInstanceSize() const;
         VkDeviceSize getAlignmentSize() const;
         VkBufferUsageFlags getUsageFlags() const;
@@ -48,7 +47,7 @@ namespace Banan {
         VkDeviceMemory memory = VK_NULL_HANDLE;
 
         VkDeviceSize bufferSize;
-        size_t instanceCount;
+        uint32_t instanceCount;
         VkDeviceSize instanceSize;
         VkDeviceSize alignmentSize;
         VkBufferUsageFlags usageFlags;

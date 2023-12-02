@@ -1,6 +1,4 @@
 #version 450
-#extension GL_EXT_nonuniform_qualifier : enable
-#extension GL_EXT_buffer_reference : require
 
 layout (local_size_x = 256) in;
 
@@ -26,12 +24,11 @@ struct GameObject {
 
 layout(set = 0, binding = 0) uniform GlobalUbo {
     mat4 projection;
-    mat4 inverseProjection;
+    mat4 shadowProjection;
     mat4 view;
     mat4 inverseView;
     vec4 ambientLightColor;
     int numGameObjects;
-    int numPointLights;
 } ubo;
 
 layout(set = 0, binding = 1) buffer GameObjects {
@@ -43,7 +40,7 @@ void main()
     for (int i = 0; i < ubo.numGameObjects; i++) {
 
         if (ssbo.objects[i].isPointLight == 1)
-            continue;
+        continue;
 
         const float c3 = cos(ssbo.objects[i].rotation.b);
         const float s3 = sin(ssbo.objects[i].rotation.b);

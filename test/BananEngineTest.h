@@ -3,17 +3,16 @@
 //
 #pragma once
 
-#include <core/banan_descriptor.h>
-#include <core/banan_window.h>
-#include <core/banan_device.h>
-#include <core/banan_model.h>
-#include <core/banan_game_object.h>
-#include <core/banan_renderer.h>
+#include <banan_descriptor.h>
+#include <banan_window.h>
+#include <banan_device.h>
+#include <banan_model.h>
+#include <banan_game_object.h>
+#include <banan_renderer.h>
 
 #include <memory>
 #include <vector>
 
-int main();
 namespace Banan{
     class BananEngineTest {
     public:
@@ -27,6 +26,7 @@ namespace Banan{
         ~BananEngineTest();
 
         void run();
+
     private:
         void loadGameObjects();
 

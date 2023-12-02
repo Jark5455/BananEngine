@@ -8,7 +8,6 @@
 
 #include <string>
 #include <vector>
-#include <vulkan/vulkan.h>
 
 namespace Banan {
     struct SwapChainSupportDetails {
@@ -18,8 +17,8 @@ namespace Banan {
     };
 
     struct QueueFamilyIndices {
-        size_t graphicsFamily;
-        size_t presentFamily;
+        uint32_t graphicsFamily;
+        uint32_t presentFamily;
         bool graphicsFamilyHasValue = false;
         bool presentFamilyHasValue = false;
         bool isComplete() { return graphicsFamilyHasValue && presentFamilyHasValue; }
@@ -44,8 +43,7 @@ namespace Banan {
         VkSampleCountFlagBits getMsaaSampleCount() { return msaaSamples; }
 
         SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physicalDevice); }
-        bool checkMemoryType(VkMemoryPropertyFlags properties);
-        size_t findMemoryType(size_t typeFilter, VkMemoryPropertyFlags properties);
+        uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice); }
         VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
         VkSampleCountFlagBits getMaxUsableSampleCount();
@@ -54,10 +52,10 @@ namespace Banan {
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, size_t mipLevels, size_t layerCount);
-        void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, size_t mipLevels, size_t layerCount);
-        void copyBufferToImage(VkBuffer buffer, VkImage image, size_t width, size_t height, size_t layerCount);
-        void generateMipMaps(VkImage image, size_t width, size_t height, size_t mipLevels);
+        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount);
+        void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount);
+        void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount);
+        void generateMipMaps(VkImage image, uint32_t width, uint32_t height, uint32_t mipLevels);
 
         void createImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
 
@@ -83,7 +81,7 @@ namespace Banan {
         VkDebugUtilsMessengerEXT debugMessenger;
         VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties properties;
-        BananWindow &bananWindow;
+        BananWindow &window;
         VkCommandPool commandPool;
 
         VkDevice device_;
@@ -94,15 +92,6 @@ namespace Banan {
         VkSampleCountFlagBits msaaSamples;
 
         const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
-        const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                                                            VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-                                                            VK_KHR_MAINTENANCE2_EXTENSION_NAME,
-                                                            VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-                                                            VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
-                                                            VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-                                                            VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
-                                                            VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
-                                                            VK_KHR_MULTIVIEW_EXTENSION_NAME,
-                                                            VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
+        const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
     };
 }

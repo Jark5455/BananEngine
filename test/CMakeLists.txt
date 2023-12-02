@@ -1,10 +1,15 @@
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(BananEngineTest main.cpp BananEngineTest.cpp systems/SimpleRenderSystem.cpp systems/PointLightSystem.cpp KeyboardMovementController.cpp systems/ShadowSystem.cpp systems/ComputeSystem.cpp systems/ProcrastinatedRenderSystem.cpp systems/ProcrastinatedRenderSystem.h)
+add_executable(BananEngineTest main.cpp BananEngineTest.cpp systems/SimpleRenderSystem.cpp systems/PointLightSystem.cpp KeyboardMovementController.cpp systems/ComputeSystem.cpp systems/ProcrastinatedRenderSystem.cpp systems/ProcrastinatedRenderSystem.h)
 
 target_link_libraries(BananEngineTest PRIVATE BananEngine)
 
 include_directories(${CMAKE_SOURCE_DIR})
+
+find_package(Vulkan REQUIRED)
+if (NOT TARGET Vulkan::glslangValidator)
+    message(FATAL_ERROR "GLSL Compiler not found")
+endif()
 
 file(GLOB_RECURSE GLSL_SOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
@@ -14,11 +19,11 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES
 
 foreach(GLSL ${GLSL_SOURCE_FILES})
     get_filename_component(FILE_NAME ${GLSL} NAME)
-    set(SPIRV "${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv")
+    set(SPIRV "${CMAKE_CURRENT_BINARY_DIR}/shaders/${FILE_NAME}.spv")
     add_custom_command(
         OUTPUT ${SPIRV}
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/shaders/"
-        COMMAND glslangValidator -V ${GLSL} -o ${SPIRV}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders/"
+        COMMAND Vulkan::glslangValidator -V ${GLSL} -o ${SPIRV}
         DEPENDS ${GLSL})
     list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach(GLSL)
@@ -30,7 +35,7 @@ add_dependencies(BananEngineTest shaders)
 add_custom_command(TARGET BananEngineTest POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:BananEngineTest>/shaders/"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_BINARY_DIR}/shaders"
+        "${CMAKE_CURRENT_BINARY_DIR}/shaders"
         "$<TARGET_FILE_DIR:BananEngineTest>/shaders"
 )
 

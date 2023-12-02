@@ -12,88 +12,82 @@
 
 namespace Banan {
     class BananDescriptorSetLayout {
+    public:
+        class Builder {
         public:
-            class Builder {
-                public:
-                    Builder(BananDevice &device) : bananDevice{device} {}
-                    Builder &addFlag(VkDescriptorBindingFlagsEXT flag);
-                    Builder &addBinding(size_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, size_t count = 1);
-                    std::unique_ptr<BananDescriptorSetLayout> build() const;
-
-                private:
-                    BananDevice &bananDevice;
-                    std::unordered_map<size_t, VkDescriptorSetLayoutBinding> bindings{};
-                    std::vector<VkDescriptorBindingFlagsEXT> flags{};
-            };
-
-            BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<size_t, VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorBindingFlagsEXT> flags);
-            ~BananDescriptorSetLayout();
-            BananDescriptorSetLayout(const BananDescriptorSetLayout &) = delete;
-            BananDescriptorSetLayout &operator=(const BananDescriptorSetLayout &) = delete;
-
-            void resizeBinding(size_t binding, size_t newBindingCount);
-            VkDescriptorSetLayout getDescriptorSetLayout() const;
+            Builder(BananDevice &bananDevice) : bananDevice{bananDevice} {}
+            Builder &addFlag(VkDescriptorBindingFlagsEXT flag);
+            Builder &addBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count = 1);
+            std::unique_ptr<BananDescriptorSetLayout> build() const;
 
         private:
             BananDevice &bananDevice;
-            VkDescriptorSetLayout descriptorSetLayout;
-            std::unordered_map<size_t, VkDescriptorSetLayoutBinding> bindings;
+            std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
+            std::vector<VkDescriptorBindingFlagsEXT> flags{};
+        };
 
-            friend class BananDescriptorWriter;
+        BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorBindingFlagsEXT> flags);
+        ~BananDescriptorSetLayout();
+        BananDescriptorSetLayout(const BananDescriptorSetLayout &) = delete;
+        BananDescriptorSetLayout &operator=(const BananDescriptorSetLayout &) = delete;
+
+        VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
+
+    private:
+        BananDevice &bananDevice;
+        VkDescriptorSetLayout descriptorSetLayout;
+        std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings;
+
+        friend class BananDescriptorWriter;
     };
 
     class BananDescriptorPool {
+    public:
+        class Builder {
         public:
-            class Builder {
-                public:
-                    Builder(BananDevice &device) : bananDevice{device} {}
+            Builder(BananDevice &bananDevice) : bananDevice{bananDevice} {}
 
-                    Builder &addPoolSize(VkDescriptorType descriptorType, size_t count);
-                    Builder &setPoolFlags(VkDescriptorPoolCreateFlags flags);
-                    Builder &setMaxSets(size_t count);
-                    std::unique_ptr<BananDescriptorPool> build() const;
-
-                private:
-                    BananDevice &bananDevice;
-                    std::vector<VkDescriptorPoolSize> poolSizes{};
-                    size_t maxSets = 1000;
-                    VkDescriptorPoolCreateFlags poolFlags = 0;
-            };
-
-            BananDescriptorPool(BananDevice &bananDevice, size_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize> &poolSizes);
-            ~BananDescriptorPool();
-            BananDescriptorPool(const BananDescriptorPool &) = delete;
-            BananDescriptorPool &operator=(const BananDescriptorPool &) = delete;
-
-            bool allocateDescriptor(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<size_t> descriptorCount);
-            bool allocateDescriptor(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor);
-
-            void freeDescriptors(std::vector<VkDescriptorSet> &descriptors) const;
-            void resetPool();
+            Builder &addPoolSize(VkDescriptorType descriptorType, uint32_t count);
+            Builder &setPoolFlags(VkDescriptorPoolCreateFlags flags);
+            Builder &setMaxSets(uint32_t count);
+            std::unique_ptr<BananDescriptorPool> build() const;
 
         private:
             BananDevice &bananDevice;
-            VkDescriptorPool descriptorPool;
-            friend class BananDescriptorWriter;
+            std::vector<VkDescriptorPoolSize> poolSizes{};
+            uint32_t maxSets = 1000;
+            VkDescriptorPoolCreateFlags poolFlags = 0;
+        };
+
+        BananDescriptorPool(BananDevice &bananDevice, uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize> &poolSizes);
+        ~BananDescriptorPool();
+        BananDescriptorPool(const BananDescriptorPool &) = delete;
+        BananDescriptorPool &operator=(const BananDescriptorPool &) = delete;
+
+        bool allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<uint32_t> descriptorCount) const;
+        void freeDescriptors(std::vector<VkDescriptorSet> &descriptors) const;
+        void resetPool();
+
+    private:
+        BananDevice &bananDevice;
+        VkDescriptorPool descriptorPool;
+        friend class BananDescriptorWriter;
     };
 
     class BananDescriptorWriter {
-        public:
-            BananDescriptorWriter(BananDescriptorSetLayout &setLayout, BananDescriptorPool &pool);
+    public:
+        BananDescriptorWriter(BananDescriptorSetLayout &setLayout, BananDescriptorPool &pool);
 
-            BananDescriptorWriter &writeBuffer(size_t binding, VkDescriptorBufferInfo &bufferInfo);
-            BananDescriptorWriter &writeImage(size_t binding, VkDescriptorImageInfo &imageInfo);
-            BananDescriptorWriter &writeImages(size_t binding, const std::unordered_map<size_t, VkDescriptorImageInfo>& imageInfos);
-            BananDescriptorWriter &writeImages(size_t binding, const std::vector<VkDescriptorImageInfo>& imageInfos);
+        BananDescriptorWriter &writeBuffer(uint32_t binding, VkDescriptorBufferInfo *bufferInfo);
+        BananDescriptorWriter &writeImage(uint32_t binding, VkDescriptorImageInfo *imageInfo);
+        BananDescriptorWriter &writeImages(uint32_t binding, std::unordered_map<uint32_t, VkDescriptorImageInfo> &imageInfos);
 
-            bool build(VkDescriptorSet &set, std::vector<size_t> descriptorCount);
-            bool build(VkDescriptorSet &set);
+        bool build(VkDescriptorSet &set, std::vector<uint32_t> descriptorCount);
+        void overwrite(VkDescriptorSet &set);
 
-            void overwrite(VkDescriptorSet &set);
-
-        private:
-            BananDescriptorSetLayout &setLayout;
-            BananDescriptorPool &pool;
-            std::vector<VkWriteDescriptorSet> writes;
+    private:
+        BananDescriptorSetLayout &setLayout;
+        BananDescriptorPool &pool;
+        std::vector<VkWriteDescriptorSet> writes;
     };
 }

@@ -7,6 +7,9 @@
 #include "banan_device.h"
 #include "banan_image.h"
 
+// vulkan headers
+#include <vulkan/vulkan.h>
+
 // std lib headers
 #include <string>
 #include <vector>
@@ -16,36 +19,22 @@ namespace Banan {
     class BananSwapChain {
     public:
 
-        static constexpr size_t MAX_FRAMES_IN_FLIGHT = 2;
+        static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
         BananSwapChain(BananDevice &deviceRef, VkExtent2D extent, std::shared_ptr<BananSwapChain> previous);
         ~BananSwapChain();
 
         BananSwapChain(const BananSwapChain &) = delete;
         BananSwapChain &operator=(const BananSwapChain &) = delete;
 
-        VkFramebuffer getGeometryFramebuffer() { return geometryFramebuffer; }
-        VkRenderPass getGeometryRenderpass() { return geometryRenderpass; }
-
-        VkFramebuffer getEdgeDetectionFramebuffer() { return edgeDetectionFramebuffer; }
-        VkRenderPass getEdgeDetectionRenderPass() { return edgeDetectionRenderPass; }
-
-        VkFramebuffer getBlendWeightFramebuffer() { return blendFramebuffer; }
-        VkRenderPass getBlendWeightRenderpass() { return blendWeightRenderPass; }
-
-        VkFramebuffer getResolveFramebuffer(size_t index) { return resolveFramebuffers[index]; }
-        VkRenderPass getResolveRenderpass() { return resolveRenderPass; }
-
-        VkImageView getImageView(size_t index) { return swapChainImageViews[index]; }
+        VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
+        VkRenderPass getRenderPass() { return renderPass; }
+        VkImageView getImageView(int index) { return swapChainImageViews[index]; }
         size_t imageCount() { return swapChainImages.size(); }
         VkFormat getSwapChainImageFormat() { return swapChainImageFormat; }
         VkExtent2D getSwapChainExtent() { return swapChainExtent; }
-        size_t width() { return static_cast<size_t>(swapChainExtent.width); }
-        size_t height() { return static_cast<size_t>(swapChainExtent.height); }
-
+        uint32_t width() { return swapChainExtent.width; }
+        uint32_t height() { return swapChainExtent.height; }
         std::vector<std::shared_ptr<BananImage>> gbuffer() { return gBufferAttachments; }
-        std::shared_ptr<BananImage> geometry() { return geometryImage; }
-        std::shared_ptr<BananImage> edge() { return edgeImage; }
-        std::shared_ptr<BananImage> blend() { return blendImage; }
 
         float extentAspectRatio() {
             return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
@@ -53,21 +42,18 @@ namespace Banan {
 
         VkFormat findDepthFormat();
 
-        VkResult acquireNextImage(size_t *imageIndex);
-        VkResult submitCommandBuffers(const VkCommandBuffer *buffers, const size_t *imageIndex);
+        VkResult acquireNextImage(uint32_t *imageIndex);
+        VkResult submitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex);
 
         bool compareSwapFormats(const BananSwapChain &otherSwapChain) const;
 
     private:
         void createSwapChain();
         void createImageViews();
-        void createGeometryRenderPass();
-        void createGeometryFramebuffer();
+        void createRenderPass();
+        void createFramebuffers();
         void createSyncObjects();
         void createGBufferResources();
-        void createResolveResources();
-        void createResolveRenderpasses();
-        void createResolveFramebuffers();
 
         // Helper functions
         VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
@@ -78,22 +64,10 @@ namespace Banan {
         VkFormat swapChainDepthFormat;
         VkExtent2D swapChainExtent;
 
-        VkFramebuffer geometryFramebuffer;
-        VkRenderPass geometryRenderpass;
-
-        VkFramebuffer edgeDetectionFramebuffer;
-        VkFramebuffer blendFramebuffer;
-        std::vector<VkFramebuffer> resolveFramebuffers;
-
-        VkRenderPass edgeDetectionRenderPass;
-        VkRenderPass blendWeightRenderPass;
-        VkRenderPass resolveRenderPass;
+        std::vector<VkFramebuffer> swapChainFramebuffers;
+        VkRenderPass renderPass;
 
         std::vector<std::shared_ptr<BananImage>> gBufferAttachments;
-
-        std::shared_ptr<BananImage> geometryImage;
-        std::shared_ptr<BananImage> edgeImage;
-        std::shared_ptr<BananImage> blendImage;
 
         std::vector<VkImage> swapChainImages;
         std::vector<VkImageView> swapChainImageViews;

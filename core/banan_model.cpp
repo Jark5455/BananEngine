@@ -13,13 +13,13 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 #include <openexr.h>
 
+#include <ImathBox.h>
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
-#include <Imath/ImathBox.h>
 
 using namespace Imf;
 using namespace Imath;

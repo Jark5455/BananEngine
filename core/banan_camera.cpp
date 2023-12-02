@@ -137,7 +137,7 @@ namespace Banan {
         inverseViewMatrix[3][2] = position.z;
     }
 
-     const glm::vec3 BananCamera::getPosition() const {
+    const glm::vec3 BananCamera::getPosition() const {
         return glm::vec3(inverseViewMatrix[3]);
     }
 }

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+
 #include <SDL2/SDL.h>
+#include <SDL_vulkan.h>
 
 namespace Banan {
     class BananWindow {
@@ -9,7 +11,7 @@ namespace Banan {
     public:
         BananWindow();
 
-        BananWindow(size_t w, size_t h);
+        BananWindow(int w, int h);
         ~BananWindow();
 
         BananWindow(const BananWindow &) = delete;
@@ -20,8 +22,8 @@ namespace Banan {
         SDL_Window *getSDLWindow() const;
 
     private:
-        size_t width;
-        size_t height;
+        int width;
+        int height;
 
         SDL_Window *window;
     };
