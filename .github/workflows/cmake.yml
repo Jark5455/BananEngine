@@ -37,7 +37,7 @@ jobs:
       run: conan profile detect --force
 
     - name: Conan Install Libraries Debug
-      run: conan install . --output-folder=${{github.workspace}}/build-linux/build-debug --build=missing -c tools.system.package_manager:mode=install --settings=build_type=Debug
+      run: conan install . --output-folder=${{github.workspace}}/build-linux/build-debug --build=missing -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True --settings=build_type=Debug
       
     - name: Configure CMake Build Debug
       run: cmake -B ${{github.workspace}}/build-linux/build-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -46,7 +46,7 @@ jobs:
       run: cmake --build ${{github.workspace}}/build-linux/build-debug
 
     - name: Conan Install Libraries Release
-      run: conan install . --output-folder=${{github.workspace}}/build-linux/build-release -c tools.system.package_manager:mode=install --build=missing
+      run: conan install . --output-folder=${{github.workspace}}/build-linux/build-release -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True --build=missing
       
     - name: Configure CMake Build Release
       run: cmake -B ${{github.workspace}}/build-linux/build-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
