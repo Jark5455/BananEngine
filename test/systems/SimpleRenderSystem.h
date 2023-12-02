@@ -3,28 +3,28 @@
 //
 #pragma once
 
-#include <banan_camera.h>
-#include <banan_pipeline.h>
-#include <banan_device.h>
-#include <banan_game_object.h>
-#include <banan_frame_info.h>
+#include <core/banan_camera.h>
+#include <core/banan_pipeline.h>
+#include <core/banan_device.h>
+#include <core/banan_game_object.h>
+#include <core/banan_frame_info.h>
 
 #include <memory>
 #include <vector>
 
 namespace Banan{
-    class PointLightSystem {
+    class SimpleRenderSystem {
         public:
-            PointLightSystem(const PointLightSystem &) = delete;
-            PointLightSystem &operator=(const PointLightSystem &) = delete;
+            SimpleRenderSystem(const SimpleRenderSystem &) = delete;
+            SimpleRenderSystem &operator=(const SimpleRenderSystem &) = delete;
 
-            PointLightSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
-            ~PointLightSystem();
+            SimpleRenderSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
+            ~SimpleRenderSystem();
 
-            void update(BananFrameInfo &frameInfo);
             void render(BananFrameInfo &frameInfo);
 
             void reconstructPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts);
+
 
     private:
             void createPipelineLayout(std::vector<VkDescriptorSetLayout> layouts);

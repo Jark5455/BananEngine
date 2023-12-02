@@ -10,6 +10,8 @@
 #include <unordered_set>
 #include <algorithm>
 
+#include <SDL2/SDL_vulkan.h>
+
 namespace Banan {
 
     #if defined(_MSC_VER)
@@ -66,6 +68,7 @@ namespace Banan {
     }
 
     void BananDevice::createInstance() {
+
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available!");
         }

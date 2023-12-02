@@ -1,9 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-
 #include <SDL2/SDL.h>
-#include <SDL_vulkan.h>
 
 namespace Banan {
     class BananWindow {

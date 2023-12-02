@@ -7,9 +7,6 @@
 #include "banan_device.h"
 #include "banan_image.h"
 
-// vulkan headers
-#include <vulkan/vulkan.h>
-
 // std lib headers
 #include <string>
 #include <vector>

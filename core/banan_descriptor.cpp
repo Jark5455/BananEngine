@@ -8,16 +8,15 @@
 #include <cassert>
 #include <stdexcept>
 #include <algorithm>
-#include <utility>
 
 namespace Banan {
 
-    BananDescriptorSetLayout::Builder &BananDescriptorSetLayout::Builder::addBinding(size_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, size_t count) {
+    BananDescriptorSetLayout::Builder &BananDescriptorSetLayout::Builder::addBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags, uint32_t count) {
         assert(bindings.count(binding) == 0 && "Binding already in use");
         VkDescriptorSetLayoutBinding layoutBinding{};
-        layoutBinding.binding = static_cast<uint32_t>(binding);
+        layoutBinding.binding = binding;
         layoutBinding.descriptorType = descriptorType;
-        layoutBinding.descriptorCount = static_cast<uint32_t>(count);
+        layoutBinding.descriptorCount = count;
         layoutBinding.stageFlags = stageFlags;
         bindings[binding] = layoutBinding;
         return *this;
@@ -32,7 +31,7 @@ namespace Banan {
         return *this;
     }
 
-    BananDescriptorSetLayout::BananDescriptorSetLayout(BananDevice &device, std::unordered_map<size_t, VkDescriptorSetLayoutBinding> bindingsMap, std::vector<VkDescriptorBindingFlagsEXT> flags) : bananDevice{device}, bindings{std::move(bindingsMap)} {
+    BananDescriptorSetLayout::BananDescriptorSetLayout(BananDevice &bananDevice, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorBindingFlagsEXT> flags) : bananDevice{bananDevice}, bindings{bindings} {
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
         for (auto kv : bindings) {
             setLayoutBindings.insert(setLayoutBindings.begin(), kv.second);
@@ -48,10 +47,7 @@ namespace Banan {
         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
         descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
-
-        if (std::count(flags.begin(), flags.end(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) > 0)
-            descriptorSetLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-
+        if (std::count(flags.begin(), flags.end(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) > 0) descriptorSetLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
         descriptorSetLayoutInfo.pNext = flags.empty() ? nullptr : &descriptorSetLayoutBindingFlagsCreateInfoExt;
 
         if (vkCreateDescriptorSetLayout(bananDevice.device(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
@@ -59,20 +55,12 @@ namespace Banan {
         }
     }
 
-    void BananDescriptorSetLayout::resizeBinding(size_t binding, size_t newBindingCount) {
-
-    }
-
-    VkDescriptorSetLayout BananDescriptorSetLayout::getDescriptorSetLayout() const {
-        return descriptorSetLayout;
-    }
-
     BananDescriptorSetLayout::~BananDescriptorSetLayout() {
         vkDestroyDescriptorSetLayout(bananDevice.device(), descriptorSetLayout, nullptr);
     }
 
-    BananDescriptorPool::Builder &BananDescriptorPool::Builder::addPoolSize(VkDescriptorType descriptorType, size_t count) {
-        poolSizes.push_back({descriptorType, static_cast<uint32_t>(count)});
+    BananDescriptorPool::Builder &BananDescriptorPool::Builder::addPoolSize(VkDescriptorType descriptorType, uint32_t count) {
+        poolSizes.push_back({descriptorType, count});
         return *this;
     }
 
@@ -80,7 +68,7 @@ namespace Banan {
         poolFlags = flags;
         return *this;
     }
-    BananDescriptorPool::Builder &BananDescriptorPool::Builder::setMaxSets(size_t count) {
+    BananDescriptorPool::Builder &BananDescriptorPool::Builder::setMaxSets(uint32_t count) {
         maxSets = count;
         return *this;
     }
@@ -90,7 +78,7 @@ namespace Banan {
     }
 
 
-    BananDescriptorPool::BananDescriptorPool(BananDevice &device, size_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize> &poolSizes) : bananDevice{device} {
+    BananDescriptorPool::BananDescriptorPool(BananDevice &bananDevice, uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize> &poolSizes) : bananDevice{bananDevice} {
         VkDescriptorPoolCreateInfo descriptorPoolInfo{};
         descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -108,7 +96,8 @@ namespace Banan {
         vkDestroyDescriptorPool(bananDevice.device(), descriptorPool, nullptr);
     }
 
-    bool BananDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<size_t> descriptorCount) {
+    bool BananDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor, std::vector<uint32_t> descriptorCount) const {
+
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;
@@ -116,31 +105,17 @@ namespace Banan {
         allocInfo.descriptorSetCount = 1;
 
         VkDescriptorSetVariableDescriptorCountAllocateInfoEXT descriptorSetVariableDescriptorCountAllocateInfoExt{};
-        descriptorSetVariableDescriptorCountAllocateInfoExt.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
-        descriptorSetVariableDescriptorCountAllocateInfoExt.descriptorSetCount = static_cast<uint32_t>(descriptorCount.size());
-        descriptorSetVariableDescriptorCountAllocateInfoExt.pDescriptorCounts = reinterpret_cast<uint32_t *>(descriptorCount.data());
 
-        allocInfo.pNext = descriptorCount.empty() ? nullptr : &descriptorSetVariableDescriptorCountAllocateInfoExt;
+        if (!descriptorCount.empty()) {
+            descriptorSetVariableDescriptorCountAllocateInfoExt.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
+            descriptorSetVariableDescriptorCountAllocateInfoExt.descriptorSetCount = descriptorCount.size();
+            descriptorSetVariableDescriptorCountAllocateInfoExt.pDescriptorCounts = descriptorCount.data();
+            allocInfo.pNext = &descriptorSetVariableDescriptorCountAllocateInfoExt;
+        }
 
         if (vkAllocateDescriptorSets(bananDevice.device(), &allocInfo, &descriptor) != VK_SUCCESS) {
             return false;
         }
-
-        return true;
-    }
-
-    bool BananDescriptorPool::allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor) {
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = descriptorPool;
-        allocInfo.pSetLayouts = &descriptorSetLayout;
-        allocInfo.descriptorSetCount = 1;
-        allocInfo.pNext = nullptr;
-
-        if (vkAllocateDescriptorSets(bananDevice.device(), &allocInfo, &descriptor) != VK_SUCCESS) {
-            return false;
-        }
-
         return true;
     }
 
@@ -152,25 +127,9 @@ namespace Banan {
         vkResetDescriptorPool(bananDevice.device(), descriptorPool, 0);
     }
 
-    BananDescriptorWriter::BananDescriptorWriter(BananDescriptorSetLayout &descriptorSetLayout, BananDescriptorPool &descriptorPool) : setLayout{descriptorSetLayout}, pool{descriptorPool} {}
+    BananDescriptorWriter::BananDescriptorWriter(BananDescriptorSetLayout &setLayout, BananDescriptorPool &pool) : setLayout{setLayout}, pool{pool} {}
 
-    BananDescriptorWriter &BananDescriptorWriter::writeBuffer(size_t binding, VkDescriptorBufferInfo &bufferInfo) {
-        assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
-        auto &bindingDescription = setLayout.bindings[binding];
-        assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
-
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.descriptorType = bindingDescription.descriptorType;
-        write.dstBinding = static_cast<uint32_t>(binding);
-        write.pBufferInfo = &bufferInfo;
-        write.descriptorCount = 1;
-
-        writes.push_back(write);
-        return *this;
-    }
-
-    BananDescriptorWriter &BananDescriptorWriter::writeImage(size_t binding, VkDescriptorImageInfo &imageInfo) {
+    BananDescriptorWriter &BananDescriptorWriter::writeBuffer(uint32_t binding, VkDescriptorBufferInfo *bufferInfo) {
         assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
         auto &bindingDescription = setLayout.bindings[binding];
         assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
@@ -179,20 +138,36 @@ namespace Banan {
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.descriptorType = bindingDescription.descriptorType;
         write.dstBinding = binding;
-        write.pImageInfo = &imageInfo;
+        write.pBufferInfo = bufferInfo;
         write.descriptorCount = 1;
 
         writes.push_back(write);
         return *this;
     }
 
-    BananDescriptorWriter &BananDescriptorWriter::writeImages(size_t binding, const std::unordered_map<size_t , VkDescriptorImageInfo>& imageInfos) {
+    BananDescriptorWriter &BananDescriptorWriter::writeImage(uint32_t binding, VkDescriptorImageInfo *imageInfo) {
+        assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
+        auto &bindingDescription = setLayout.bindings[binding];
+        assert(bindingDescription.descriptorCount == 1 && "Binding single descriptor info, but binding expects multiple");
+
+        VkWriteDescriptorSet write{};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.descriptorType = bindingDescription.descriptorType;
+        write.dstBinding = binding;
+        write.pImageInfo = imageInfo;
+        write.descriptorCount = 1;
+
+        writes.push_back(write);
+        return *this;
+    }
+
+    BananDescriptorWriter &BananDescriptorWriter::writeImages(uint32_t binding, std::unordered_map<uint32_t, VkDescriptorImageInfo> &imageInfos) {
         auto &bindingDescription = setLayout.bindings[binding];
         for (auto &kv : imageInfos) {
             VkWriteDescriptorSet write{};
-            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.sType = write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write.descriptorType = bindingDescription.descriptorType;
-            write.dstBinding = static_cast<uint32_t>(binding);
+            write.dstBinding = binding;
             write.dstArrayElement = kv.first;
             write.pImageInfo = &kv.second;
             write.descriptorCount = 1;
@@ -203,33 +178,8 @@ namespace Banan {
         return *this;
     }
 
-    BananDescriptorWriter &BananDescriptorWriter::writeImages(size_t binding, const std::vector<VkDescriptorImageInfo>& imageInfos) {
-        auto &bindingDescription = setLayout.bindings[binding];
-
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.descriptorType = bindingDescription.descriptorType;
-        write.dstBinding = static_cast<uint32_t>(binding);
-        write.dstArrayElement = 0;
-        write.pImageInfo = imageInfos.data();
-        write.descriptorCount = static_cast<uint32_t>(imageInfos.size());
-
-        writes.push_back(write);
-
-        return *this;
-    }
-
-    bool BananDescriptorWriter::build(VkDescriptorSet &set, std::vector<size_t> descriptorCount) {
-        bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set, std::move(descriptorCount));
-        if (!success) {
-            return false;
-        }
-        overwrite(set);
-        return true;
-    }
-
-    bool BananDescriptorWriter::build(VkDescriptorSet &set) {
-        bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set);
+    bool BananDescriptorWriter::build(VkDescriptorSet &set, std::vector<uint32_t> descriptorCount) {
+        bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set, descriptorCount);
         if (!success) {
             return false;
         }
@@ -242,6 +192,7 @@ namespace Banan {
             write.dstSet = set;
         }
 
-        vkUpdateDescriptorSets(pool.bananDevice.device(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+        vkUpdateDescriptorSets(pool.bananDevice.device(), writes.size(), writes.data(), 0, nullptr);
     }
+
 }

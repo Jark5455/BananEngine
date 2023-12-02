@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <vulkan/vulkan.h>
 
 namespace Banan {
     struct SwapChainSupportDetails {

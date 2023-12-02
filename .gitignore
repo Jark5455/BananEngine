@@ -1,5 +1,4 @@
-/cmake-build-release/
 /cmake-build-debug/
+/cmake-build-release/
 /.idea/
-/.env.cmake/
-/Tests/banan_assets/
+/test/banan_assets/
