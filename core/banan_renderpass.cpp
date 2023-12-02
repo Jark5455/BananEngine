@@ -39,16 +39,16 @@ namespace Banan {
             bananDevice.transitionImageLayout(frameBufferAttachments.back()->getImageHandle(), frameBufferFormats.back(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
         }
 
-        VkImageView attachments[frameBufferAttachments.size()];
-        for (int i = 0; i < frameBufferAttachments.size(); i++) {
+        std::vector<VkImageView> attachments{frameBufferAttachments.size()};
+        for (int i = 0; i < attachments.size(); i++) {
             attachments[i] = frameBufferAttachments[i]->descriptorInfo().imageView;
         }
 
         VkFramebufferCreateInfo fbufCreateInfo{};
         fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         fbufCreateInfo.renderPass = renderPass;
-        fbufCreateInfo.attachmentCount = frameBufferAttachments.size();
-        fbufCreateInfo.pAttachments = attachments;
+        fbufCreateInfo.attachmentCount = attachments.size();
+        fbufCreateInfo.pAttachments = attachments.data();
         fbufCreateInfo.width = extent.width;
         fbufCreateInfo.height = extent.height;
         fbufCreateInfo.layers = 1;
