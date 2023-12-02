@@ -60,7 +60,7 @@ namespace Banan {
 
     void BananRenderPass::createRenderpass() {
         VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
-        VkAttachmentDescription osAttachments[frameBufferFormats.size()];
+        std::vector<VkAttachmentDescription> osAttachments{frameBufferFormats.size()};
 
         for (int i = 0; i < frameBufferFormats.size(); i++) {
             osAttachments[i].format = frameBufferFormats[i];
@@ -122,8 +122,8 @@ namespace Banan {
 
         VkRenderPassCreateInfo renderPassCreateInfo{};
         renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassCreateInfo.attachmentCount = frameBufferFormats.size();
-        renderPassCreateInfo.pAttachments = osAttachments;
+        renderPassCreateInfo.attachmentCount = osAttachments.size();
+        renderPassCreateInfo.pAttachments = osAttachments.data();
         renderPassCreateInfo.subpassCount = 1;
         renderPassCreateInfo.pSubpasses = &subpass;
         renderPassCreateInfo.dependencyCount = 2;
