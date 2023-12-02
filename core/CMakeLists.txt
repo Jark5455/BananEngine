@@ -3,6 +3,7 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(SDL2 REQUIRED)
 find_package(Vulkan REQUIRED)
 
+# TODO eventually phase out the following dependencies
 find_package(assimp REQUIRED)
 find_package(stb REQUIRED)
 find_package(OpenEXR REQUIRED)
@@ -30,4 +31,4 @@ target_link_libraries(BananEngine OpenEXR::OpenEXR)
 target_link_libraries(BananEngine Imath::Imath)
 target_link_libraries(BananEngine Vulkan::Vulkan)
 
-include_directories(${OpenEXR_INCLUDE_DIRS} ${Imath_INCLUDE_DIRS})
+include_directories(${OpenEXR_INCLUDE_DIRS} ${Imath_INCLUDE_DIRS} ${stb_INCLUDE_DIRS})
