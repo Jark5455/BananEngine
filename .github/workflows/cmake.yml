@@ -90,23 +90,24 @@ jobs:
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
           
-          cmake -B ${{github.workspace}}/build-windows/build-debug -DCMAKE_BUILD_TYPE=Debug -T ClangCL
+          cmake -B ${{github.workspace}}/build-windows/build-debug -T ClangCL
 
       - name: Compile BananEngine Build Debug
-        run: cmake --build ${{github.workspace}}/build-windows/build-debug
+        run: cmake --build ${{github.workspace}}/build-windows/build-debug --config Debug
+
+      - name: Conan Install Libraries Release
+        run: conan install . --output-folder=${{github.workspace}}/build-windows/build-release --build=missing
         
       - name: Configure CMake Build Release
         run: |
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
           
-          cmake -B ${{github.workspace}}/build-windows/build-release -DCMAKE_BUILD_TYPE=Release -T ClangCL
+          cmake -B ${{github.workspace}}/build-windows/build-release -T ClangCL
 
-      - name: Conan Install Libraries Release
-        run: conan install . --output-folder=${{github.workspace}}/build-windows/build-release --build=missing
         
       - name: Compile BananEngine Build Release
-        run: cmake --build ${{github.workspace}}/build-windows/build-release
+        run: cmake --build ${{github.workspace}}/build-windows/build-release --config Release
         
       - name: Archive compilation output
         uses: actions/upload-artifact@v3
