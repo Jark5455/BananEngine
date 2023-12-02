@@ -3,11 +3,11 @@
 //
 #pragma once
 
-#include <banan_camera.h>
-#include <banan_pipeline.h>
-#include <banan_device.h>
-#include <banan_game_object.h>
-#include <banan_frame_info.h>
+#include <core/banan_camera.h>
+#include <core/banan_pipeline.h>
+#include <core/banan_device.h>
+#include <core/banan_game_object.h>
+#include <core/banan_frame_info.h>
 
 #include <memory>
 #include <vector>

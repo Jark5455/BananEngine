@@ -9,7 +9,6 @@
 
 int main() {
     Banan::BananEngineTest app{};
-    auto logger = app.getLogger();
 
     try {
         app.run();

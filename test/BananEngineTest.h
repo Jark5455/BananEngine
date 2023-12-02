@@ -3,13 +3,12 @@
 //
 #pragma once
 
-#include <banan_descriptor.h>
-#include <banan_window.h>
-#include <banan_device.h>
-#include <banan_model.h>
-#include <banan_game_object.h>
-#include <banan_renderer.h>
-#include <banan_logger.h>
+#include <core/banan_descriptor.h>
+#include <core/banan_window.h>
+#include <core/banan_device.h>
+#include <core/banan_model.h>
+#include <core/banan_game_object.h>
+#include <core/banan_renderer.h>
 
 #include <memory>
 #include <vector>
@@ -28,7 +27,6 @@ namespace Banan{
         ~BananEngineTest();
 
         void run();
-        std::shared_ptr<BananLogger> getLogger();
     private:
         void loadGameObjects();
 
@@ -42,7 +40,6 @@ namespace Banan{
         std::unique_ptr<BananDescriptorPool> heightPool;
         std::unique_ptr<BananDescriptorPool> procrastinatedPool;
 
-        std::shared_ptr<BananLogger> bananLogger;
         BananGameObject::Map gameObjects;
 
         std::unordered_map<uint32_t, VkDescriptorImageInfo> gameObjectsTextureInfo;

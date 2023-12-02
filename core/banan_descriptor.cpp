@@ -104,8 +104,9 @@ namespace Banan {
         allocInfo.pSetLayouts = &descriptorSetLayout;
         allocInfo.descriptorSetCount = 1;
 
+        VkDescriptorSetVariableDescriptorCountAllocateInfoEXT descriptorSetVariableDescriptorCountAllocateInfoExt{};
+
         if (!descriptorCount.empty()) {
-            VkDescriptorSetVariableDescriptorCountAllocateInfoEXT descriptorSetVariableDescriptorCountAllocateInfoExt{};
             descriptorSetVariableDescriptorCountAllocateInfoExt.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
             descriptorSetVariableDescriptorCountAllocateInfoExt.descriptorSetCount = descriptorCount.size();
             descriptorSetVariableDescriptorCountAllocateInfoExt.pDescriptorCounts = descriptorCount.data();

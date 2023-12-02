@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <SDL2/SDL_vulkan.h>
+
 namespace Banan {
     BananWindow::BananWindow() {
         SDL_GetWindowSize(window, &width, &height);
@@ -19,6 +21,7 @@ namespace Banan {
     }
 
     void BananWindow::createWindowSurface(VkInstance instance, VkSurfaceKHR *surface) {
+
         if (SDL_Vulkan_CreateSurface(window, instance, surface) != SDL_TRUE) {
             throw std::runtime_error("failed to create window surface!");
         }

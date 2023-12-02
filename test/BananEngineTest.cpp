@@ -4,11 +4,11 @@
 
 #include "BananEngineTest.h"
 
-#include "Systems/PointLightSystem.h"
-#include "Systems/SimpleRenderSystem.h"
-#include "Systems/ShadowSystem.h"
-#include "Systems/ComputeSystem.h"
-#include "Systems/ProcrastinatedRenderSystem.h"
+#include "systems/PointLightSystem.h"
+#include "systems/SimpleRenderSystem.h"
+#include "systems/ShadowSystem.h"
+#include "systems/ComputeSystem.h"
+#include "systems/ProcrastinatedRenderSystem.h"
 
 #include "KeyboardMovementController.h"
 
@@ -18,8 +18,6 @@
 
 #include <algorithm>
 #include <chrono>
-
-#include <banan_logger.h>
 
 #include <sys/resource.h>
 
@@ -374,10 +372,6 @@ namespace Banan{
                 }
             }
         }
-    }
-
-    std::shared_ptr<BananLogger> BananEngineTest::getLogger() {
-        return bananLogger;
     }
 }
 
