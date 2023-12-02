@@ -23,8 +23,6 @@ jobs:
     steps:
     
     - uses: actions/checkout@v3
-      with:
-        submodules: recursive
     
     - name: Install Dependencies
       run: |
@@ -32,21 +30,20 @@ jobs:
         sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
         sudo apt update
         sudo apt install vulkan-sdk libglm-dev clang
-        
-        ${{github.workspace}}/vcpkg/bootstrap-vcpkg.sh
-        ${{github.workspace}}/vcpkg/vcpkg integrate install
 
-        ${{github.workspace}}/vcpkg/vcpkg install assimp:x64-linux
-        ${{github.workspace}}/vcpkg/vcpkg install openexr:x64-linux
-        ${{github.workspace}}/vcpkg/vcpkg install sdl2[vulkan]:x64-linux
-        ${{github.workspace}}/vcpkg/vcpkg install stb:x64-linux
-        ${{github.workspace}}/vcpkg/vcpkg install vulkan:x64-linux
+        pip install conan
 
+    - name: Conan Install Libraries Debug
+      run: conan install . --output-folder=${{github.workspace}}/build-linux/build-debug --build=missing --settings=build_type=Debug
+      
     - name: Configure CMake Build Debug
       run: cmake -B ${{github.workspace}}/build-linux/build-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
       
     - name: Compile BananEngine Build Debug
       run: cmake --build ${{github.workspace}}/build-linux/build-debug
+
+    - name: Conan Install Libraries Release
+      run: conan install . --output-folder=${{github.workspace}}/build-linux/build-release --build=missing
       
     - name: Configure CMake Build Release
       run: cmake -B ${{github.workspace}}/build-linux/build-release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -76,16 +73,12 @@ jobs:
           
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
           $env:VULKAN_SDK = "C:\VulkanSDK\$var\"
-          
-          ${{github.workspace}}\vcpkg\bootstrap-vcpkg.bat
-          ${{github.workspace}}\vcpkg\vcpkg.exe integrate install
-          
-          ${{github.workspace}}\vcpkg\vcpkg.exe install assimp:x64-windows
-          ${{github.workspace}}\vcpkg\vcpkg.exe install openexr:x64-windows
-          ${{github.workspace}}\vcpkg\vcpkg.exe install sdl2[vulkan]:x64-windows
-          ${{github.workspace}}\vcpkg\vcpkg.exe install stb:x64-windows
-          ${{github.workspace}}\vcpkg\vcpkg.exe install vulkan:x64-windows
-          
+
+          pip install conan
+
+      - name: Conan Install Libraries Debug
+        run: conan install . --output-folder=${{github.workspace}}/build-windows/build-debug --build=missing --settings=build_type=Debug
+      
       - name: Configure CMake Build Debug
         run: |
           $var = Invoke-Webrequest -URI https://vulkan.lunarg.com/sdk/latest/windows.txt | Select-Object -ExpandProperty Content
@@ -103,6 +96,9 @@ jobs:
           
           cmake -B ${{github.workspace}}/build-windows/build-release -DCMAKE_BUILD_TYPE=Release -T ClangCL
 
+      - name: Conan Install Libraries Release
+        run: conan install . --output-folder=${{github.workspace}}/build-windows/build-release --build=missing
+        
       - name: Compile BananEngine Build Release
         run: cmake --build ${{github.workspace}}/build-windows/build-release
         
