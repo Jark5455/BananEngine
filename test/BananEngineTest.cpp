@@ -67,7 +67,7 @@ namespace Banan{
 
         std::vector<std::unique_ptr<BananBuffer>> storageBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (auto & storageBuffer : storageBuffers) {
-            storageBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), gameObjects.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minStorageBufferOffsetAlignment);
+            storageBuffer = std::make_unique<BananBuffer>(bananDevice, sizeof(GameObjectData), static_cast<uint32_t>(gameObjects.size()), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, bananDevice.physicalDeviceProperties().limits.minStorageBufferOffsetAlignment);
             storageBuffer->map();
         }
 
