@@ -4,6 +4,7 @@ assimp/5.2.2
 stb/cci.20220909
 openexr/3.2.1
 libdeflate/1.19
+zlib/1.2.13
 
 [generators]
 CMakeDeps
