@@ -44,7 +44,7 @@ namespace BananSTLExt {
     }
 
     uint64_t BananWyHash::wymix(uint64_t A, uint64_t B) {
-        _wymum(&A,&B);
+        wymum(&A,&B);
         return A^B;
     }
 }
