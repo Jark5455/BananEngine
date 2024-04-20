@@ -6,7 +6,7 @@
 
 #include <stdexcept>
 
-namespace Banan {
+namespace BananTest {
     ComputeSystem::ComputeSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device} {
         createPipelineLayout(layouts);
         createPipelines(renderPass);

@@ -7,7 +7,7 @@
 #include <core/banan_game_object.h>
 #include <core/banan_window.h>
 
-namespace Banan {
+namespace BananTest {
     class KeyboardMovementController {
         public:
 
@@ -26,7 +26,7 @@ namespace Banan {
             int lookDown = SDL_SCANCODE_DOWN;
         };
 
-        void moveInPlaneXZ(float dt, BananGameObject &object);
+        void moveInPlaneXZ(float dt, Banan::BananGameObject &object);
 
         float moveSpeed{3.f};
         float lookSpeed{1.5f};

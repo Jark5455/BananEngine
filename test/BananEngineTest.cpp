@@ -18,7 +18,7 @@
 #include <algorithm>
 #include <chrono>
 
-namespace Banan{
+namespace BananTest {
 
     BananEngineTest::BananEngineTest() {
 

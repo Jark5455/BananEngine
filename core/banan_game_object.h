@@ -33,7 +33,8 @@ namespace Banan {
         float lightIntensity = 1.0f;
     };
 
-    class BananGameObject {
+
+    class [[deprecated("Moved to BananECS")]] BananGameObject {
     public:
         using id_t = unsigned int;
         using Map = std::unordered_map<id_t, BananGameObject>;

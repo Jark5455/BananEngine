@@ -9,6 +9,9 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 include_directories(${PROJECT_SOURCE_DIR}/core)
 add_subdirectory("core")
 
+include_directories(${PROJECT_SOURCE_DIR}/stlext)
+add_subdirectory("stlext")
+
 include_directories(${PROJECT_SOURCE_DIR}/test)
 add_subdirectory("test")
 

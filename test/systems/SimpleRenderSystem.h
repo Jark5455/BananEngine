@@ -12,7 +12,9 @@
 #include <memory>
 #include <vector>
 
-namespace Banan{
+using namespace Banan;
+
+namespace BananTest {
     class SimpleRenderSystem {
     public:
         SimpleRenderSystem(const SimpleRenderSystem &) = delete;

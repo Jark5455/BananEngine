@@ -14,7 +14,7 @@
 #include <map>
 #include <stdexcept>
 
-namespace Banan{
+namespace BananTest {
     PointLightSystem::PointLightSystem(BananDevice &device, VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> layouts) : bananDevice{device} {
         createPipelineLayout(layouts);
         createPipeline(renderPass);

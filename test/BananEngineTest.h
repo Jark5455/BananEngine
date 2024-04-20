@@ -13,7 +13,9 @@
 #include <memory>
 #include <vector>
 
-namespace Banan{
+using namespace Banan;
+
+namespace BananTest {
     class BananEngineTest {
     public:
         static constexpr int WIDTH = 800;

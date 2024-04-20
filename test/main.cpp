@@ -8,7 +8,7 @@
 #include <iostream>
 
 int main(int argv, char** args) {
-    Banan::BananEngineTest app{};
+    BananTest::BananEngineTest app{};
 
     try {
         app.run();

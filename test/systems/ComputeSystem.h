@@ -8,7 +8,9 @@
 #include <banan_device.h>
 #include <banan_frame_info.h>
 
-namespace Banan {
+using namespace Banan;
+
+namespace BananTest {
     class ComputeSystem {
     public:
         ComputeSystem(const ComputeSystem &) = delete;

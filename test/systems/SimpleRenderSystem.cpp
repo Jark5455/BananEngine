@@ -11,7 +11,7 @@
 
 #include <stdexcept>
 
-namespace Banan{
+namespace BananTest {
 
     struct SimplePushConstantData {
         glm::mat4 modelMatrix{1.f};

@@ -5,9 +5,8 @@
 #include "KeyboardMovementController.h"
 
 #include <limits>
-#include <iostream>
 
-namespace Banan {
+namespace BananTest {
     void KeyboardMovementController::moveInPlaneXZ(float dt, Banan::BananGameObject &object) {
         glm::vec3 rotate{0.f};
         glm::vec3 moveDir{0.f};

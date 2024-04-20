@@ -15,7 +15,9 @@
 #include <memory>
 #include <vector>
 
-namespace Banan{
+using namespace Banan;
+
+namespace BananTest {
     class ProcrastinatedRenderSystem {
     public:
         ProcrastinatedRenderSystem(const ProcrastinatedRenderSystem &) = delete;
