@@ -1,10 +1,10 @@
 [requires]
-sdl/2.28.5
-assimp/5.2.2
-stb/cci.20220909
-openexr/3.2.1
-libdeflate/1.19
-zlib/1.2.13
+sdl/[>=0.0.1]@
+assimp/[>=0.0.1]@
+stb/[>=0.0.1]@
+openexr/[>=0.0.1]@
+libdeflate/[>=0.0.1]@
+zlib/[>=0.0.1]@
 
 [generators]
 CMakeDeps
