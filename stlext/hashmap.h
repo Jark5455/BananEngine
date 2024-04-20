@@ -5,7 +5,7 @@
 #pragma once
 
 namespace BananSTLExt {
-    class BananHashmap {
+    template <typename K, typename V> class BananHashmap {
 
     };
 }

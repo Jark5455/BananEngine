@@ -10,14 +10,14 @@
 
 namespace BananSTLExt {
     uint64_t BananWyHash::wyrot(uint64_t x) {
-        return (x>>32)|(x<<32);
+        return (x >> 32) | (x << 32);
     }
 
     void BananWyHash::wymum(uint64_t *A, uint64_t *B) {
         #if defined(__SIZEOF_INT128__)
             __uint128_t r = (*A) * (*B);
             *A ^= (uint64_t)r;
-            *B ^= (uint64_t)(r>>64);
+            *B ^= (uint64_t)(r >> 64);
         #elif defined(_MSC_VER) && defined(_M_X64)
             uint64_t a;
             uint64_t b;
@@ -48,7 +48,7 @@ namespace BananSTLExt {
     }
 
     uint64_t BananWyHash::wymix(uint64_t A, uint64_t B) {
-        wymum(&A,&B);
+        wymum(&A, &B);
         return A^B;
     }
 
