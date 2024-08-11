@@ -1,8 +1,9 @@
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 add_executable(BananEngineTest main.cpp BananEngineTest.cpp systems/SimpleRenderSystem.cpp systems/PointLightSystem.cpp KeyboardMovementController.cpp systems/ComputeSystem.cpp systems/ProcrastinatedRenderSystem.cpp systems/ProcrastinatedRenderSystem.h)
 
-target_link_libraries(BananEngineTest PRIVATE BananEngine)
+target_link_libraries(BananEngineTest BananEngine)
+target_link_libraries(BananEngineTest BananSTLExt)
 
 include_directories(${CMAKE_SOURCE_DIR})
 

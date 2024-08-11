@@ -5,21 +5,29 @@
 #include <cstdint>
 #include <string>
 
+#include "wyhash.h"
+
 #pragma once
 
 namespace BananSTLExt {
-    template<typename T> class BananHash {
-        public:
-            uint64_t hash(T const &obj) const noexcept;
+    template<typename T>
+    struct BananHash {
+        inline uint64_t operator()(const T &obj) const noexcept {
+            return BananWyHash::wyhash64(static_cast<uint64_t>(obj), UINT64_C(0x9E3779B97F4A7C15));
+        }
     };
 
-    template <typename T> class BananHash<std::basic_string<T>> {
-        public:
-            uint64_t hash(std::basic_string<T> const &str) const noexcept;
+    template<typename T>
+    struct BananHash<T *> {
+        inline uint64_t operator()(T* obj) const noexcept {
+            return BananWyHash::wyhash64(reinterpret_cast<uintptr_t>(obj), UINT64_C(0x9E3779B97F4A7C15));
+        }
     };
 
-    template <typename T> class BananHash<T*> {
-        public:
-            uint64_t hash(T* ptr) const noexcept;
+    template<typename T>
+    struct BananHash<std::basic_string<T>> {
+        inline uint64_t operator()(const std::basic_string<T> str) const noexcept {
+            return BananWyHash::wyhash(str.data(), str.size(), BananWyHash::wyp[0], BananWyHash::wyp);
+        }
     };
 }
