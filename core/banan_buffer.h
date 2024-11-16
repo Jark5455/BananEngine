@@ -6,6 +6,8 @@
 
 #include "banan_device.h"
 
+#include <volk.h>
+
 namespace Banan {
 
     class BananBuffer {

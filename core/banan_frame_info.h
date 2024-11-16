@@ -7,7 +7,7 @@
 #include "banan_camera.h"
 #include "banan_game_object.h"
 
-#include <vulkan/vulkan.h>
+#include <volk.h>
 
 namespace Banan {
     struct GlobalUbo {

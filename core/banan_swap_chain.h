@@ -8,7 +8,7 @@
 #include "banan_image.h"
 
 // vulkan headers
-#include <vulkan/vulkan.h>
+#include <volk.h>
 
 // std lib headers
 #include <string>

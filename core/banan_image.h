@@ -6,7 +6,12 @@
 
 #include "banan_device.h"
 
-#define STB_IMAGE_IMPLEMENTATION
+#include <volk.h>
+#include <stb/stb_image.h>
+
+#ifndef STBI_IMPLEMENTATION
+#define STBI_IMPLEMENTATION
+#endif
 
 namespace Banan {
     class BananImage {

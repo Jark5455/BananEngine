@@ -6,6 +6,8 @@
 
 #include "banan_device.h"
 
+#include <volk.h>
+
 #include <array>
 #include <memory>
 #include <unordered_map>

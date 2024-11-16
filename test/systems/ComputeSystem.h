@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <banan_pipeline.h>
-#include <banan_device.h>
-#include <banan_frame_info.h>
+#include <core/banan_pipeline.h>
+#include <core/banan_device.h>
+#include <core/banan_frame_info.h>
 
 using namespace Banan;
 
