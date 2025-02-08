@@ -22,6 +22,10 @@ namespace BananTest {
 
     BananEngineTest::BananEngineTest() {
 
+        // TODO also rework this shit too
+
+        /*
+
         loadGameObjects();
 
         globalPool = BananDescriptorPool::Builder(bananDevice)
@@ -53,11 +57,17 @@ namespace BananTest {
                 .setMaxSets(BananSwapChain::MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, BananSwapChain::MAX_FRAMES_IN_FLIGHT * 3)
                 .build();
+
+        */
     }
 
     BananEngineTest::~BananEngineTest() = default;
 
     void BananEngineTest::run() {
+
+        // TODO rework this shit
+
+        /*
 
         std::vector<std::unique_ptr<BananBuffer>> uboBuffers(BananSwapChain::MAX_FRAMES_IN_FLIGHT);
         for (auto & uboBuffer : uboBuffers) {
@@ -104,7 +114,7 @@ namespace BananTest {
                 .addBinding(2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
                 .build();
 
-        // SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
+        SimpleRenderSystem renderSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout(), textureSetLayout->getDescriptorSetLayout(), normalSetLayout->getDescriptorSetLayout(), heightMapSetLayout->getDescriptorSetLayout()}};
         PointLightSystem pointLightSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         // ShadowSystem shadowSystem{bananDevice, bananRenderer.getShadowRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
         ComputeSystem computeSystem{bananDevice, bananRenderer.getSwapChainRenderPass(), {globalSetLayout->getDescriptorSetLayout()}};
@@ -270,14 +280,18 @@ namespace BananTest {
                 }*/
 
                 bananRenderer.beginSwapChainRenderPass(commandBuffer);
-                procrastinatedRenderSystem.calculateGBuffer(frameInfo);
-                procrastinatedRenderSystem.render(frameInfo);
+                // procrastinatedRenderSystem.calculateGBuffer(frameInfo);
+                // procrastinatedRenderSystem.render(frameInfo);
+
+                renderSystem.render(frameInfo);
                 pointLightSystem.render(frameInfo);
                 bananRenderer.endSwapChainRenderPass(commandBuffer);
 
                 bananRenderer.endFrame();
             }
         }
+
+        */
     }
 
     void BananEngineTest::loadGameObjects() {

@@ -1,10 +1,11 @@
+#!/usr/bin/python -u
+
 import hashlib
 import os
 import pathlib
 import shutil
 import sys
 import subprocess
-import enum
 
 OUT_PATH = pathlib.Path('BananBuild')
 RELEASE_PATH = pathlib.Path('BananBuild/Release')
@@ -53,7 +54,7 @@ def safe_copy(src, dst):
         raise Exception('Attempted write to : ' + dst + ' which is outside the project directory')
 
     if src.is_dir():
-        shutil.copytree(src, dst)
+        shutil.copytree(src, dst, dirs_exist_ok=True)
     elif src.is_file():
         shutil.copy(src, dst)
     else:
@@ -141,6 +142,11 @@ def mkdirs():
     if not DEBUG_BUILDCACHE_INCLUDE_PATH.exists():
         DEBUG_BUILDCACHE_INCLUDE_PATH.mkdir(parents=True)
 
+    if not BIN_PATH.joinpath('banan_assets').exists():
+        BIN_PATH.joinpath('banan_assets').mkdir(parents=True)
+    if not BIN_PATH.joinpath('shaders').exists():
+        BIN_PATH.joinpath('shaders').mkdir(parents=True)
+
 
 def build_dependencies():
     cmake_name = 'cmake'
@@ -173,39 +179,6 @@ def build_dependencies():
         with open(DEPENDENCY_PATH.joinpath('stb.md5'), 'w') as hash_file:
             hash_file.write(stb_hash)
 
-    # VOLK
-    volk_path = pathlib.Path('third-party/volk')
-    volk_hash = hash_directory(volk_path)
-    if not check_dependency_hash('volk', volk_hash):
-        volk_workingdir = DEPENDENCY_PATH.joinpath('volk')
-        if volk_workingdir.exists():
-            safe_delete(volk_workingdir)
-        safe_copy(volk_path, volk_workingdir)
-
-        print('=' * os.get_terminal_size().columns)
-        print('COMPILING VOLK')
-        print('=' * os.get_terminal_size().columns)
-
-        volk_build_dir = volk_workingdir.joinpath('build')
-        volk_build_dir.mkdir()
-
-        assert subprocess.run([cmake_name, ".."], cwd=volk_build_dir).returncode == 0
-        assert subprocess.run([cmake_name, "--build", "."], cwd=volk_build_dir).returncode == 0
-
-        if os.name == 'posix':
-            safe_copy(volk_build_dir.joinpath('libvolk.a'), LIB_PATH.joinpath('libvolk.a'))
-        elif os.name == 'nt':
-            safe_copy(volk_build_dir.joinpath('libvolk.lib'), LIB_PATH.joinpath('libvolk.lib'))
-
-        volk_include_path = INCLUDE_PATH.joinpath('volk/')
-        if not volk_include_path.exists():
-            volk_include_path.mkdir()
-
-        safe_copy(volk_path.joinpath('volk.h'), volk_include_path.joinpath('volk.h'))
-
-        with open(DEPENDENCY_PATH.joinpath('volk.md5'), 'w') as hash_file:
-            hash_file.write(volk_hash)
-
     # ASSIMP
     assimp_path = pathlib.Path('third-party/assimp')
     assimp_hash = hash_directory(assimp_path)
@@ -216,9 +189,7 @@ def build_dependencies():
             safe_delete(assimp_workingdir)
         safe_copy(assimp_path, assimp_workingdir)
 
-        print('=' * os.get_terminal_size().columns)
         print('COMPILING ASSIMP')
-        print('=' * os.get_terminal_size().columns)
 
         assimp_build_dir = assimp_workingdir.joinpath('build')
         assimp_build_dir.mkdir()
@@ -227,10 +198,10 @@ def build_dependencies():
                               cwd=assimp_build_dir).returncode == 0
 
         if BUILD_TYPE == 'Debug':
-            assert subprocess.run([cmake_name, "--build", ".", "--config", "debug"],
+            assert subprocess.run([cmake_name, "--build", ".", "--config", "debug", "-j", "16"],
                                   cwd=assimp_build_dir).returncode == 0
         elif BUILD_TYPE == 'Release':
-            assert subprocess.run([cmake_name, "--build", ".", "--config", "release"],
+            assert subprocess.run([cmake_name, "--build", ".", "--config", "release", "-j", "16"],
                                   cwd=assimp_build_dir).returncode == 0
 
         if os.name == 'posix':
@@ -253,9 +224,7 @@ def build_dependencies():
             safe_delete(openexr_workingdir)
         safe_copy(openexr_path, openexr_workingdir)
 
-        print('=' * os.get_terminal_size().columns)
         print('COMPILING OPENEXR')
-        print('=' * os.get_terminal_size().columns)
 
         openexr_build_dir = openexr_workingdir.joinpath('build')
         openexr_build_dir.mkdir()
@@ -264,7 +233,7 @@ def build_dependencies():
             [cmake_name, "-DOPENEXR_FORCE_INTERNAL_IMATH=ON", "-DOPENEXR_FORCE_INTERNAL_DEFLATE=ON", "..",
              "--install-prefix", openexr_build_dir.resolve().joinpath("install")],
             cwd=openexr_build_dir).returncode == 0
-        assert subprocess.run([cmake_name, "--build", ".", "--target", "install", "--config", BUILD_TYPE],
+        assert subprocess.run([cmake_name, "--build", ".", "--target", "install", "--config", BUILD_TYPE, "-j", "16"],
                               cwd=openexr_build_dir).returncode == 0
 
         if os.name == 'posix':
@@ -303,15 +272,13 @@ def build_dependencies():
             safe_delete(sdl_workingdir)
         safe_copy(sdl_path, sdl_workingdir)
 
-        print('=' * os.get_terminal_size().columns)
         print('COMPILING SDL')
-        print('=' * os.get_terminal_size().columns)
 
         sdl_build_dir = sdl_workingdir.joinpath('build')
         sdl_build_dir.mkdir()
 
         assert subprocess.run([cmake_name, "-DCMAKE_BUILD_TYPE=" + BUILD_TYPE, ".."], cwd=sdl_build_dir).returncode == 0
-        assert subprocess.run([cmake_name, "--build", "."], cwd=sdl_build_dir).returncode == 0
+        assert subprocess.run([cmake_name, "--build", ".", "-j", "16"], cwd=sdl_build_dir).returncode == 0
 
         if BUILD_TYPE == 'Debug':
             if os.name == 'posix':
@@ -326,8 +293,14 @@ def build_dependencies():
 
         safe_copy(sdl_build_dir.joinpath('include/SDL2'), INCLUDE_PATH.joinpath('SDL2'))
 
+        if BUILD_TYPE == 'Debug':
+            safe_copy(sdl_build_dir.joinpath('include-config-debug/SDL2/SDL_config.h'), INCLUDE_PATH.joinpath('SDL2/SDL_config.h'))
+        elif BUILD_TYPE == 'Release':
+            safe_copy(sdl_build_dir.joinpath('include-config-release/SDL2/SDL_config.h'), INCLUDE_PATH.joinpath('SDL2/SDL_config.h'))
+
         with open(DEPENDENCY_PATH.joinpath('sdl.md5'), 'w') as hash_file:
             hash_file.write(sdl_hash)
+
 
 
 def compile_file(filepath, flags, includes):
@@ -337,12 +310,12 @@ def compile_file(filepath, flags, includes):
         BUILDCACHE_PATH.joinpath(filepath).parent.mkdir(parents=True)
 
     if os.name == 'posix':
-        includes = [x for include in includes for x in ('-I', include)]
+        includes = ['-I', str(INCLUDE_PATH)] + [x for include in includes for x in ('-I', include)]
         cmd = ['clang++', '-std=c++20', '-c'] + flags + includes + ['-o', str(BUILDCACHE_PATH.joinpath(filepath.with_suffix('.o'))), str(filepath)]
         print(' '.join(cmd))
         assert subprocess.run(cmd).returncode == 0
     elif os.name == 'nt':
-        includes = [x for include in includes for x in ('/I', include)]
+        includes = ['/I', str(INCLUDE_PATH)] + [x for include in includes for x in ('/I', include)]
         cmd = ['clang-cl.exe', '/std:c++20', '/c'] + flags + includes + ['/Fo:', str(BUILDCACHE_PATH.joinpath(filepath.stem)), str(filepath)]
         print(' '.join(cmd))
         assert subprocess.run(cmd).returncode == 0
@@ -357,11 +330,11 @@ def link_target(target_name, target_type, files, flags, libs):
         libs = ['-l' + lib for lib in libs]
 
         if target_type == 'executable':
-            cmd = ['clang++'] + flags + libs + ['-L', str(LIB_PATH), '-L', str(BIN_PATH), '-o', str(BIN_PATH.joinpath(target_name))] + files
+            cmd = ['clang++'] + flags + libs + ['-L', str(BIN_PATH), '-o', str(BIN_PATH.joinpath(target_name))] + files
             print(' '.join(cmd))
             assert subprocess.run(cmd).returncode == 0
         elif target_type == 'library':
-            cmd = ['clang++', '-shared'] + flags + libs + ['-L', str(LIB_PATH), '-L', str(BIN_PATH), '-o', str(BIN_PATH.joinpath('lib' + target_name + '.so'))] + files
+            cmd = ['clang++', '-shared'] + flags + libs + ['-L', str(BIN_PATH), '-o', str(BIN_PATH.joinpath('lib' + target_name + '.so'))] + files
             print(' '.join(cmd))
             assert subprocess.run(cmd).returncode == 0
         else:
@@ -370,11 +343,11 @@ def link_target(target_name, target_type, files, flags, libs):
         libs = ['lib' + lib + '.dll' for lib in libs]
 
         if target_type == 'executable':
-            cmd = ['lld-link.exe'] + flags + ['/LIBPATH:', str(LIB_PATH), '/LIBPATH:', str(BIN_PATH), '/OUT:', str(BIN_PATH.joinpath(target_name + '.exe'))] + files + libs
+            cmd = ['lld-link.exe'] + flags + ['/LIBPATH:', str(BIN_PATH), '/OUT:', str(BIN_PATH.joinpath(target_name + '.exe'))] + files + libs
             print(' '.join(cmd))
             assert subprocess.run(cmd).returncode == 0
         elif target_type == 'library':
-            cmd = ['lld-link.exe', '/DLL'] + flags + ['/LIBPATH:', str(LIB_PATH), '/LIBPATH:', str(BIN_PATH), '/OUT:', str(BIN_PATH.joinpath('lib' + target_name + '.dll'))] + files + libs
+            cmd = ['lld-link.exe', '/DLL'] + flags + ['/LIBPATH:', str(BIN_PATH), '/OUT:', str(BIN_PATH.joinpath('lib' + target_name + '.dll'))] + files + libs
             print(' '.join(cmd))
             assert subprocess.run(cmd).returncode == 0
         else:
@@ -382,6 +355,11 @@ def link_target(target_name, target_type, files, flags, libs):
 
 
 def build_banan():
+
+    # Copy deps to build folder
+
+    for lib in LIB_PATH.glob('*.so'):
+        safe_copy(lib, BIN_PATH.joinpath(lib.name))
 
     # Build BananStlExt
 
@@ -412,11 +390,18 @@ def build_banan():
 
     if BananStlExtChanges:
         flags = ['-fsanitize=address']
+        if os.name == 'posix':
+            flags.extend(['-Wl,-rpath=${ORIGIN}'])
         if os.name == 'nt' and BUILD_TYPE == 'Debug':
             flags.extend(['/DEBUG', '/PDB'])
 
         files = [str(BUILDCACHE_PATH.joinpath(src.with_suffix('.o'))) for src in pathlib.Path('stlext').glob('*.cpp')]
-        link_target('BananStlExt', 'library', files, flags, [])
+
+        try:
+            link_target('BananStlExt', 'library', files, flags, [])
+        except:
+            print('Link command failed for BananStlExt')
+            safe_delete(BUILDCACHE_PATH.joinpath('stlext'))
 
     # Build BananEngineCore
 
@@ -424,7 +409,7 @@ def build_banan():
     for src in pathlib.Path('core').glob('*.cpp'):
         hash = hash_sourcefile(src)
         if not check_source_hash(src, hash):
-            includes = [str(INCLUDE_PATH.joinpath('assimp')), str(INCLUDE_PATH.joinpath('glm')), str(INCLUDE_PATH.joinpath('Imath')), str(INCLUDE_PATH.joinpath('OpenEXR')), str(INCLUDE_PATH.joinpath('SDL2')), str(INCLUDE_PATH.joinpath('stb')), str(INCLUDE_PATH.joinpath('volk'))]
+            includes = [str(INCLUDE_PATH.joinpath('assimp')), str(INCLUDE_PATH.joinpath('Imath')), str(INCLUDE_PATH.joinpath('OpenEXR')), str(INCLUDE_PATH.joinpath('SDL2')), str(INCLUDE_PATH.joinpath('stb'))]
             flags = ['-fcf-protection', '-fstack-protector', '-fsanitize=address']
             if (os.name == 'posix'):
                 flags.extend(['-fPIC', '-Wall', '-Wextra'])
@@ -448,11 +433,18 @@ def build_banan():
 
     if BananEngineCoreChanges:
         flags = ['-fsanitize=address']
+        if os.name == 'posix':
+            flags.extend(['-Wl,-rpath=${ORIGIN}'])
         if os.name == 'nt' and BUILD_TYPE == 'Debug':
             flags.extend(['/DEBUG', '/PDB'])
 
         files = [str(BUILDCACHE_PATH.joinpath(src.with_suffix('.o'))) for src in pathlib.Path('core').glob('*.cpp')]
-        link_target('BananEngineCore', 'library', files, flags, ['assimp', 'OpenEXR', 'SDL2-2.0', 'volk', 'BananStlExt'])
+
+        try:
+            link_target('BananEngineCore', 'library', files, flags, ['assimp', 'OpenEXR', 'SDL2-2.0', 'vulkan', 'BananStlExt'])
+        except:
+            print('Link command failed for BananEngineCore')
+            safe_delete(BUILDCACHE_PATH.joinpath('core'))
 
     # Build BananEngineTest
 
@@ -460,7 +452,7 @@ def build_banan():
     for src in pathlib.Path('test').rglob('*.cpp'):
         hash = hash_sourcefile(src)
         if not check_source_hash(src, hash):
-            includes = [str(INCLUDE_PATH.joinpath('assimp')), str(INCLUDE_PATH.joinpath('glm')), str(INCLUDE_PATH.joinpath('Imath')), str(INCLUDE_PATH.joinpath('OpenEXR')), str(INCLUDE_PATH.joinpath('SDL2')), str(INCLUDE_PATH.joinpath('stb')), str(INCLUDE_PATH.joinpath('volk'))]
+            includes = [str(INCLUDE_PATH.joinpath('assimp')), str(INCLUDE_PATH.joinpath('glm')), str(INCLUDE_PATH.joinpath('Imath')), str(INCLUDE_PATH.joinpath('OpenEXR')), str(INCLUDE_PATH.joinpath('SDL2')), str(INCLUDE_PATH.joinpath('stb'))]
             flags = ['-fcf-protection', '-fstack-protector', '-fsanitize=address']
             if (os.name == 'posix'):
                 flags.extend(['-fPIC', '-Wall', '-Wextra'])
@@ -484,11 +476,40 @@ def build_banan():
 
     if BananEngineTestChanges:
         flags = ['-fsanitize=address']
+        if os.name == 'posix':
+            flags.extend(['-Wl,-rpath=${ORIGIN}'])
         if os.name == 'nt' and BUILD_TYPE == 'Debug':
             flags.extend(['/DEBUG', '/PDB'])
 
         files = [str(BUILDCACHE_PATH.joinpath(src.with_suffix('.o'))) for src in pathlib.Path('test').rglob('*.cpp')]
-        link_target('BananEngineTest', 'executable', files, flags, ['BananEngineCore', 'BananStlExt', 'SDL2-2.0', 'volk'])
+
+        try:
+            link_target('BananEngineTest', 'executable', files, flags, ['BananEngineCore', 'BananStlExt', 'SDL2-2.0', 'vulkan'])
+        except:
+            print('Linker command failed for BananEngineTest')
+            safe_delete(BUILDCACHE_PATH.joinpath('test'))
+
+    safe_copy(pathlib.Path('test/banan_assets'), BIN_PATH.joinpath('banan_assets'))
+
+    for shader in pathlib.Path('test/shaders').rglob('*'):
+        hash = hash_sourcefile(shader)
+        if not check_source_hash(shader, hash):
+
+            if not BUILDCACHE_PATH.joinpath(shader).parent.exists():
+                BUILDCACHE_PATH.joinpath(shader).parent.mkdir(parents=True)
+
+            if os.name == 'posix':
+                cmd = ['glslangValidator', '-V', str(shader), '-o', str(BIN_PATH.joinpath('shaders').joinpath(str(shader.name) + '.spv'))]
+                print(' '.join(cmd))
+                assert subprocess.run(cmd).returncode == 0
+            elif os.name == 'nt':
+                cmd = ['glslangValidator.exe', '-V', str(shader), '-o', str(BIN_PATH.joinpath('shaders').joinpath(str(shader.name) + '.spv'))]
+                print(' '.join(cmd))
+                assert subprocess.run(cmd).returncode == 0
+
+            with open(str(BUILDCACHE_PATH.joinpath(shader.with_suffix('.md5'))), 'w') as hash_file:
+                hash_file.write(hash)
+
 
 if __name__ == '__main__':
     mkdirs()

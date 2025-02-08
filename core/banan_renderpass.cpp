@@ -10,7 +10,7 @@
 
 namespace Banan {
 
-    BananRenderPass::BananRenderPass(BananDevice &device, std::vector<VkFormat> attachmentFormats, VkExtent2D extent, bool depthImage) : bananDevice{device}, frameBufferFormats{std::move(attachmentFormats)}, extent{extent} {
+    BananRenderPass::BananRenderPass(BananDevice &device, std::vector<VkFormat> attachmentFormats, VkExtent2D extent, bool depthImage) : frameBufferFormats{std::move(attachmentFormats)}, bananDevice{device}, extent{extent} {
         if (depthImage)
             frameBufferFormats.push_back(device.findSupportedFormat({VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT));
 
@@ -26,7 +26,7 @@ namespace Banan {
     void BananRenderPass::createFramebuffer() {
 
         VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
-        for (int i = 0 ; i < frameBufferFormats.size() - 1; i++) {
+        for (size_t i = 0 ; i < frameBufferFormats.size() - 1; i++) {
             frameBufferAttachments.push_back(std::make_shared<BananImage>(bananDevice, extent.width, extent.height, 1, frameBufferFormats[i], VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
             bananDevice.transitionImageLayout(frameBufferAttachments.back()->getImageHandle(), frameBufferFormats[i], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, 1);
         }
@@ -40,7 +40,7 @@ namespace Banan {
         }
 
         std::vector<VkImageView> attachments{frameBufferAttachments.size()};
-        for (int i = 0; i < attachments.size(); i++) {
+        for (size_t i = 0; i < attachments.size(); i++) {
             attachments[i] = frameBufferAttachments[i]->descriptorInfo().imageView;
         }
 
@@ -62,7 +62,7 @@ namespace Banan {
         VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
         std::vector<VkAttachmentDescription> osAttachments{frameBufferFormats.size()};
 
-        for (int i = 0; i < osAttachments.size(); i++) {
+        for (size_t i = 0; i < osAttachments.size(); i++) {
             osAttachments[i].format = frameBufferFormats[i];
             osAttachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
             osAttachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -77,7 +77,7 @@ namespace Banan {
         std::vector<VkAttachmentReference> colorReferences{};
         std::vector<VkAttachmentReference> depthReferences{};
 
-        for (int i = 0; i < frameBufferFormats.size() - 1; i++) {
+        for (size_t i = 0; i < frameBufferFormats.size() - 1; i++) {
             VkAttachmentReference colorReference{};
             colorReference.attachment = i;
             colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -137,7 +137,7 @@ namespace Banan {
     void BananRenderPass::beginRenderPass(VkCommandBuffer commandBuffer, bool flippedViewport) {
         std::vector<VkClearValue> clearValues{frameBufferAttachments.size()};
 
-        for (int i = 0; i < clearValues.size() - 1; i++) {
+        for (size_t i = 0; i < clearValues.size() - 1; i++) {
             clearValues[i].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
         }
 

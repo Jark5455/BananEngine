@@ -10,6 +10,8 @@ namespace Banan {
 
     BananWindow::BananWindow(int w, int h) : width{w}, height{h} {
         SDL_Init(SDL_INIT_EVERYTHING);
+        SDL_Vulkan_LoadLibrary(nullptr);
+
         window = SDL_CreateWindow("Banan",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED, w, h,SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     }
 
