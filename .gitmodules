@@ -1,4 +1,9 @@
-
+[submodule "third-party/assimp"]
+    path = third-party/assimp
+    url = https://github.com/assimp/assimp.git
+[submodule "third-party/glm"]
+    path = third-party/glm
+    url = https://github.com/g-truc/glm.git
 [submodule "third-party/openexr"]
 	path = third-party/openexr
 	url = https://github.com/AcademySoftwareFoundation/openexr.git
@@ -8,3 +13,6 @@
 [submodule "third-party/stb"]
 	path = third-party/stb
 	url = https://github.com/nothings/stb.git
+[submodule "third-party/volk"]
+	path = third-party/volk
+	url = https://github.com/zeux/volk.git
